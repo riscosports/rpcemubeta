@@ -595,6 +595,9 @@ rpcemu_config_apply_new_settings(Config *new_config, Model new_model)
 	/* Copy new settings over */
 	memcpy(&config, new_config, sizeof(Config));
 
+	// Save the settings to the rpc.cfg file
+	config_save(&config);
+
 	if(sound_changed) {
 		if(config.soundenabled) {
 			sound_restart();

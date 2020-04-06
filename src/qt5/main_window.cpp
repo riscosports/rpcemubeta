@@ -691,7 +691,7 @@ MainWindow::menu_fullscreen()
 		// Change Windowed -> Full Screen
 
 		// Make sure people know how to exit full-screen
-		if (config.show_fullscreen_message) {
+		if (config_copy.show_fullscreen_message) {
 			QCheckBox *checkBox = new QCheckBox("Do not show this message again");
 
 			QMessageBox msg_box(QMessageBox::Information,
@@ -714,7 +714,8 @@ MainWindow::menu_fullscreen()
 
 			// If they checked the box don't show this message again
 			if (msg_box.checkBox()->isChecked()) {
-				config.show_fullscreen_message = 0;
+				emit this->emulator.show_fullscreen_message_off();
+				config_copy.show_fullscreen_message = 0;
 			}
 		}
 
