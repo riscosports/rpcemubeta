@@ -189,8 +189,8 @@ ConfigureDialog::dialog_accepted()
 	if(mem_256->isChecked()) new_config.mem_size = 256;
 
 	// VRAM
-	if(vram_0->isChecked()) new_config.vrammask = 0;
-	if(vram_2->isChecked()) new_config.vrammask = 0x7FFFFF;
+	if (vram_0->isChecked()) new_config.vram_size = 0;
+	if (vram_2->isChecked()) new_config.vram_size = 8;
 
 	// Sound
 	if(sound_checkbox->isChecked()) {
@@ -280,11 +280,13 @@ ConfigureDialog::applyConfig()
 	vram_0->setChecked(false);
 	vram_2->setChecked(false);
 
-	switch(config_copy->vrammask) {
-	case        0: vram_0->setChecked(true); break;
-	case 0x7FFFFF: vram_2->setChecked(true); break;
-	// TODO Pheobe? cos it'll trip this defualt ...
-	default: fatal("configuredialog.cpp: unhandled vram size 0x%08x", config_copy->vrammask);
+	switch (config_copy->vram_size) {
+	case 0:
+		vram_0->setChecked(true);
+		break;
+	default:
+		vram_2->setChecked(true);
+		break;
 	}
 
 	// Sound
