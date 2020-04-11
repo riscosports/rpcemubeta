@@ -37,6 +37,9 @@ extern void opSWI(uint32_t opcode);
 #define checkneg(v)	(v & 0x80000000)
 #define checkpos(v)	(!(v & 0x80000000))
 
+/// Only certain bits within CPSR/SPSR can be modified on real hardware
+#define PSR_BITS_VALID	0xf00000df
+
 /** A table used by MSR instructions to determine which fields can be modified
     within a PSR */
 static const uint32_t msrlookup[16] = {
@@ -336,7 +339,7 @@ arm_write_cpsr(uint32_t opcode, uint32_t value)
 	}
 
 	/* Look up which fields to write to CPSR */
-	field_mask = msrlookup[(opcode >> 16) & 0xf];
+	field_mask = msrlookup[(opcode >> 16) & 0xf] & PSR_BITS_VALID;
 
 	/* Write to CPSR */
 	arm.reg[16] = (arm.reg[16] & ~field_mask) | (value & field_mask);
