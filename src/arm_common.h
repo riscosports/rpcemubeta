@@ -382,7 +382,7 @@ arm_write_spsr(uint32_t opcode, uint32_t value)
 	/* Only privileged modes have an SPSR */
 	if (ARM_MODE_PRIV(arm.mode)) {
 		/* Look up which fields to write to SPSR */
-		field_mask = msrlookup[(opcode >> 16) & 0xf];
+		field_mask = msrlookup[(opcode >> 16) & 0xf] & PSR_BITS_VALID;
 
 		/* Write to SPSR for current mode */
 		arm.spsr[arm.mode & 0xf] = (arm.spsr[arm.mode & 0xf] & ~field_mask) |

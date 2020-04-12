@@ -837,6 +837,17 @@ opCMPimm(uint32_t opcode)
 }
 
 static void
+opMSRsimm(uint32_t opcode)
+{
+	if (RD == 15) {
+		/* MSR SPSR,imm */
+		arm_write_spsr(opcode, arm_imm(opcode));
+	} else {
+		undefined();
+	}
+}
+
+static void
 opCMNimm(uint32_t opcode)
 {
 	uint32_t lhs, rhs, dest;

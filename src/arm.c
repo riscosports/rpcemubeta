@@ -1219,6 +1219,14 @@ execarm(int cycs)
 					}
 					break;
 
+				case 0x36: /* MSR SPSR,imm */
+					if (RD == 15) {
+						arm_write_spsr(opcode, arm_imm(opcode));
+					} else {
+						undefined();
+					}
+					break;
+
 				case 0x37: /* CMN imm */
 					lhs = GETADDR(RN);
 					rhs = arm_imm(opcode);

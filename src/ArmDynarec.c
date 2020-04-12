@@ -644,7 +644,7 @@ static const OpFn opcodes[256]=
 
 	opANDimm, opANDimmS,opEORimm, opEORimmS,opSUBimm, opSUBimmS,opRSBimm, opRSBimmS, //20
 	opADDimm, opADDimmS,opADCimm, opADCimmS,opSBCimm, opSBCimmS,opRSCimm, opRSCimmS, //28
-	badopcode,opTSTimm, opMSRcimm,opTEQimm, badopcode,opCMPimm, badopcode,opCMNimm,  //30
+	badopcode,opTSTimm, opMSRcimm,opTEQimm, badopcode,opCMPimm, opMSRsimm,opCMNimm,  //30
 	opORRimm, opORRimmS,opMOVimm, opMOVimmS,opBICimm, opBICimmS,opMVNimm, opMVNimmS, //38
 
 	(OpFn)opSTR,    (OpFn)opLDR,    (OpFn)opSTRT,   (OpFn)opLDRT,   (OpFn)opSTRB,   (OpFn)opLDRB,   (OpFn)opSTRBT,  (OpFn)opLDRBT,   //40
