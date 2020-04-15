@@ -34,6 +34,9 @@ extern void opSWI(uint32_t opcode);
 /** Evaluate to non-zero if 'mode' is a privileged mode */
 #define ARM_MODE_PRIV(mode)	((mode) & 0xf)
 
+/// Evaluate to non-zero if 'mode' has a SPSR (i.e. not USR26/USR32/Sys32)
+#define ARM_MODE_HAS_SPSR(mode)	(ARM_MODE_PRIV(mode) && ((mode) != 0x1f))
+
 #define checkneg(v)	(v & 0x80000000)
 #define checkpos(v)	(!(v & 0x80000000))
 
@@ -379,8 +382,8 @@ arm_write_spsr(uint32_t opcode, uint32_t value)
 {
 	uint32_t field_mask;
 
-	/* Only privileged modes have an SPSR */
-	if (ARM_MODE_PRIV(arm.mode)) {
+	// Only privileged modes have an SPSR (except Sys32)
+	if (ARM_MODE_HAS_SPSR(arm.mode)) {
 		/* Look up which fields to write to SPSR */
 		field_mask = msrlookup[(opcode >> 16) & 0xf] & PSR_BITS_VALID;
 
