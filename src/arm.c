@@ -947,7 +947,7 @@ execarm(int cycs)
 						}
 					} else if ((opcode & 0xfff) == 0) {
 						/* MRS reg,SPSR */
-						arm.reg[RD] = arm.spsr[arm.mode & 0xf];
+						arm.reg[RD] = arm_read_spsr();
 					} else {
 						bad_opcode(opcode);
 					}

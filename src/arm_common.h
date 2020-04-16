@@ -370,6 +370,28 @@ arm_write_cpsr(uint32_t opcode, uint32_t value)
 }
 
 /**
+ * Handle reads from SPSR by MRS instruction.
+ *
+ * @return Value of SPSR (or CPSR if unavailable)
+ */
+static inline uint32_t
+arm_read_spsr(void)
+{
+	if (ARM_MODE_HAS_SPSR(arm.mode)) {
+		return arm.spsr[arm.mode & 0xf];
+	} else {
+		// Real hardware returns CPSR if the mode has no SPSR
+		if (ARM_MODE_32(arm.mode)) {
+			return arm.reg[16];
+		} else {
+			return (arm.reg[15] & 0xf0000000) |
+			       ((arm.reg[15] >> 20) & 0xc0) |
+			       (arm.reg[15] & 3);
+		}
+	}
+}
+
+/**
  * Handle writes to SPSR by MSR instruction
  *
  * Takes into account User/Privileged modes.
