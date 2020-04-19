@@ -401,11 +401,11 @@ opTSTreg(uint32_t opcode)
 static void
 opMSRcreg(uint32_t opcode)
 {
-	if ((RD == 15) && ((opcode & 0xff0) == 0)) {
+	if ((opcode & 0xf010) == 0xf000) {
 		/* MSR CPSR,reg */
 		arm_write_cpsr(opcode, arm.reg[RM]);
 	} else {
-		bad_opcode(opcode);
+		undefined();
 	}
 }
 
@@ -471,11 +471,11 @@ opCMPreg(uint32_t opcode)
 static void
 opMSRsreg(uint32_t opcode)
 {
-	if ((RD == 15) && ((opcode & 0xff0) == 0)) {
+	if ((opcode & 0xf010) == 0xf000) {
 		/* MSR SPSR,reg */
 		arm_write_spsr(opcode, arm.reg[RM]);
 	} else {
-		bad_opcode(opcode);
+		undefined();
 	}
 }
 
@@ -802,7 +802,7 @@ opMSRcimm(uint32_t opcode)
 		/* MSR CPSR,imm */
 		arm_write_cpsr(opcode, arm_imm(opcode));
 	} else {
-		bad_opcode(opcode);
+		undefined();
 	}
 }
 

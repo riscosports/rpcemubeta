@@ -912,10 +912,10 @@ execarm(int cycs)
 					break;
 
 				case 0x12: /* MSR CPSR,reg */
-					if ((RD == 15) && ((opcode & 0xff0) == 0)) {
+					if ((opcode & 0xf010) == 0xf000) {
 						arm_write_cpsr(opcode, arm.reg[RM]);
 					} else {
-						bad_opcode(opcode);
+						undefined();
 					}
 					break;
 
@@ -966,10 +966,10 @@ execarm(int cycs)
 					break;
 
 				case 0x16: /* MSR SPSR,reg */
-					if ((RD == 15) && ((opcode & 0xff0) == 0)) {
+					if ((opcode & 0xf010) == 0xf000) {
 						arm_write_spsr(opcode, arm.reg[RM]);
 					} else {
-						bad_opcode(opcode);
+						undefined();
 					}
 					break;
 
@@ -1193,7 +1193,7 @@ execarm(int cycs)
 					if (RD == 15) {
 						arm_write_cpsr(opcode, arm_imm(opcode));
 					} else {
-						bad_opcode(opcode);
+						undefined();
 					}
 					break;
 
