@@ -247,6 +247,7 @@ fdc_image_load(const char *fn, int drive)
 		}
 	} else {
 		error("Unknown disc image file extension '%s', must be .adf or .adl", extension);
+		fclose(f);
 		return;
 	}
 
