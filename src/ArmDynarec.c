@@ -694,6 +694,18 @@ arm_opcode_may_abort(uint32_t opcode)
 	return 0;
 }
 
+/**
+ * Select and return pointer to opcode function.
+ *
+ * @param opcode Opcode
+ * @return Pointer to function
+ */
+static inline OpFn
+arm_opcode_fn(uint32_t opcode)
+{
+	return opcodes[(opcode >> 20) & 0xff];
+}
+
 void
 execarm(int cycs)
 {
@@ -729,7 +741,8 @@ execarm(int cycs)
 					if ((opcode & 0x0e108000) == 0x08108000) { blockend = 1; } /* End if R15 reloaded from LDM */
 					if ((opcode & 0x0c100000) == 0x04100000 && (RD == 15)) { blockend = 1; } /* End if R15 reloaded from LDR */
 					if (flaglookup[opcode >> 28][(*pcpsr) >> 28]) {// && !(armirq&0x80))
-						opcodes[(opcode >> 20) & 0xff](opcode);
+						OpFn fn = arm_opcode_fn(opcode);
+						fn(opcode);
 					}
 					// if ((opcode & 0x0e000000) == 0x0a000000) blockend = 1; /* Always end block on branches */
 					// if ((opcode & 0x0c000000) == 0x0c000000) blockend = 1; /* And SWIs and copro stuff */
@@ -803,7 +816,7 @@ execarm(int cycs)
 							} else {
 								lastflagchange = 0;
 							}
-							generatecall(opcodes[(opcode >> 20) & 0xff], opcode, pcpsr);
+							generatecall(arm_opcode_fn(opcode), opcode, pcpsr);
 #ifdef ABORTCHECKING
 							if (arm_opcode_may_abort(opcode)) {
 								generateirqtest();
@@ -815,7 +828,8 @@ execarm(int cycs)
 							if ((opcode & 0x0e108000) == 0x08108000) blockend = 1; /* End if R15 reloaded from LDM */
 							if ((opcode & 0x0c100000) == 0x04100000 && (RD == 15)) blockend=1; /* End if R15 reloaded from LDR */
 							if (flaglookup[opcode >> 28][(*pcpsr) >> 28]) { // && !(armirq&0x80))
-								opcodes[(opcode >> 20) & 0xff](opcode);
+								OpFn fn = arm_opcode_fn(opcode);
+								fn(opcode);
 							}
 						}
 						arm.reg[15] += 4;
