@@ -104,4 +104,14 @@ extern int countbitstable[65536];
 #define UNDEFINED  11
 #define SYSTEM     15
 
+static inline uint32_t
+GETADDR(uint32_t r)
+{
+	if (r == 15) {
+		return arm.reg[15] & arm.r15_mask;
+	} else {
+		return arm.reg[r];
+	}
+}
+
 #endif //__ARM__
