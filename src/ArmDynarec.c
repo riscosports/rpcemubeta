@@ -81,9 +81,6 @@ int prog32;
 #define CFSET	((arm.reg[cpsr] & CFLAG) ? 1u : 0)
 #define VFSET	((arm.reg[cpsr] & VFLAG) ? 1u : 0)
 
-#define LOADREG(r,v) if (r == 15) { arm.reg[15] = (arm.reg[15] & ~arm.r15_mask) | (((v) + 4) & arm.r15_mask); refillpipeline(); } else arm.reg[r] = (v);
-#define GETREG(r) ((r == 15) ? (arm.reg[15] + arm.r15_diff) : arm.reg[r])
-
 #define refillpipeline() blockend=1;
 
 #include "arm_common.h"

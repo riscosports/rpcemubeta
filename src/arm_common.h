@@ -28,6 +28,10 @@ extern void arm_load_multiple(uint32_t opcode, uint32_t address, uint32_t writeb
 extern void arm_load_multiple_s(uint32_t opcode, uint32_t address, uint32_t writeback);
 extern void opSWI(uint32_t opcode);
 
+#define LOADREG(r, v) if (r == 15) { arm.reg[15] = (arm.reg[15] & ~arm.r15_mask) | (((v) + 4) & arm.r15_mask); refillpipeline(); } else arm.reg[r] = (v);
+
+#define GETREG(r) ((r == 15) ? (arm.reg[15] + arm.r15_diff) : arm.reg[r])
+
 /** Evaulate to non-zero if 'mode' is a 32-bit mode */
 #define ARM_MODE_32(mode)	((mode) & 0x10)
 
