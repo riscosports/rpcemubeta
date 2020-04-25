@@ -41,6 +41,7 @@ typedef struct {
 	uint32_t	r15_diff;
 	uint8_t		abort_base_restored;
 	uint8_t		stm_writeback_at_end;
+	uint8_t		arch_v4;
 } ARMState;
 
 typedef void (*OpFn)(uint32_t opcode);

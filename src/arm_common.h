@@ -22,11 +22,17 @@
 #define ARM_COMMON_H
 
 /* Functions in arm_common.c */
+extern void arm_ldrh(uint32_t opcode);
+extern void arm_ldrsh(uint32_t opcode);
+extern void arm_ldrsb(uint32_t opcode);
+extern void arm_strh(uint32_t opcode);
 extern void arm_store_multiple(uint32_t opcode, uint32_t address, uint32_t writeback);
 extern void arm_store_multiple_s(uint32_t opcode, uint32_t address, uint32_t writeback);
 extern void arm_load_multiple(uint32_t opcode, uint32_t address, uint32_t writeback);
 extern void arm_load_multiple_s(uint32_t opcode, uint32_t address, uint32_t writeback);
 extern void opSWI(uint32_t opcode);
+
+#define refillpipeline() blockend=1;
 
 #define LOADREG(r, v) if (r == 15) { arm.reg[15] = (arm.reg[15] & ~arm.r15_mask) | (((v) + 4) & arm.r15_mask); refillpipeline(); } else arm.reg[r] = (v);
 

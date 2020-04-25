@@ -88,9 +88,10 @@ int prog32;
 #define CFSET	((arm.reg[cpsr] & CFLAG) ? 1u : 0)
 #define VFSET	((arm.reg[cpsr] & VFLAG) ? 1u : 0)
 
-#define refillpipeline()
-
 #include "arm_common.h"
+
+#undef refillpipeline
+#define refillpipeline()
 
 uint32_t pccache;
 static const uint32_t *pccache2;
@@ -302,10 +303,12 @@ resetarm(CPUModel cpu_model)
 		arm.r15_diff = 0;
 		arm.abort_base_restored = 1;
 		arm.stm_writeback_at_end = 1;
+		arm.arch_v4 = 1;
 	} else {
 		arm.r15_diff = 4;
 		arm.abort_base_restored = 0;
 		arm.stm_writeback_at_end = 0;
+		arm.arch_v4 = 0;
 	}
 
 	cycles = 0;
@@ -590,15 +593,25 @@ execarm(int cycs)
 
 			if (flaglookup[opcode >> 28][(*pcpsr) >> 28] && !(armirq & 0x80)) //prefabort)
 			{
-#ifdef STRONGARM
-				if ((opcode & 0xe0000f0) == 0xb0) {
-					/* LDRH/STRH */
-					fatal("Bad LDRH/STRH opcode %08X\n", opcode);
-				} else if ((opcode & 0xe1000d0) == 0x1000d0) {
-					/* LDRS */
-					fatal("Bad LDRH/STRH opcode %08X\n", opcode);
-				} else {
-#endif
+				if (arm.arch_v4) {
+					if ((opcode & 0xe0000f0) == 0xb0) {
+						// LDRH/STRH
+						if (opcode & 0x100000) {
+							arm_ldrh(opcode);
+						} else {
+							arm_strh(opcode);
+						}
+						goto skip;
+					} else if ((opcode & 0xe1000d0) == 0x1000d0) {
+						// LDRSB/LDRSH
+						if ((opcode & 0xf0) == 0xd0) {
+							arm_ldrsb(opcode);
+						} else {
+							arm_ldrsh(opcode);
+						}
+						goto skip;
+					}
+				}
 
 				switch ((opcode >> 20) & 0xff) {
 				case 0x00: /* AND reg */
@@ -1866,9 +1879,9 @@ execarm(int cycs)
 					break;
 				}
 			}
-#ifdef STRONGARM
-			}
-#endif
+
+	// This label is used to skip the switch above
+skip:
 
 			if (/*databort|*/armirq)//|prefabort)
 			{

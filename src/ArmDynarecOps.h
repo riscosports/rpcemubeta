@@ -1520,3 +1520,31 @@ opMRC(uint32_t opcode)
 		undefined();
 	}
 }
+
+static int
+opLDRH(uint32_t opcode)
+{
+	arm_ldrh(opcode);
+	return (armirq & 0x40);
+}
+
+static int
+opLDRSB(uint32_t opcode)
+{
+	arm_ldrsb(opcode);
+	return (armirq & 0x40);
+}
+
+static int
+opLDRSH(uint32_t opcode)
+{
+	arm_ldrsh(opcode);
+	return (armirq & 0x40);
+}
+
+static int
+opSTRH(uint32_t opcode)
+{
+	arm_strh(opcode);
+	return (armirq & 0x40);
+}

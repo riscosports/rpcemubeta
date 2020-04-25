@@ -295,10 +295,12 @@ resetarm(CPUModel cpu_model)
 		arm.r15_diff = 0;
 		arm.abort_base_restored = 1;
 		arm.stm_writeback_at_end = 1;
+		arm.arch_v4 = 1;
 	} else {
 		arm.r15_diff = 4;
 		arm.abort_base_restored = 0;
 		arm.stm_writeback_at_end = 0;
+		arm.arch_v4 = 0;
 	}
 
 	cycles = 0;
@@ -687,6 +689,13 @@ arm_opcode_may_abort(uint32_t opcode)
 	if ((opcode & 0x0fb000f0) == 0x01000090) {
 		return 1;
 	}
+	// Is this a load/store extension?
+	if (arm.arch_v4) {
+		if (((opcode & 0xe0000f0) == 0xb0) || ((opcode & 0xe1000d0) == 0x1000d0)) {
+			return 1;
+		}
+	}
+
 	return 0;
 }
 
@@ -699,6 +708,24 @@ arm_opcode_may_abort(uint32_t opcode)
 static inline OpFn
 arm_opcode_fn(uint32_t opcode)
 {
+	if (arm.arch_v4) {
+		if ((opcode & 0xe0000f0) == 0xb0) {
+			// LDRH/STRH
+			if (opcode & 0x100000) {
+				return (OpFn) opLDRH;
+			} else {
+				return (OpFn) opSTRH;
+			}
+		} else if ((opcode & 0xe1000d0) == 0x1000d0) {
+			// LDRSB/LDRSH
+			if ((opcode & 0xf0) == 0xd0) {
+				return (OpFn) opLDRSB;
+			} else {
+				return (OpFn) opLDRSH;
+			}
+		}
+	}
+
 	return opcodes[(opcode >> 20) & 0xff];
 }
 
