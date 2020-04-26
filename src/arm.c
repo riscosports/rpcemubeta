@@ -883,7 +883,7 @@ execarm(int cycs)
 					break;
 
 				case 0x10: /* MRS reg,CPSR and SWP */
-					if ((opcode & 0xf0) == 0x90) {
+					if ((opcode & 0xff0) == 0x90) {
 						/* SWP */
 						if (RD != 15) {
 							addr = GETADDR(RN);
@@ -899,16 +899,15 @@ execarm(int cycs)
 							}
 							LOADREG(RD, dest);
 						}
-					} else if ((opcode & 0xfff) == 0) {
+					} else if ((opcode & 0xf0fff) == 0xf0000) {
 						/* MRS reg,CPSR */
 						if (!ARM_MODE_32(arm.mode)) {
 							arm.reg[16] = (arm.reg[15] & 0xf0000000) | (arm.reg[15] & 3);
 							arm.reg[16] |= ((arm.reg[15] & 0xc000000) >> 20);
 						}
 						arm.reg[RD] = arm.reg[16];
-					} else {
+					} else if (arm.arch_v4) {
 						undefined();
-						// bad_opcode(opcode);
 					}
 					break;
 
@@ -941,7 +940,7 @@ execarm(int cycs)
 					break;
 
 				case 0x14: /* MRS reg,SPSR and SWPB */
-					if ((opcode & 0xf0) == 0x90) {
+					if ((opcode & 0xff0) == 0x90) {
 						/* SWPB */
 						if (RD != 15) {
 							addr = GETADDR(RN);
@@ -956,11 +955,11 @@ execarm(int cycs)
 							}
 							LOADREG(RD, dest);
 						}
-					} else if ((opcode & 0xfff) == 0) {
+					} else if ((opcode & 0xf0fff) == 0xf0000) {
 						/* MRS reg,SPSR */
 						arm.reg[RD] = arm_read_spsr();
-					} else {
-						bad_opcode(opcode);
+					} else if (arm.arch_v4) {
+						undefined();
 					}
 					break;
 
