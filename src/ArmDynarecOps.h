@@ -1521,6 +1521,19 @@ opMRC(uint32_t opcode)
 	}
 }
 
+/**
+ * This refers to the unallocated portions of the opcode space.
+ */
+static void
+opUNALLOC(uint32_t opcode)
+{
+	NOT_USED(opcode);
+
+	if (arm.arch_v4) {
+		undefined();
+	}
+}
+
 static int
 opLDRH(uint32_t opcode)
 {

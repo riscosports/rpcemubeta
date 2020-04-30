@@ -509,13 +509,6 @@ shift4(uint32_t opcode)
 
 #define undefined() exception(UNDEFINED,8,4)
 
-static void bad_opcode(uint32_t opcode) 
-{
-     error("Bad opcode %02X %08X at %07X\n",(opcode >> 20) & 0xFF, opcode, PC);
-     dumpregs();
-     exit(EXIT_FAILURE);
-}
-
 void
 exception(uint32_t mmode, uint32_t address, uint32_t diff)
 {
@@ -614,12 +607,6 @@ set_memory_executable(void *ptr, size_t len)
 
 #include "ArmDynarecOps.h"
 
-static void badopcode(uint32_t opcode)
-{
-        bad_opcode(opcode);
-        exit(-1);
-}
-
 static const unsigned char validforskip[64]=
 {
         1,        1,        1,        1,        1,       1,        1,       1,
@@ -642,7 +629,7 @@ static const OpFn opcodes[256]=
 
 	opANDimm, opANDimmS,opEORimm, opEORimmS,opSUBimm, opSUBimmS,opRSBimm, opRSBimmS, //20
 	opADDimm, opADDimmS,opADCimm, opADCimmS,opSBCimm, opSBCimmS,opRSCimm, opRSCimmS, //28
-	badopcode,opTSTimm, opMSRcimm,opTEQimm, badopcode,opCMPimm, opMSRsimm,opCMNimm,  //30
+	opUNALLOC,opTSTimm, opMSRcimm,opTEQimm, opUNALLOC,opCMPimm, opMSRsimm,opCMNimm,  //30
 	opORRimm, opORRimmS,opMOVimm, opMOVimmS,opBICimm, opBICimmS,opMVNimm, opMVNimmS, //38
 
 	(OpFn)opSTR,    (OpFn)opLDR,    (OpFn)opSTRT,   (OpFn)opLDRT,   (OpFn)opSTRB,   (OpFn)opLDRB,   (OpFn)opSTRBT,  (OpFn)opLDRBT,   //40

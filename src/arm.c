@@ -517,14 +517,6 @@ shift4(uint32_t opcode)
 
 #define undefined() exception(UNDEFINED,8,4)
 
-static void bad_opcode(uint32_t opcode) 
-{
-     error("Bad opcode %02X %08X at %07X\n",(opcode >> 20) & 0xFF, opcode, PC);
-     rpclog("Bad opcode %02X %08X at %07X\n",(opcode >> 20) & 0xFF, opcode, PC);
-     dumpregs();
-     exit(EXIT_FAILURE);
-}
-
 void
 exception(uint32_t mmode, uint32_t address, uint32_t diff)
 {
@@ -1874,7 +1866,9 @@ execarm(int cycs)
 					break;
 
 				default:
-					bad_opcode(opcode);
+					if (arm.arch_v4) {
+						undefined();
+					}
 					break;
 				}
 			}
