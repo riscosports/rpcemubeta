@@ -36,17 +36,6 @@
   OpenTTD much the same.Desktop seems to have less gains, though Dhrystone has gone from
   40.4 DMIPS to 46 DMIPS*/
   
-/*There are bits and pieces of StrongARM emulation in this file. All of the
-  extra instructions have been identified, but only some of the long multiplication
-  instructions have been defined (enough to get AMPlayer working in SA mode).
-  Due to this, it has been defined out for now. Uncomment the following line to
-  emulate what is there for now
-  ArcQuake appears totally broken with this turned on, so there are obviously some
-  bugs in the new instructions
-
-  30/10/06 - Long multiplication instructions fixed, feel free to leave this in now!*/
-#define STRONGARM
-
 /*Preliminary FPA emulation. This works to an extent - !Draw works with it, !SICK
   seems to (FPA Whetstone scores are around 100x without), but !AMPlayer doesn't
   work, and GCC stuff tends to crash.*/
@@ -699,8 +688,7 @@ execarm(int cycs)
 					break;
 
 				case 0x08: /* ADD reg */
-#ifdef STRONGARM
-					if ((opcode & 0xf0) == 0x90) {
+					if (arm.arch_v4 && (opcode & 0xf0) == 0x90) {
 						/* UMULL */
 						uint64_t mula = (uint64_t) arm.reg[MULRS];
 						uint64_t mulb = (uint64_t) arm.reg[MULRM];
@@ -710,14 +698,12 @@ execarm(int cycs)
 						arm.reg[MULRD] = (uint32_t) (mulres >> 32);
 						break;
 					}
-#endif
 					dest = GETADDR(RN) + shift2(opcode);
 					arm_write_dest(opcode, dest);
 					break;
 
 				case 0x09: /* ADDS reg */
-#ifdef STRONGARM
-					if ((opcode & 0xf0) == 0x90) {
+					if (arm.arch_v4 && (opcode & 0xf0) == 0x90) {
 						/* UMULLS */
 						uint64_t mula = (uint64_t) arm.reg[MULRS];
 						uint64_t mulb = (uint64_t) arm.reg[MULRM];
@@ -728,7 +714,6 @@ execarm(int cycs)
 						arm_flags_long_multiply(mulres);
 						break;
 					}
-#endif
 					lhs = GETADDR(RN);
 					rhs = shift2(opcode);
 					dest = lhs + rhs;
@@ -741,8 +726,7 @@ execarm(int cycs)
 					break;
 
 				case 0x0a: /* ADC reg */
-#ifdef STRONGARM
-					if ((opcode & 0xf0) == 0x90) {
+					if (arm.arch_v4 && (opcode & 0xf0) == 0x90) {
 						/* UMLAL */
 						uint64_t mula = (uint64_t) arm.reg[MULRS];
 						uint64_t mulb = (uint64_t) arm.reg[MULRM];
@@ -754,14 +738,12 @@ execarm(int cycs)
 						arm.reg[MULRD] = (uint32_t) (mulres >> 32);
 						break;
 					}
-#endif
 					dest = GETADDR(RN) + shift2(opcode) + CFSET;
 					arm_write_dest(opcode, dest);
 					break;
 
 				case 0x0b: /* ADCS reg */
-#ifdef STRONGARM
-					if ((opcode & 0xf0) == 0x90) {
+					if (arm.arch_v4 && (opcode & 0xf0) == 0x90) {
 						/* UMLALS */
 						uint64_t mula = (uint64_t) arm.reg[MULRS];
 						uint64_t mulb = (uint64_t) arm.reg[MULRM];
@@ -774,7 +756,6 @@ execarm(int cycs)
 						arm_flags_long_multiply(mulres);
 						break;
 					}
-#endif
 					lhs = GETADDR(RN);
 					rhs = shift2(opcode);
 					dest = lhs + rhs + CFSET;
@@ -787,8 +768,7 @@ execarm(int cycs)
 					break;
 
 				case 0x0c: /* SBC reg */
-#ifdef STRONGARM
-					if ((opcode & 0xf0) == 0x90) {
+					if (arm.arch_v4 && (opcode & 0xf0) == 0x90) {
 						/* SMULL */
 						int64_t mula = (int64_t) (int32_t) arm.reg[MULRS];
 						int64_t mulb = (int64_t) (int32_t) arm.reg[MULRM];
@@ -798,14 +778,12 @@ execarm(int cycs)
 						arm.reg[MULRD] = (uint32_t) (mulres >> 32);
 						break;
 					}
-#endif
 					dest = GETADDR(RN) - shift2(opcode) - ((CFSET) ? 0 : 1);
 					arm_write_dest(opcode, dest);
 					break;
 
 				case 0x0d: /* SBCS reg */
-#ifdef STRONGARM
-					if ((opcode & 0xf0) == 0x90) {
+					if (arm.arch_v4 && (opcode & 0xf0) == 0x90) {
 						/* SMULLS */
 						int64_t mula = (int64_t) (int32_t) arm.reg[MULRS];
 						int64_t mulb = (int64_t) (int32_t) arm.reg[MULRM];
@@ -816,7 +794,6 @@ execarm(int cycs)
 						arm_flags_long_multiply(mulres);
 						break;
 					}
-#endif
 					lhs = GETADDR(RN);
 					rhs = shift2(opcode);
 					dest = lhs - rhs - (CFSET ? 0 : 1);
@@ -829,8 +806,7 @@ execarm(int cycs)
 					break;
 
 				case 0x0e: /* RSC reg */
-#ifdef STRONGARM
-					if ((opcode & 0xf0) == 0x90) {
+					if (arm.arch_v4 && (opcode & 0xf0) == 0x90) {
 						/* SMLAL */
 						int64_t mula = (int64_t) (int32_t) arm.reg[MULRS];
 						int64_t mulb = (int64_t) (int32_t) arm.reg[MULRM];
@@ -842,14 +818,12 @@ execarm(int cycs)
 						arm.reg[MULRD] = (uint32_t) (mulres >> 32);
 						break;
 					}
-#endif
 					dest = shift2(opcode) - GETADDR(RN) - ((CFSET) ? 0 : 1);
 					arm_write_dest(opcode, dest);
 					break;
 
 				case 0x0f: /* RSCS reg */
-#ifdef STRONGARM
-					if ((opcode & 0xf0) == 0x90) {
+					if (arm.arch_v4 && (opcode & 0xf0) == 0x90) {
 						/* SMLALS */
 						int64_t mula = (int64_t) (int32_t) arm.reg[MULRS];
 						int64_t mulb = (int64_t) (int32_t) arm.reg[MULRM];
@@ -862,7 +836,6 @@ execarm(int cycs)
 						arm_flags_long_multiply(mulres);
 						break;
 					}
-#endif
 					lhs = GETADDR(RN);
 					rhs = shift2(opcode);
 					dest = rhs - lhs - (CFSET ? 0 : 1);

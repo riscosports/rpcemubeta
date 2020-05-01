@@ -21,7 +21,6 @@
 #include "rpcemu.h"
 
 int blockend;
-#define STRONGARM
 
 /*Preliminary FPA emulation. This works to an extent - !Draw works with it, !SICK
   seems to (FPA Whetstone scores are around 100x without), but !AMPlayer doesn't
