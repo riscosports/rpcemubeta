@@ -22,6 +22,7 @@
 #include <QButtonGroup>
 #include <QMessageBox>
 
+#include "main_window.h"
 #include "configure_dialog.h"
 
 ConfigureDialog::ConfigureDialog(Emulator &emulator, Config *config_copy, Model *model_copy, QWidget *parent)
@@ -204,11 +205,7 @@ ConfigureDialog::dialog_accepted()
 
 	// Compare against existing config and see if it will cause a reboot
 	if(rpcemu_config_is_reset_required(&new_config, new_model)) {
-		QMessageBox msgBox;
-		msgBox.setText("This will reset RPCEmu!\nOkay to continue?");
-		msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
-		msgBox.setDefaultButton(QMessageBox::Cancel);
-		int ret = msgBox.exec();
+		int ret = MainWindow::reset_question(parentWidget());
 
 		if(ret == QMessageBox::Cancel) {
 			// Set the values in the dialog back to the current settings

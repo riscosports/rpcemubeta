@@ -544,6 +544,12 @@ rpcemu_config_is_reset_required(const Config *new_config, Model new_model)
 		needs_reset = 1;
 	}
 
+	if (config.network_type != new_config->network_type) {
+		needs_reset = 1;
+	}
+
+	// TODO Various network, MAC/IP/bridgename changes will also cause reset
+
 	return needs_reset;
 }
 
