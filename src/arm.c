@@ -72,6 +72,8 @@ uint32_t *usrregs[16];
 int databort;
 int prog32;
 
+static int unpredictable_count = 1000; ///< Limit logging of unpredictable instructions
+
 #define NFSET	((arm.reg[cpsr] & NFLAG) ? 1u : 0)
 #define ZFSET	((arm.reg[cpsr] & ZFLAG) ? 1u : 0)
 #define CFSET	((arm.reg[cpsr] & CFLAG) ? 1u : 0)
@@ -546,6 +548,23 @@ exception(uint32_t mmode, uint32_t address, uint32_t diff)
 	}
 }
 
+/**
+ * An instruction with unpredictable behaviour has been encountered.
+ *
+ * On real hardware these can have very odd behaviour, so log these in case
+ * software is depending on them.
+ *
+ * @param opcode Opcode of instruction being emulated
+ */
+static void
+arm_unpredictable(uint32_t opcode)
+{
+	if (unpredictable_count != 0) {
+		unpredictable_count--;
+		rpclog("ARM: Unpredictable opcode %08x at %08x\n", opcode, PC);
+	}
+}
+
 void
 execarm(int cycs)
 {
@@ -873,6 +892,8 @@ execarm(int cycs)
 						arm.reg[RD] = arm.reg[16];
 					} else if (arm.arch_v4) {
 						undefined();
+					} else {
+						arm_unpredictable(opcode);
 					}
 					break;
 
@@ -889,8 +910,10 @@ execarm(int cycs)
 				case 0x12: /* MSR CPSR,reg */
 					if ((opcode & 0xf010) == 0xf000) {
 						arm_write_cpsr(opcode, arm.reg[RM]);
-					} else {
+					} else if (arm.arch_v4) {
 						undefined();
+					} else {
+						arm_unpredictable(opcode);
 					}
 					break;
 
@@ -925,6 +948,8 @@ execarm(int cycs)
 						arm.reg[RD] = arm_read_spsr();
 					} else if (arm.arch_v4) {
 						undefined();
+					} else {
+						arm_unpredictable(opcode);
 					}
 					break;
 
@@ -943,8 +968,10 @@ execarm(int cycs)
 				case 0x16: /* MSR SPSR,reg */
 					if ((opcode & 0xf010) == 0xf000) {
 						arm_write_spsr(opcode, arm.reg[RM]);
-					} else {
+					} else if (arm.arch_v4) {
 						undefined();
+					} else {
+						arm_unpredictable(opcode);
 					}
 					break;
 
@@ -1167,8 +1194,10 @@ execarm(int cycs)
 				case 0x32: /* MSR CPSR,imm */
 					if (RD == 15) {
 						arm_write_cpsr(opcode, arm_imm(opcode));
-					} else {
+					} else if (arm.arch_v4) {
 						undefined();
+					} else {
+						arm_unpredictable(opcode);
 					}
 					break;
 
@@ -1197,8 +1226,10 @@ execarm(int cycs)
 				case 0x36: /* MSR SPSR,imm */
 					if (RD == 15) {
 						arm_write_spsr(opcode, arm_imm(opcode));
-					} else {
+					} else if (arm.arch_v4) {
 						undefined();
+					} else {
+						arm_unpredictable(opcode);
 					}
 					break;
 
@@ -1841,6 +1872,8 @@ execarm(int cycs)
 				default:
 					if (arm.arch_v4) {
 						undefined();
+					} else {
+						arm_unpredictable(opcode);
 					}
 					break;
 				}

@@ -75,6 +75,8 @@ uint32_t *usrregs[16];
 int databort;
 int prog32;
 
+static int unpredictable_count = 1000; ///< Limit logging of unpredictable instructions
+
 #define NFSET	((arm.reg[cpsr] & NFLAG) ? 1u : 0)
 #define ZFSET	((arm.reg[cpsr] & ZFLAG) ? 1u : 0)
 #define CFSET	((arm.reg[cpsr] & CFLAG) ? 1u : 0)
@@ -547,6 +549,23 @@ exception(uint32_t mmode, uint32_t address, uint32_t diff)
 		arm.reg[15] |= ((irq_disable << 20) | address);
 	}
 	refillpipeline();
+}
+
+/**
+ * An instruction with unpredictable behaviour has been encountered.
+ *
+ * On real hardware these can have very odd behaviour, so log these in case
+ * software is depending on them.
+ *
+ * @param opcode Opcode of instruction being emulated
+ */
+static void
+arm_unpredictable(uint32_t opcode)
+{
+	if (unpredictable_count != 0) {
+		unpredictable_count--;
+		rpclog("ARM: Unpredictable opcode %08x at %08x\n", opcode, PC);
+	}
 }
 
 #if defined __linux__ || defined __MACH__

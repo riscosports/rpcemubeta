@@ -364,6 +364,8 @@ opSWPword(uint32_t opcode)
 		arm.reg[RD] = arm.reg[16];
 	} else if (arm.arch_v4) {
 		undefined();
+	} else {
+		arm_unpredictable(opcode);
 	}
 	return 0;
 }
@@ -388,8 +390,10 @@ opMSRcreg(uint32_t opcode)
 	if ((opcode & 0xf010) == 0xf000) {
 		/* MSR CPSR,reg */
 		arm_write_cpsr(opcode, arm.reg[RM]);
-	} else {
+	} else if (arm.arch_v4) {
 		undefined();
+	} else {
+		arm_unpredictable(opcode);
 	}
 }
 
@@ -432,6 +436,8 @@ opSWPbyte(uint32_t opcode)
 		arm.reg[RD] = arm_read_spsr();
 	} else if (arm.arch_v4) {
 		undefined();
+	} else {
+		arm_unpredictable(opcode);
 	}
 	return 0;
 }
@@ -458,8 +464,10 @@ opMSRsreg(uint32_t opcode)
 	if ((opcode & 0xf010) == 0xf000) {
 		/* MSR SPSR,reg */
 		arm_write_spsr(opcode, arm.reg[RM]);
-	} else {
+	} else if (arm.arch_v4) {
 		undefined();
+	} else {
+		arm_unpredictable(opcode);
 	}
 }
 
@@ -785,8 +793,10 @@ opMSRcimm(uint32_t opcode)
 	if (RD == 15) {
 		/* MSR CPSR,imm */
 		arm_write_cpsr(opcode, arm_imm(opcode));
-	} else {
+	} else if (arm.arch_v4) {
 		undefined();
+	} else {
+		arm_unpredictable(opcode);
 	}
 }
 
@@ -826,8 +836,10 @@ opMSRsimm(uint32_t opcode)
 	if (RD == 15) {
 		/* MSR SPSR,imm */
 		arm_write_spsr(opcode, arm_imm(opcode));
-	} else {
+	} else if (arm.arch_v4) {
 		undefined();
+	} else {
+		arm_unpredictable(opcode);
 	}
 }
 
@@ -1515,6 +1527,8 @@ opUNALLOC(uint32_t opcode)
 
 	if (arm.arch_v4) {
 		undefined();
+	} else {
+		arm_unpredictable(opcode);
 	}
 }
 
