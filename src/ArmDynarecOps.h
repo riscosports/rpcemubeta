@@ -952,6 +952,11 @@ opSTRT(uint32_t opcode)
 {
 	uint32_t addr, data, offset, templ;
 
+	if ((opcode & 0x2000010) == 0x2000010) {
+		undefined();
+		return 0;
+	}
+
 	addr = GETADDR(RN);
 
 	/* Temporarily switch to user permissions */
@@ -985,6 +990,11 @@ static int
 opLDRT(uint32_t opcode)
 {
 	uint32_t addr, data, offset, templ;
+
+	if ((opcode & 0x2000010) == 0x2000010) {
+		undefined();
+		return 0;
+	}
 
 	addr = GETADDR(RN);
 
@@ -1030,6 +1040,11 @@ opSTRBT(uint32_t opcode)
 {
 	uint32_t addr, data, offset, templ;
 
+	if ((opcode & 0x2000010) == 0x2000010) {
+		undefined();
+		return 0;
+	}
+
 	addr = GETADDR(RN);
 
 	/* Temporarily switch to user permissions */
@@ -1063,6 +1078,11 @@ static int
 opLDRBT(uint32_t opcode)
 {
 	uint32_t addr, data, offset, templ;
+
+	if ((opcode & 0x2000010) == 0x2000010) {
+		undefined();
+		return 0;
+	}
 
 	addr = GETADDR(RN);
 

@@ -1305,10 +1305,15 @@ execarm(int cycs)
 					}
 					break;
 
-				case 0x42: /* STRT Rd, [Rn], #-imm   */
-				case 0x4a: /* STRT Rd, [Rn], #+imm   */
 				case 0x62: /* STRT Rd, [Rn], -reg... */
 				case 0x6a: /* STRT Rd, [Rn], +reg... */
+					if (opcode & 0x10) {
+						undefined();
+						break;
+					}
+					/* Fall-through */
+				case 0x42: /* STRT Rd, [Rn], #-imm   */
+				case 0x4a: /* STRT Rd, [Rn], #+imm   */
 					addr = GETADDR(RN);
 
 					/* Temp switch to user permissions */
@@ -1336,10 +1341,15 @@ execarm(int cycs)
 					arm.reg[RN] = addr;
 					break;
 
-				case 0x43: /* LDRT Rd, [Rn], #-imm   */
-				case 0x4b: /* LDRT Rd, [Rn], #+imm   */
 				case 0x63: /* LDRT Rd, [Rn], -reg... */
 				case 0x6b: /* LDRT Rd, [Rn], +reg... */
+					if (opcode & 0x10) {
+						undefined();
+						break;
+					}
+					/* Fall-through */
+				case 0x43: /* LDRT Rd, [Rn], #-imm   */
+				case 0x4b: /* LDRT Rd, [Rn], #+imm   */
 					addr = GETADDR(RN);
 
 					/* Temp switch to user permissions */
@@ -1377,10 +1387,15 @@ execarm(int cycs)
 					LOADREG(RD, data);
 					break;
 
-				case 0x46: /* STRBT Rd, [Rn], #-imm   */
-				case 0x4e: /* STRBT Rd, [Rn], #+imm   */
 				case 0x66: /* STRBT Rd, [Rn], -reg... */
 				case 0x6e: /* STRBT Rd, [Rn], +reg... */
+					if (opcode & 0x10) {
+						undefined();
+						break;
+					}
+					/* Fall-through */
+				case 0x46: /* STRBT Rd, [Rn], #-imm   */
+				case 0x4e: /* STRBT Rd, [Rn], #+imm   */
 					addr = GETADDR(RN);
 
 					/* Temp switch to user permissions */
@@ -1408,10 +1423,15 @@ execarm(int cycs)
 					arm.reg[RN] = addr;
 					break;
 
-				case 0x47: /* LDRBT Rd, [Rn], #-imm   */
-				case 0x4f: /* LDRBT Rd, [Rn], #+imm   */
 				case 0x67: /* LDRBT Rd, [Rn], -reg... */
 				case 0x6f: /* LDRBT Rd, [Rn], +reg... */
+					if (opcode & 0x10) {
+						undefined();
+						break;
+					}
+					/* Fall-through */
+				case 0x47: /* LDRBT Rd, [Rn], #-imm   */
+				case 0x4f: /* LDRBT Rd, [Rn], #+imm   */
 					addr = GETADDR(RN);
 
 					/* Temp switch to user permissions */
