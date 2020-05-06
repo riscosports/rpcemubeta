@@ -36,7 +36,7 @@ extern "C" {
 #endif /* __cplusplus */
 
 /* Version number of RPCEmu */
-#define VERSION "0.9.2"
+#define VERSION "0.9.3"
 
 /* URLs used for the help menu weblinks */
 #define URL_MANUAL  "http://www.marutan.net/rpcemu/manual/"
