@@ -843,16 +843,12 @@ vidcthread(void)
 	memset(thr.dirtybuffer, 0, 512 * 4);
 	thr.needvsync = 1;
 
-	if (yl == -1 && yh == -1) {
+	if (yl == -1 || yh == -1) {
 		return;
 	}
 
 	if (yh > thr.vidc_ysize) {
 		yh = thr.vidc_ysize;
-	}
-
-	if (yl == -1) {
-		yl = 0;
 	}
 
 	if (yl >= thr.vidc_ysize) {
