@@ -417,7 +417,6 @@ vidcthread(void)
 {
 	const uint32_t vidstart = thr.iomd_vidstart & 0x7ffff0;
 	uint32_t vidend;
-	uint32_t *vidp = NULL;
 	int drawit = 0;
 	int x, y;
 	const uint8_t *ramp;
@@ -457,6 +456,8 @@ vidcthread(void)
 	switch (thr.bpp) {
 	case 0: /* 1 bpp on 32 bpp */
 		for (y = 0; y < thr.vidc_ysize; y++) {
+			uint32_t *vidp = video_image_scanline(y);
+
 			if (y < (oldcursorheight + oldcursory) && (y >= (oldcursory - 2))) {
 				drawit = 1;
 				yh = y + 8;
@@ -465,7 +466,6 @@ vidcthread(void)
 				}
 			}
 			if (drawit) {
-				vidp = video_image_scanline(y);
 				yh = y + 1;
 			}
 			for (x = 0; x < thr.vidc_xsize; x += 8) {
@@ -495,9 +495,6 @@ vidcthread(void)
 					addr = vidstart;
 				}
 				if ((addr & 0xfff) == 0) {
-					if (!drawit && thr.dirtybuffer[addr >> 12]) {
-						vidp = video_image_scanline(y);
-					}
 					drawit = thr.dirtybuffer[addr >> 12];
 					if (y < (oldcursorheight + oldcursory) && (y >= (oldcursory - 2))) {
 						drawit = 1;
@@ -514,6 +511,8 @@ vidcthread(void)
 		break;
 	case 1: /* 2 bpp on 32 bpp */
 		for (y = 0; y < thr.vidc_ysize; y++) {
+			uint32_t *vidp = video_image_scanline(y);
+
 			if (y < (oldcursorheight + oldcursory) && (y >= (oldcursory - 2))) {
 				drawit = 1;
 				yh = y + 8;
@@ -522,7 +521,6 @@ vidcthread(void)
 				}
 			}
 			if (drawit) {
-				vidp = video_image_scanline(y);
 				yh = y + 1;
 			}
 			for (x = 0; x < thr.vidc_xsize; x += 4) {
@@ -548,9 +546,6 @@ vidcthread(void)
 					addr = vidstart;
 				}
 				if ((addr & 0xfff) == 0) {
-					if (!drawit && thr.dirtybuffer[addr >> 12]) {
-						vidp = video_image_scanline(y);
-					}
 					drawit = thr.dirtybuffer[addr >> 12];
 					if (y < (oldcursorheight + oldcursory) && (y >= (oldcursory - 2))) {
 						drawit = 1;
@@ -567,6 +562,8 @@ vidcthread(void)
 		break;
 	case 2: /* 4 bpp on 32 bpp */
 		for (y = 0; y < thr.vidc_ysize; y++) {
+			uint32_t *vidp = video_image_scanline(y);
+
 			if (y < (oldcursorheight + oldcursory) && (y >= (oldcursory - 2))) {
 				drawit = 1;
 				yh = y + 8;
@@ -575,7 +572,6 @@ vidcthread(void)
 				}
 			}
 			if (drawit) {
-				vidp = video_image_scanline(y);
 				yh = y + 1;
 			}
 			for (x = 0; x < thr.vidc_xsize; x += 32) {
@@ -610,9 +606,6 @@ vidcthread(void)
 					addr = vidstart;
 				}
 				if ((addr & 0xfff) == 0) {
-					if (!drawit && thr.dirtybuffer[addr >> 12]) {
-						vidp = video_image_scanline(y);
-					}
 					drawit = thr.dirtybuffer[addr >> 12];
 					if (y < (oldcursorheight + oldcursory) && (y >= (oldcursory - 2))) {
 						drawit = 1;
@@ -629,6 +622,8 @@ vidcthread(void)
 		break;
 	case 3: /* 8 bpp on 32 bpp */
 		for (y = 0; y < thr.vidc_ysize; y++) {
+			uint32_t *vidp = video_image_scanline(y);
+
 			if (y < (oldcursorheight + oldcursory) && (y >= (oldcursory - 2))) {
 				drawit = 1;
 				yh = y + 8;
@@ -637,7 +632,6 @@ vidcthread(void)
 				}
 			}
 			if (drawit) {
-				vidp = video_image_scanline(y);
 				yh = y + 1;
 			}
 			for (x = 0; x < thr.vidc_xsize; x += 16) {
@@ -664,9 +658,6 @@ vidcthread(void)
 					addr = vidstart;
 				}
 				if ((addr & 0xfff) == 0) {
-					if (!drawit && thr.dirtybuffer[addr >> 12]) {
-						vidp = video_image_scanline(y);
-					}
 					drawit = thr.dirtybuffer[addr >> 12];
 					if (y < (oldcursorheight + oldcursory) && (y >= (oldcursory - 2))) {
 						drawit = 1;
@@ -683,6 +674,8 @@ vidcthread(void)
 		break;
 	case 4: /* 16 bpp on 32 bpp */
 		for (y = 0; y < thr.vidc_ysize; y++) {
+			uint32_t *vidp = video_image_scanline(y);
+
 			if (y < (oldcursorheight + oldcursory) && (y >= (oldcursory - 2))) {
 				drawit = 1;
 				yh = y + 8;
@@ -691,7 +684,6 @@ vidcthread(void)
 				}
 			}
 			if (drawit) {
-				vidp = video_image_scanline(y);
 				yh = y + 1;
 			}
 			for (x = 0; x < thr.vidc_xsize; x += 8) {
@@ -722,9 +714,6 @@ vidcthread(void)
 					addr = vidstart;
 				}
 				if ((addr & 0xfff) == 0) {
-					if (!drawit && thr.dirtybuffer[addr >> 12]) {
-						vidp = video_image_scanline(y);
-					}
 					drawit = thr.dirtybuffer[addr >> 12];
 					if (y < (oldcursorheight + oldcursory) && (y >= (oldcursory - 2))) {
 						drawit = 1;
@@ -741,6 +730,8 @@ vidcthread(void)
 		break;
 	case 6: /* 32 bpp on 32 bpp */
 		for (y = 0; y < thr.vidc_ysize; y++) {
+			uint32_t *vidp = video_image_scanline(y);
+
 			if (y < (oldcursorheight + oldcursory) && (y >= (oldcursory - 2))) {
 				drawit = 1;
 				yh = y + 8;
@@ -749,7 +740,6 @@ vidcthread(void)
 				}
 			}
 			if (drawit) {
-				vidp = video_image_scanline(y);
 				yh = y + 1;
 			}
 			for (x = 0; x < thr.vidc_xsize; x += 4) {
@@ -770,9 +760,6 @@ vidcthread(void)
 					addr = vidstart;
 				}
 				if ((addr & 0xfff) == 0) {
-					if (!drawit && thr.dirtybuffer[addr >> 12]) {
-						vidp = video_image_scanline(y);
-					}
 					drawit = thr.dirtybuffer[addr >> 12];
 					if (y < (oldcursorheight + oldcursory) && (y >= (oldcursory - 2))) {
 						drawit = 1;
@@ -810,7 +797,8 @@ vidcthread(void)
 				break;
 			}
 			if ((y + thr.cursory) >= 0) {
-				vidp = video_image_scanline(y + thr.cursory);
+				uint32_t *vidp = video_image_scanline(y + thr.cursory);
+
 				for (x = 0; x < 32; x += 4) {
 #ifdef _RPCEMU_BIG_ENDIAN
 					addr ^= 3;
