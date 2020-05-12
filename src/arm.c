@@ -306,22 +306,22 @@ resetarm(CPUModel cpu_model)
 void
 arm_dump(void)
 {
-        char s[1024];
+	char s[1024];
 
-        sprintf(s, "R 0=%08X R 4=%08X R 8=%08X R12=%08X\n"
-                   "R 1=%08X R 5=%08X R 9=%08X R13=%08X\n"
-                   "R 2=%08X R 6=%08X R10=%08X R14=%08X\n"
-                   "R 3=%08X R 7=%08X R11=%08X R15=%08X\n"
-                   "%s\n",
-                   arm.reg[0], arm.reg[4], arm.reg[8], arm.reg[12],
-                   arm.reg[1], arm.reg[5], arm.reg[9], arm.reg[13],
-                   arm.reg[2], arm.reg[6], arm.reg[10], arm.reg[14],
-                   arm.reg[3], arm.reg[7], arm.reg[11], arm.reg[15],
-                   mmu ? "MMU enabled" : "MMU disabled");
-        rpclog("%s",s);
-        printf("%s",s);
-
-        memmode=1;
+	sprintf(s, "r0 = %08x    r4 = %08x    r8  = %08x    r12 = %08x\n"
+	           "r1 = %08x    r5 = %08x    r9  = %08x    r13 = %08x\n"
+	           "r2 = %08x    r6 = %08x    r10 = %08x    r14 = %08x\n"
+	           "r3 = %08x    r7 = %08x    r11 = %08x    r15 = %08x\n"
+	           "pc = %08x\n"
+	           "%s\n",
+	           arm.reg[0], arm.reg[4], arm.reg[8], arm.reg[12],
+	           arm.reg[1], arm.reg[5], arm.reg[9], arm.reg[13],
+	           arm.reg[2], arm.reg[6], arm.reg[10], arm.reg[14],
+	           arm.reg[3], arm.reg[7], arm.reg[11], arm.reg[15],
+	           PC,
+	           mmu ? "MMU enabled" : "MMU disabled");
+	rpclog("%s", s);
+	printf("%s", s);
 }
 
 static uint32_t
