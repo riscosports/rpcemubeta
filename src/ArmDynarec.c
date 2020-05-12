@@ -278,8 +278,6 @@ arm_init(void)
 void
 resetarm(CPUModel cpu_model)
 {
-//        atexit(dumpregs);
-
 	memset(&arm, 0, sizeof(arm));
 
         arm.r15_mask = 0x3fffffc;
@@ -307,7 +305,8 @@ resetarm(CPUModel cpu_model)
 	cycles = 0;
 }
 
-void dumpregs(void)
+void
+arm_dump(void)
 {
         char s[1024];
 
@@ -326,8 +325,6 @@ void dumpregs(void)
 
         memmode=1;
 }
-
-#define dumpregs()
 
 static uint32_t
 shift3(uint32_t opcode)
