@@ -75,7 +75,7 @@ extern void set_memory_executable(void *ptr, size_t len);
 
 extern ARMState arm;
 
-extern int databort,prefabort;
+extern int databort;
 extern int prog32;
 extern int blockend;
 

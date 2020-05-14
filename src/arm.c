@@ -20,22 +20,6 @@
 
 #include "rpcemu.h"
 
-/*3/12/06 - databort and prefabort have been rolled into bits 6 and 7 of armirq.
-  This gives a minor speedup.
-  MSR fixes from John-Mark Bell allow RISC OS 6 to work.
-
-  31/10/06 - Various optimisations, mainly to ldmstm()
-  I altered the most frequently used LDM/STM instructions to streamline the inner
-  loops, which gives a 20-25% speed boost for those instructions. The most frequently
-  used by far is 0x92 (STMDB !, used 5x more than any other) followed by 0x89, 0x8B,
-  0x93 and 0x95.
-  Also various other optimisations, eg shifts in non-S instructions are mostly inlined,
-  except for those which require 'special attention', where shift amounts are outside
-  the usual boundaries. Will do the same for S instructions.
-  Other optimisations to memory system, !FreeDoom has gone from 24 MIPS to 31 MIPS,
-  OpenTTD much the same.Desktop seems to have less gains, though Dhrystone has gone from
-  40.4 DMIPS to 46 DMIPS*/
-  
 /*Preliminary FPA emulation. This works to an extent - !Draw works with it, !SICK
   seems to (FPA Whetstone scores are around 100x without), but !AMPlayer doesn't
   work, and GCC stuff tends to crash.*/
@@ -60,7 +44,6 @@ ARMState arm;
 int blockend;
 static int fdci=0;
 static int cycles;
-int prefabort;
 uint32_t inscount;
 uint32_t armirq = 0;
 int cpsr;
@@ -588,8 +571,7 @@ execarm(int cycs)
 				opcode = pccache2[PC >> 2];
 			}
 
-			if (flaglookup[opcode >> 28][(*pcpsr) >> 28] && !(armirq & 0x80)) //prefabort)
-			{
+			if (flaglookup[opcode >> 28][(*pcpsr) >> 28] && !(armirq & 0x80)) {
 				if (arm.arch_v4) {
 					if ((opcode & 0xe0000f0) == 0xb0) {
 						// LDRH/STRH
@@ -1899,15 +1881,14 @@ execarm(int cycs)
 	// This label is used to skip the switch above
 skip:
 
-			if (/*databort|*/armirq)//|prefabort)
-			{
+			if (/*databort|*/armirq) {
 				if (!ARM_MODE_32(arm.mode)) {
 					arm.reg[16] &= ~0xc0;
 					arm.reg[16] |= ((arm.reg[15] & 0xc000000) >> 20);
 				}
 
 				if (armirq & 0xc0) {
-					if (armirq & 0x80) { //prefabort)
+					if (armirq & 0x80) {
 						/* Prefetch Abort */
 						exception(ABORT, 0x10, 4);
 						armirq &= ~0xc0u;
@@ -1917,7 +1898,7 @@ skip:
 						armirq &= ~0xc0u;
 					} else if (databort == 2) {
 						/* Address Exception */
-						fatal("Exception %i 0x%x %i\n", databort, armirq, prefabort);
+						fatal("Exception %i 0x%x\n", databort, armirq);
 
 						templ = arm.reg[15];
 						arm.reg[15] |= 3;

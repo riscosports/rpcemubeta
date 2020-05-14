@@ -63,7 +63,6 @@ ARMState arm;
 
 static int fdci=0;
 static int cycles;
-int prefabort;
 uint32_t inscount;
 uint32_t armirq = 0;
 int cpsr;
@@ -872,15 +871,14 @@ execarm(int cycs)
 				}
 			}
 
-			if (/*databort|*/armirq & 0xc3)//|prefabort)
-			{
+			if (/*databort|*/armirq & 0xc3) {
 				if (!ARM_MODE_32(arm.mode)) {
 					arm.reg[16] &= ~0xc0;
 					arm.reg[16] |= ((arm.reg[15] & 0xc000000) >> 20);
 				}
 
 				if (armirq & 0xc0) {
-					if (armirq & 0x80) { //prefabort)
+					if (armirq & 0x80) {
 						/* Prefetch Abort */
 						arm.reg[15] -= 4;
 						exception(ABORT, 0x10, 4);

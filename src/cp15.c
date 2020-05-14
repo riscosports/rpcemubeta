@@ -556,7 +556,6 @@ getpccache(uint32_t addr)
 			armirq &= ~0x40u;
 			armirq |= 0x80;
 			// databort = 0;
-			// prefabort = 1;
 			return NULL;
 		}
 	} else {
