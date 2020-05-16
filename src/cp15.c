@@ -554,7 +554,6 @@ getpccache(uint32_t addr)
 		phys_addr = translateaddress(addr, 0, 1);
 		if (armirq & 0x40) {
 			armirq &= ~0x40u;
-			armirq |= 0x80;
 			// databort = 0;
 			return NULL;
 		}

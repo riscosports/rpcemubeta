@@ -563,13 +563,14 @@ execarm(int cycs)
 				pccache = PC >> 12;
 				pccache2 = getpccache(PC);
 				if (pccache2 == NULL) {
-					opcode = pccache = 0xffffffff;
-				} else {
-					opcode = pccache2[PC >> 2];
+					// Prefetch Abort
+					pccache = 0xffffffff;
+					exception(ABORT, 0x10, 4);
+					arm.reg[15] += 4;
+					continue;
 				}
-			} else {
-				opcode = pccache2[PC >> 2];
 			}
+			opcode = pccache2[PC >> 2];
 
 			if (flaglookup[opcode >> 28][(*pcpsr) >> 28] && !(armirq & 0x80)) {
 				if (arm.arch_v4) {

@@ -748,13 +748,14 @@ execarm(int cycs)
 				/* Interpret block */
 				blockend = 0;
 				if ((PC >> 12) != pccache) {
+					pccache = PC >> 12;
 					pccache2 = getpccache(PC);
 					if (pccache2 == NULL) {
+						// Prefetch Abort
 						pccache = 0xffffffff;
-						armirq |= 0x80;
-					} else {
-						opcode = pccache2[PC >> 2];
-						pccache = PC >> 12;
+						exception(ABORT, 0x10, 4);
+						arm.reg[15] += 4;
+						continue;
 					}
 				}
 				while (!blockend && !(armirq & 0xc0)) {
@@ -800,13 +801,14 @@ execarm(int cycs)
 					/* Initialise 'opcode' to invalid value */
 					opcode = 0xffffffff;
 					if ((PC >> 12) != pccache) {
+						pccache = PC >> 12;
 						pccache2 = getpccache(PC);
 						if (pccache2 == NULL) {
+							// Prefetch Abort
 							pccache = 0xffffffff;
-							armirq |= 0x80;
-						} else {
-							opcode = pccache2[PC >> 2];
-							pccache = PC >> 12;
+							exception(ABORT, 0x10, 4);
+							arm.reg[15] += 4;
+							continue;
 						}
 					}
 					if (!(armirq & 0x80)) {
