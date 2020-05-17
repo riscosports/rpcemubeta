@@ -1882,33 +1882,16 @@ execarm(int cycs)
 	// This label is used to skip the switch above
 skip:
 
-			if (/*databort|*/armirq) {
+			if (/*databort|*/armirq != 0) {
 				if (!ARM_MODE_32(arm.mode)) {
 					arm.reg[16] &= ~0xc0;
 					arm.reg[16] |= ((arm.reg[15] & 0xc000000) >> 20);
 				}
 
-				if (armirq & 0xc0) {
-					if (armirq & 0x80) {
-						/* Prefetch Abort */
-						exception(ABORT, 0x10, 4);
-						armirq &= ~0xc0u;
-					} else if (armirq & 0x40) { //databort==1)
-						/* Data Abort */
-						exception(ABORT, 0x14, 0);
-						armirq &= ~0xc0u;
-					} else if (databort == 2) {
-						/* Address Exception */
-						fatal("Exception %i 0x%x\n", databort, armirq);
-
-						templ = arm.reg[15];
-						arm.reg[15] |= 3;
-						updatemode(SUPERVISOR);
-						arm.reg[14] = templ;
-						arm.reg[15] &= 0xfc000003;
-						arm.reg[15] |= 0x08000018;
-						databort = 0;
-					}
+				if (armirq & 0x40) { //databort==1)
+					// Data Abort
+					exception(ABORT, 0x14, 0);
+					armirq &= ~0x40u;
 				} else if ((armirq & 2) && !(arm.reg[16] & 0x40)) {
 					/* FIQ */
 					exception(FIQ, 0x20, 0);

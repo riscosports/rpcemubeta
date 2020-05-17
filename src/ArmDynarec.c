@@ -873,26 +873,18 @@ execarm(int cycs)
 				}
 			}
 
-			if (/*databort|*/armirq & 0xc3) {
+			if (/*databort|*/armirq != 0) {
 				if (!ARM_MODE_32(arm.mode)) {
 					arm.reg[16] &= ~0xc0;
 					arm.reg[16] |= ((arm.reg[15] & 0xc000000) >> 20);
 				}
 
-				if (armirq & 0xc0) {
-					if (armirq & 0x80) {
-						/* Prefetch Abort */
-						arm.reg[15] -= 4;
-						exception(ABORT, 0x10, 4);
-						arm.reg[15] += 4;
-						armirq &= ~0xc0u;
-					} else if (armirq & 0x40) { //databort==1)
-						/* Data Abort */
-						arm.reg[15] -= 4;
-						exception(ABORT, 0x14, 0);
-						arm.reg[15] += 4;
-						armirq &= ~0xc0u;
-					}
+				if (armirq & 0x40) { //databort==1)
+					// Data Abort
+					arm.reg[15] -= 4;
+					exception(ABORT, 0x14, 0);
+					arm.reg[15] += 4;
+					armirq &= ~0x40u;
 				} else if ((armirq & 2) && !(arm.reg[16] & 0x40)) {
 					/* FIQ */
 					arm.reg[15] -= 4;
