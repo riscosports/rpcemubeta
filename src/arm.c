@@ -572,7 +572,7 @@ execarm(int cycs)
 			}
 			opcode = pccache2[PC >> 2];
 
-			if (flaglookup[opcode >> 28][(*pcpsr) >> 28] && !(armirq & 0x80)) {
+			if (flaglookup[opcode >> 28][(*pcpsr) >> 28]) {
 				if (arm.arch_v4) {
 					if ((opcode & 0xe0000f0) == 0xb0) {
 						// LDRH/STRH

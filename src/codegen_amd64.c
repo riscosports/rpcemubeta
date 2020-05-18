@@ -1338,13 +1338,6 @@ generatepcinc(void)
         if (codeblockpos>=1200) blockend=1;
 }
 
-void
-removeblock(void)
-{
-        codeblockpc[blocknum]=0xFFFFFFFF;
-        codeblocknum[blocknum]=0xFFFFFFFF;
-}
-
 int linecyc;
 
 void

@@ -227,13 +227,6 @@ initcodeblock(uint32_t l)
 	flagsdirty = 0;
 }
 
-void
-removeblock(void)
-{
-        codeblockpc[blocknum]=0xFFFFFFFF;
-        codeblocknum[blocknum]=0xFFFFFFFF;
-}
-
 int lastflagchange=0;
 
 static const int recompileinstructions[256] = {

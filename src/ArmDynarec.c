@@ -57,8 +57,6 @@ int blockend;
 #	error "Fatal error : no recompiler available for this architecture"
 #endif
 
-extern void removeblock(void); /* in codegen_*.c */
-	
 ARMState arm;
 
 static int fdci=0;
@@ -743,7 +741,7 @@ execarm(int cycs)
 	while (cycles > 0) {
 		// cyccount+=200;
 		while (linecyc-- >= 0) {
-			armirq &= ~0xc0u;
+			armirq &= ~0x40u;
 			if (!isblockvalid(PC)) {
 				/* Interpret block */
 				blockend = 0;
@@ -758,14 +756,14 @@ execarm(int cycs)
 						continue;
 					}
 				}
-				while (!blockend && !(armirq & 0xc0)) {
+				while (!blockend && !(armirq & 0x40)) {
 					opcode = pccache2[PC >> 2];
 					if ((opcode & 0x0e000000) == 0x0a000000) { blockend = 1; } /* Always end block on branches */
 					if ((opcode & 0x0c000000) == 0x0c000000) { blockend = 1; } /* And SWIs and copro stuff */
 					if (!(opcode & 0x0c000000) && (RD == 15)) { blockend = 1; } /* End if R15 can be modified */
 					if ((opcode & 0x0e108000) == 0x08108000) { blockend = 1; } /* End if R15 reloaded from LDM */
 					if ((opcode & 0x0c100000) == 0x04100000 && (RD == 15)) { blockend = 1; } /* End if R15 reloaded from LDR */
-					if (flaglookup[opcode >> 28][(*pcpsr) >> 28]) {// && !(armirq&0x80))
+					if (flaglookup[opcode >> 28][(*pcpsr) >> 28]) {
 						OpFn fn = arm_opcode_fn(opcode);
 						fn(opcode);
 					}
@@ -775,7 +773,6 @@ execarm(int cycs)
 					if ((PC & 0xffc) == 0) {
 						blockend = 1;
 					}
-					// if (armirq) blockend=1;
 					inscount++;
 				}
 			} else {
@@ -811,12 +808,8 @@ execarm(int cycs)
 							continue;
 						}
 					}
-					if (!(armirq & 0x80)) {
-						initcodeblock(PC);
-						//printf("New block %08X %04X %08X\n",PC,hash,codeblockpc[hash]);
-						//codeblockpc[hash]=PC;
-					}
-					while (!blockend && !(armirq & 0xc0)) {
+					initcodeblock(PC);
+					while (!blockend && !(armirq & 0x40)) {
 						opcode = pccache2[PC >> 2];
 						if ((opcode >> 28) == 0xf) {
 							/* NV */
@@ -853,7 +846,7 @@ execarm(int cycs)
 							if (!(opcode & 0x0c000000) && (RD == 15)) blockend = 1; /* End if R15 can be modified */
 							if ((opcode & 0x0e108000) == 0x08108000) blockend = 1; /* End if R15 reloaded from LDM */
 							if ((opcode & 0x0c100000) == 0x04100000 && (RD == 15)) blockend=1; /* End if R15 reloaded from LDR */
-							if (flaglookup[opcode >> 28][(*pcpsr) >> 28]) { // && !(armirq&0x80))
+							if (flaglookup[opcode >> 28][(*pcpsr) >> 28]) {
 								OpFn fn = arm_opcode_fn(opcode);
 								fn(opcode);
 							}
@@ -862,14 +855,8 @@ execarm(int cycs)
 						if ((PC & 0xffc) == 0) {
 							blockend = 1;
 						}
-						// blockend = 1;
-						// inscount++;
 					}
-					if (!(armirq & 0x80)) {
-						endblock(opcode);
-					} else {
-						removeblock();
-					}
+					endblock(opcode);
 				}
 			}
 
@@ -897,7 +884,6 @@ execarm(int cycs)
 					arm.reg[15] += 4;
 				}
 			}
-			// armirq=(armirq&0xCC)|((armirq>>2)&3);
 		}
 		linecyc += 256;
 
