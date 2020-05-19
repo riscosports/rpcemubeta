@@ -548,17 +548,18 @@ arm_unpredictable(uint32_t opcode)
 void
 execarm(int cycs)
 {
-	int linecyc;
-	uint32_t opcode;
-	uint32_t lhs, rhs, dest;
-	uint32_t templ, addr, data, offset, writeback;
-
 	cycles += cycs;
 	while (cycles > 0) {
+		int linecyc;
+
 		// cyccount+=200;
 		// linecyc=200;
 		// while (linecyc>0)
 		for (linecyc = 0; linecyc < 200; linecyc++) {
+			uint32_t opcode;
+			uint32_t lhs, rhs, dest;
+			uint32_t templ, addr, data, offset, writeback;
+
 			if ((PC >> 12) != pccache) {
 				pccache = PC >> 12;
 				pccache2 = getpccache(PC);

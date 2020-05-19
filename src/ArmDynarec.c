@@ -731,11 +731,6 @@ arm_opcode_fn(uint32_t opcode)
 void
 execarm(int cycs)
 {
-	int hash;
-	void (*gen_func)(void);
-	uint32_t opcode;
-	uint32_t templ;
-
 	cycles += cycs;
 	linecyc = 256;
 	while (cycles > 0) {
@@ -757,7 +752,8 @@ execarm(int cycs)
 					}
 				}
 				while (!blockend && !(armirq & 0x40)) {
-					opcode = pccache2[PC >> 2];
+					const uint32_t opcode = pccache2[PC >> 2];
+
 					if ((opcode & 0x0e000000) == 0x0a000000) { blockend = 1; } /* Always end block on branches */
 					if ((opcode & 0x0c000000) == 0x0c000000) { blockend = 1; } /* And SWIs and copro stuff */
 					if (!(opcode & 0x0c000000) && (RD == 15)) { blockend = 1; } /* End if R15 can be modified */
@@ -776,14 +772,16 @@ execarm(int cycs)
 					inscount++;
 				}
 			} else {
-				hash = HASH(PC);
+				const uint32_t hash = HASH(PC);
 				/* if (pagedirty[PC>>9])
 				{
 					pagedirty[PC>>9]=0;
 					cacheclearpage(PC>>9);
 				}
 				else */ if (codeblockpc[hash] == PC) {
-					templ = codeblocknum[hash];
+					const uint32_t templ = codeblocknum[hash];
+					void (*gen_func)(void);
+
 					gen_func = (void *) (&rcodeblock[templ][BLOCKSTART]);
 					// gen_func=(void *)(&codeblock[blocks[templ]>>24][blocks[templ]&0xFFF][4]);
 					gen_func();
@@ -794,6 +792,8 @@ execarm(int cycs)
 						updatemode(arm.reg[cpsr] & arm.mmask);
 					}
 				} else {
+					uint32_t opcode;
+
 					blockend = 0;
 					/* Initialise 'opcode' to invalid value */
 					opcode = 0xffffffff;
