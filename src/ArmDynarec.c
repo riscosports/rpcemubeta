@@ -739,7 +739,6 @@ execarm(int cycs)
 			armirq &= ~0x40u;
 			if (!isblockvalid(PC)) {
 				/* Interpret block */
-				blockend = 0;
 				if ((PC >> 12) != pccache) {
 					pccache = PC >> 12;
 					pccache2 = getpccache(PC);
@@ -751,7 +750,8 @@ execarm(int cycs)
 						continue;
 					}
 				}
-				while (!blockend && !(armirq & 0x40)) {
+				blockend = 0;
+				do {
 					const uint32_t opcode = pccache2[PC >> 2];
 
 					if ((opcode & 0x0e000000) == 0x0a000000) { blockend = 1; } /* Always end block on branches */
@@ -770,7 +770,7 @@ execarm(int cycs)
 						blockend = 1;
 					}
 					inscount++;
-				}
+				} while (!blockend && !(armirq & 0x40));
 			} else {
 				const uint32_t hash = HASH(PC);
 				/* if (pagedirty[PC>>9])
@@ -794,9 +794,6 @@ execarm(int cycs)
 				} else {
 					uint32_t opcode;
 
-					blockend = 0;
-					/* Initialise 'opcode' to invalid value */
-					opcode = 0xffffffff;
 					if ((PC >> 12) != pccache) {
 						pccache = PC >> 12;
 						pccache2 = getpccache(PC);
@@ -809,7 +806,8 @@ execarm(int cycs)
 						}
 					}
 					initcodeblock(PC);
-					while (!blockend && !(armirq & 0x40)) {
+					blockend = 0;
+					do {
 						opcode = pccache2[PC >> 2];
 						if ((opcode >> 28) == 0xf) {
 							/* NV */
@@ -855,7 +853,7 @@ execarm(int cycs)
 						if ((PC & 0xffc) == 0) {
 							blockend = 1;
 						}
-					}
+					} while (!blockend && !(armirq & 0x40));
 					endblock(opcode);
 				}
 			}
