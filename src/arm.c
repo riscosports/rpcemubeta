@@ -52,7 +52,6 @@ static uint32_t *pcpsr;
 static uint8_t flaglookup[16][16];
 
 uint32_t *usrregs[16];
-int databort;
 int prog32;
 
 static int unpredictable_count = 1000; ///< Limit logging of unpredictable instructions
@@ -1883,13 +1882,13 @@ execarm(int cycs)
 	// This label is used to skip the switch above
 skip:
 
-			if (/*databort|*/armirq != 0) {
+			if (armirq != 0) {
 				if (!ARM_MODE_32(arm.mode)) {
 					arm.reg[16] &= ~0xc0;
 					arm.reg[16] |= ((arm.reg[15] & 0xc000000) >> 20);
 				}
 
-				if (armirq & 0x40) { //databort==1)
+				if (armirq & 0x40) {
 					// Data Abort
 					exception(ABORT, 0x14, 0);
 					armirq &= ~0x40u;
