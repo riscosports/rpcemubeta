@@ -45,7 +45,7 @@ int codeblocknum[0x8000] = {0};
 static int flagsdirty = 0;
 //#define BLOCKS 4096
 //#define HASH(l) ((l>>3)&0x3FFF)
-int blockend = 0;
+
 static int blocknum;//,blockcount;
 static int tempinscount;
 

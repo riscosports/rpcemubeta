@@ -45,7 +45,7 @@ static unsigned char codeblockpresent[0x10000];
 
 //#define BLOCKS 4096
 //#define HASH(l) ((l>>3)&0x3FFF)
-int blockend;
+
 static int blocknum;//,blockcount;
 static int tempinscount;
 
