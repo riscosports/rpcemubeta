@@ -35,7 +35,6 @@
 #include "arm.h"
 #include "arm_common.h"
 
-void generateupdatepc(void);
 int lastflagchange;
 uint8_t rcodeblock[BLOCKS][1792] __attribute__ ((aligned (4096)));
 static const void *codeblockaddr[BLOCKS];

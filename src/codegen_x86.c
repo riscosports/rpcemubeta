@@ -33,7 +33,6 @@
 #include "arm.h"
 #include "arm_common.h"
 
-void generateupdatepc(void);
 int linecyc;
 
 uint8_t rcodeblock[BLOCKS][1792+512+64] __attribute__ ((aligned (4096)));
