@@ -1924,7 +1924,7 @@ skip:
 			}
 		}
 		if (fdccallback) {
-			fdccallback -= 10;
+			fdccallback -= 100;
 			if (fdccallback <= 0) {
 				fdccallback = 0;
 				fdc_callback();
