@@ -137,8 +137,6 @@ struct iomd
 
 extern struct iomd iomd;
 
-extern  int kcallback,mcallback;
-
 extern  uint32_t cinit;
 
 extern void iomd_reset(IOMDType type);
