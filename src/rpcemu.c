@@ -190,7 +190,7 @@ resetrpc(void)
 
         mem_reset(config.mem_size, config.vram_size);
         cp15_reset(machine.cpu_model);
-        resetarm(machine.cpu_model);
+	arm_reset(machine.cpu_model);
         keyboard_reset();
 	iomd_reset(machine.iomd_type);
 
@@ -331,10 +331,7 @@ rpcemu_start(void)
 void
 execrpcemu(void)
 {
-//	static int c;
-//	printf("Exec %i\n",c);
-//c++;
-        execarm(20000);
+	arm_exec(20000);
         drawscr(drawscre);
         if (drawscre>0)
         {

@@ -255,8 +255,14 @@ arm_init(void)
 	}
 }
 
+/**
+ * Reset the ARM core to initial state. The CPU model must be selected at this
+ * point.
+ *
+ * @param cpu_model CPU model to emulate
+ */
 void
-resetarm(CPUModel cpu_model)
+arm_reset(CPUModel cpu_model)
 {
 	memset(&arm, 0, sizeof(arm));
 
@@ -544,8 +550,13 @@ arm_unpredictable(uint32_t opcode)
 	}
 }
 
+/**
+ * Execute several ARM instructions.
+ *
+ * @param cycs
+ */
 void
-execarm(int cycs)
+arm_exec(int cycs)
 {
 	cycles += cycs;
 	while (cycles > 0) {
