@@ -167,7 +167,6 @@ typedef struct {
 extern Machine machine; /**< The details of the current model being emulated */
 
 extern uint32_t inscount;
-extern int cyccount;
 
 /* These functions can optionally be overridden by a platform. If not
    needed to be overridden, there is a generic version in rpc-machdep.c */

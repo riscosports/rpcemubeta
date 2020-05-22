@@ -562,7 +562,6 @@ arm_exec(int cycs)
 	while (cycles > 0) {
 		int linecyc;
 
-		// cyccount+=200;
 		// linecyc=200;
 		// while (linecyc>0)
 		for (linecyc = 0; linecyc < 200; linecyc++) {

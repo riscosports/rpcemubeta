@@ -744,7 +744,6 @@ arm_exec(int cycs)
 	cycles += cycs;
 	linecyc = 256;
 	while (cycles > 0) {
-		// cyccount+=200;
 		while (linecyc-- >= 0) {
 			armirq &= ~0x40u;
 			if (!isblockvalid(PC)) {

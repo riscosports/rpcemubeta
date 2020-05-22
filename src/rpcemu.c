@@ -104,7 +104,6 @@ Perf perf = {
 	0.0f  /* mips_total */
 };
 
-int cyccount = 0;
 int drawscre = 0;
 int quited = 0;
 
