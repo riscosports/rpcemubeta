@@ -742,9 +742,8 @@ void
 arm_exec(int cycs)
 {
 	cycles += cycs;
-	linecyc = 256;
 	while (cycles > 0) {
-		while (linecyc-- >= 0) {
+		for (linecyc = 256; linecyc >= 0; linecyc--) {
 			armirq &= ~0x40u;
 			if (!isblockvalid(PC)) {
 				/* Interpret block */
@@ -892,7 +891,6 @@ arm_exec(int cycs)
 				}
 			}
 		}
-		linecyc += 256;
 
 		if (kcallback) {
 			kcallback--;
