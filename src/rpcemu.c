@@ -109,6 +109,8 @@ int quited = 0;
 
 static FILE *arclog; /* Log file handle */
 
+static int cycles;
+static int fdci;
 
 #ifdef _DEBUG
 /**
@@ -209,6 +211,9 @@ resetrpc(void)
 		network_init();
 	}
 #endif
+
+	cycles = 0;
+	fdci = 0;
 
 	rpclog("RPCEmu: Machine reset complete\n");
 }
@@ -330,7 +335,49 @@ rpcemu_start(void)
 void
 execrpcemu(void)
 {
-	arm_exec(20000);
+	cycles += 20000;
+
+	while (cycles > 0) {
+		cycles -= arm_exec();
+
+		if (kcallback) {
+			kcallback--;
+			if (kcallback <= 0) {
+				kcallback = 0;
+				keyboard_callback_rpcemu();
+			}
+		}
+		if (mcallback) {
+			mcallback -= 10;
+			if (mcallback <= 0) {
+				mcallback = 0;
+				mouse_ps2_callback();
+			}
+		}
+		if (fdccallback) {
+			fdccallback -= 100;
+			if (fdccallback <= 0) {
+				fdccallback = 0;
+				fdc_callback();
+			}
+		}
+		if (idecallback) {
+			idecallback -= 10;
+			if (idecallback <= 0) {
+				idecallback = 0;
+				callbackide();
+			}
+		}
+		if (motoron) {
+			fdci--;
+			if (fdci <= 0) {
+				fdci = 20000;
+				iomd.irqa.status |= IOMD_IRQA_FLOPPY_INDEX;
+				updateirqs();
+			}
+		}
+	}
+
         drawscr(drawscre);
         if (drawscre>0)
         {
