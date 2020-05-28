@@ -396,8 +396,6 @@ execrpcemu(void)
 void
 rpcemu_idle(void)
 {
-	int hostupdate = 0;
-
 	/* Loop while no interrupts pending */
 	while (!armirq) {
 		/* Run down any callback timers */
@@ -447,8 +445,7 @@ rpcemu_idle(void)
 #endif
 		}
 		/* Run other periodic actions */
-		if (!armirq && !(++hostupdate > 20)) {
-			hostupdate = 0;
+		if (!armirq) {
 			drawscr(drawscre);
 			if (drawscre > 0) {
 				drawscre--;
