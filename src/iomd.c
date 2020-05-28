@@ -943,19 +943,18 @@ iomd_end(void)
 {
 }
 
+/**
+ * Signal a change in the Flyback signal from VIDC
+ *
+ * @param flyback_new New value of Flyback signal
+ */
 void
-iomd_vsync(int vsync)
+iomd_flyback(int flyback_new)
 {
-        if (vsync)
-        {
-//                rpclog("Vsync high\n");
-                iomd.irqa.status |= IOMD_IRQA_FLYBACK;
-                updateirqs();
-                flyback=1;
-        }
-        else
-        {
-//                rpclog("Vsync low\n");
-                flyback=0;
-        }
+	flyback = flyback_new;
+
+	if (flyback) {
+		iomd.irqa.status |= IOMD_IRQA_FLYBACK;
+		updateirqs();
+	}
 }
