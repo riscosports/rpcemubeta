@@ -26,9 +26,6 @@
 #include "mem.h"
 #include "arm.h"
 
-#define UNDEFINED  11
-#define undefined() exception(UNDEFINED,8,4)
-
 static double fparegs[8] = {0.0}; /*No C variable type for 80-bit floating point, so use 64*/
 static uint32_t fpsr = 0, fpcr = 0;
 
@@ -137,7 +134,7 @@ void fpaopcode(uint32_t opcode)
                                 break;
                                 default:
 /*                                arm.reg[15]+=8;
-                                undefined();
+                                arm_exception_undefined();
                                 return;*/
                                 fatal("Bad LDF/STF size %08X %08X\n", opcode & 0x408000, opcode);
                         }
@@ -415,7 +412,7 @@ void fpaopcode(uint32_t opcode)
                 if ((opcode&0x8000) && ((opcode&0xF08000)>=0x508000) && ((opcode&0xF08000)<0xE08000))
                 {
                         arm.reg[15] += 4;
-                        undefined();
+                        arm_exception_undefined();
                         return;
                 }
                 switch (opcode&0xF08000)

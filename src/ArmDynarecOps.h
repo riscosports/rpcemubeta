@@ -363,7 +363,7 @@ opSWPword(uint32_t opcode)
 		}
 		arm.reg[RD] = arm.reg[16];
 	} else if (arm.arch_v4) {
-		undefined();
+		arm_exception_undefined();
 	} else {
 		arm_unpredictable(opcode);
 	}
@@ -391,7 +391,7 @@ opMSRcreg(uint32_t opcode)
 		/* MSR CPSR,reg */
 		arm_write_cpsr(opcode, arm.reg[RM]);
 	} else if (arm.arch_v4) {
-		undefined();
+		arm_exception_undefined();
 	} else {
 		arm_unpredictable(opcode);
 	}
@@ -435,7 +435,7 @@ opSWPbyte(uint32_t opcode)
 		/* MRS reg,SPSR */
 		arm.reg[RD] = arm_read_spsr();
 	} else if (arm.arch_v4) {
-		undefined();
+		arm_exception_undefined();
 	} else {
 		arm_unpredictable(opcode);
 	}
@@ -465,7 +465,7 @@ opMSRsreg(uint32_t opcode)
 		/* MSR SPSR,reg */
 		arm_write_spsr(opcode, arm.reg[RM]);
 	} else if (arm.arch_v4) {
-		undefined();
+		arm_exception_undefined();
 	} else {
 		arm_unpredictable(opcode);
 	}
@@ -794,7 +794,7 @@ opMSRcimm(uint32_t opcode)
 		/* MSR CPSR,imm */
 		arm_write_cpsr(opcode, arm_imm(opcode));
 	} else if (arm.arch_v4) {
-		undefined();
+		arm_exception_undefined();
 	} else {
 		arm_unpredictable(opcode);
 	}
@@ -837,7 +837,7 @@ opMSRsimm(uint32_t opcode)
 		/* MSR SPSR,imm */
 		arm_write_spsr(opcode, arm_imm(opcode));
 	} else if (arm.arch_v4) {
-		undefined();
+		arm_exception_undefined();
 	} else {
 		arm_unpredictable(opcode);
 	}
@@ -953,7 +953,7 @@ opSTRT(uint32_t opcode)
 	uint32_t addr, data, offset, templ;
 
 	if ((opcode & 0x2000010) == 0x2000010) {
-		undefined();
+		arm_exception_undefined();
 		return 0;
 	}
 
@@ -992,7 +992,7 @@ opLDRT(uint32_t opcode)
 	uint32_t addr, data, offset, templ;
 
 	if ((opcode & 0x2000010) == 0x2000010) {
-		undefined();
+		arm_exception_undefined();
 		return 0;
 	}
 
@@ -1041,7 +1041,7 @@ opSTRBT(uint32_t opcode)
 	uint32_t addr, data, offset, templ;
 
 	if ((opcode & 0x2000010) == 0x2000010) {
-		undefined();
+		arm_exception_undefined();
 		return 0;
 	}
 
@@ -1080,7 +1080,7 @@ opLDRBT(uint32_t opcode)
 	uint32_t addr, data, offset, templ;
 
 	if ((opcode & 0x2000010) == 0x2000010) {
-		undefined();
+		arm_exception_undefined();
 		return 0;
 	}
 
@@ -1126,7 +1126,7 @@ opSTR(uint32_t opcode)
 	uint32_t addr, data, offset;
 
 	if ((opcode & 0x2000010) == 0x2000010) {
-		undefined();
+		arm_exception_undefined();
 		return 0;
 	}
 
@@ -1174,7 +1174,7 @@ opLDR(uint32_t opcode)
 	uint32_t addr, data, offset;
 
 	if ((opcode & 0x2000010) == 0x2000010) {
-		undefined();
+		arm_exception_undefined();
 		return 0;
 	}
 
@@ -1232,7 +1232,7 @@ opSTRB(uint32_t opcode)
 	uint32_t addr, data, offset;
 
 	if ((opcode & 0x2000010) == 0x2000010) {
-		undefined();
+		arm_exception_undefined();
 		return 0;
 	}
 
@@ -1280,7 +1280,7 @@ opLDRB(uint32_t opcode)
 	uint32_t addr, data, offset;
 
 	if ((opcode & 0x2000010) == 0x2000010) {
-		undefined();
+		arm_exception_undefined();
 		return 0;
 	}
 
@@ -1497,7 +1497,7 @@ opcopro(uint32_t opcode)
 #endif
 	NOT_USED(opcode);
 
-	undefined();
+	arm_exception_undefined();
 }
 
 static void
@@ -1512,7 +1512,7 @@ opMCR(uint32_t opcode)
 	if ((opcode & 0xf10) == 0xf10) {
 		cp15_write(RN, arm.reg[RD], opcode);
 	} else {
-		undefined();
+		arm_exception_undefined();
 	}
 }
 
@@ -1533,7 +1533,7 @@ opMRC(uint32_t opcode)
 			arm.reg[RD] = cp15_read(RN);
 		}
 	} else {
-		undefined();
+		arm_exception_undefined();
 	}
 }
 
@@ -1546,7 +1546,7 @@ opUNALLOC(uint32_t opcode)
 	NOT_USED(opcode);
 
 	if (arm.arch_v4) {
-		undefined();
+		arm_exception_undefined();
 	} else {
 		arm_unpredictable(opcode);
 	}

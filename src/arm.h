@@ -114,4 +114,13 @@ GETADDR(uint32_t r)
 	}
 }
 
+/**
+ * Generate an Undefined Instruction exception.
+ */
+static inline void
+arm_exception_undefined(void)
+{
+	exception(UNDEFINED, 8, 4);
+}
+
 #endif //__ARM__

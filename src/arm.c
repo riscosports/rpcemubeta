@@ -481,8 +481,6 @@ shift4(uint32_t opcode)
 	}
 }
 
-#define undefined() exception(UNDEFINED,8,4)
-
 void
 exception(uint32_t mmode, uint32_t address, uint32_t diff)
 {
@@ -867,7 +865,7 @@ arm_exec(void)
 					}
 					arm.reg[RD] = arm.reg[16];
 				} else if (arm.arch_v4) {
-					undefined();
+					arm_exception_undefined();
 				} else {
 					arm_unpredictable(opcode);
 				}
@@ -887,7 +885,7 @@ arm_exec(void)
 				if ((opcode & 0xf010) == 0xf000) {
 					arm_write_cpsr(opcode, arm.reg[RM]);
 				} else if (arm.arch_v4) {
-					undefined();
+					arm_exception_undefined();
 				} else {
 					arm_unpredictable(opcode);
 				}
@@ -923,7 +921,7 @@ arm_exec(void)
 					// MRS reg,SPSR
 					arm.reg[RD] = arm_read_spsr();
 				} else if (arm.arch_v4) {
-					undefined();
+					arm_exception_undefined();
 				} else {
 					arm_unpredictable(opcode);
 				}
@@ -945,7 +943,7 @@ arm_exec(void)
 				if ((opcode & 0xf010) == 0xf000) {
 					arm_write_spsr(opcode, arm.reg[RM]);
 				} else if (arm.arch_v4) {
-					undefined();
+					arm_exception_undefined();
 				} else {
 					arm_unpredictable(opcode);
 				}
@@ -1171,7 +1169,7 @@ arm_exec(void)
 				if (RD == 15) {
 					arm_write_cpsr(opcode, arm_imm(opcode));
 				} else if (arm.arch_v4) {
-					undefined();
+					arm_exception_undefined();
 				} else {
 					arm_unpredictable(opcode);
 				}
@@ -1203,7 +1201,7 @@ arm_exec(void)
 				if (RD == 15) {
 					arm_write_spsr(opcode, arm_imm(opcode));
 				} else if (arm.arch_v4) {
-					undefined();
+					arm_exception_undefined();
 				} else {
 					arm_unpredictable(opcode);
 				}
@@ -1284,7 +1282,7 @@ arm_exec(void)
 			case 0x62: // STRT Rd, [Rn], -reg...
 			case 0x6a: // STRT Rd, [Rn], +reg...
 				if (opcode & 0x10) {
-					undefined();
+					arm_exception_undefined();
 					break;
 				}
 				// Fall-through
@@ -1320,7 +1318,7 @@ arm_exec(void)
 			case 0x63: // LDRT Rd, [Rn], -reg...
 			case 0x6b: // LDRT Rd, [Rn], +reg...
 				if (opcode & 0x10) {
-					undefined();
+					arm_exception_undefined();
 					break;
 				}
 				// Fall-through
@@ -1366,7 +1364,7 @@ arm_exec(void)
 			case 0x66: // STRBT Rd, [Rn], -reg...
 			case 0x6e: // STRBT Rd, [Rn], +reg...
 				if (opcode & 0x10) {
-					undefined();
+					arm_exception_undefined();
 					break;
 				}
 				// Fall-through
@@ -1402,7 +1400,7 @@ arm_exec(void)
 			case 0x67: // LDRBT Rd, [Rn], -reg...
 			case 0x6f: // LDRBT Rd, [Rn], +reg...
 				if (opcode & 0x10) {
-					undefined();
+					arm_exception_undefined();
 					break;
 				}
 				// Fall-through
@@ -1449,7 +1447,7 @@ arm_exec(void)
 			case 0x78: // STR Rd, [Rn, +reg...]
 			case 0x7a: // STR Rd, [Rn, +reg...]!
 				if (opcode & 0x10) {
-					undefined();
+					arm_exception_undefined();
 					break;
 				}
 				// Fall-through
@@ -1502,7 +1500,7 @@ arm_exec(void)
 			case 0x79: // LDR Rd, [Rn, +reg...]
 			case 0x7b: // LDR Rd, [Rn, +reg...]!
 				if (opcode & 0x10) {
-					undefined();
+					arm_exception_undefined();
 					break;
 				}
 				// Fall-through
@@ -1565,7 +1563,7 @@ arm_exec(void)
 			case 0x7c: // STRB Rd, [Rn, +reg...]
 			case 0x7e: // STRB Rd, [Rn, +reg...]!
 				if (opcode & 0x10) {
-					undefined();
+					arm_exception_undefined();
 					break;
 				}
 				// Fall-through
@@ -1618,7 +1616,7 @@ arm_exec(void)
 			case 0x7d: // LDRB Rd, [Rn, +reg...]
 			case 0x7f: // LDRB Rd, [Rn, +reg...]!
 				if (opcode & 0x10) {
-					undefined();
+					arm_exception_undefined();
 					break;
 				}
 				// Fall-through
@@ -1820,7 +1818,7 @@ arm_exec(void)
 					break;
 				}
 #endif
-				undefined();
+				arm_exception_undefined();
 				break;
 
 			case 0xe0: case 0xe2: case 0xe4: case 0xe6: // MCR
@@ -1834,7 +1832,7 @@ arm_exec(void)
 				if ((opcode & 0xf10) == 0xf10) {
 					cp15_write(RN, arm.reg[RD], opcode);
 				} else {
-					undefined();
+					arm_exception_undefined();
 				}
 				break;
 
@@ -1854,7 +1852,7 @@ arm_exec(void)
 						arm.reg[RD] = cp15_read(RN);
 					}
 				} else {
-					undefined();
+					arm_exception_undefined();
 				}
 				break;
 
@@ -1867,7 +1865,7 @@ arm_exec(void)
 
 			default:
 				if (arm.arch_v4) {
-					undefined();
+					arm_exception_undefined();
 				} else {
 					arm_unpredictable(opcode);
 				}

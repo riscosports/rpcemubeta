@@ -496,8 +496,6 @@ shift4(uint32_t opcode)
 	}
 }
 
-#define undefined() exception(UNDEFINED,8,4)
-
 void
 exception(uint32_t mmode, uint32_t address, uint32_t diff)
 {
