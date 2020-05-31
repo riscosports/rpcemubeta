@@ -91,7 +91,6 @@ static struct cached_state {
         int doublesize;
         uint32_t bpp;
         uint8_t *dirtybuffer;
-        int needvsync;
         int threadpending;
 } thr;
 
@@ -340,7 +339,6 @@ drawscr(int needredraw)
 				video_update(0, thr.vidc_ysize);
 			}
 			needredraw = 0;
-			thr.needvsync = 1;
 		}
 	}
 
@@ -386,10 +384,6 @@ drawscr(int needredraw)
 		cp15_tlb_invalidate_physical(invalidate);
 
 		thr.threadpending = 1;
-	}
-
-	if (thr.needvsync) {
-		thr.needvsync = 0;
 	}
 
 	if (needredraw) {
@@ -840,7 +834,6 @@ vidcthread(void)
 
 	/* Clean the dirtybuffer now we have updated eveything in it */
 	memset(thr.dirtybuffer, 0, 512 * 4);
-	thr.needvsync = 1;
 
 	if (yl == -1 || yh == -1) {
 		return;
