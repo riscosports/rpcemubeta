@@ -364,6 +364,9 @@ rpcemu_video_update(const uint32_t *buffer, int xsize, int ysize,
 
 	// Send update message to GUI
 	emit pMainWin->main_display_signal(video_update);
+
+	// Send flyback message to emulator thread
+	emit emulator->video_flyback_signal();
 }
 
 /**
@@ -467,6 +470,9 @@ int main (int argc, char ** argv)
  */
 Emulator::Emulator()
 {
+	// "Internal" signals from non-GUI threads
+	connect(this, &Emulator::video_flyback_signal, this, &Emulator::video_flyback);
+
 	// Signals from the main GUI window to provide emulated machine input
 	connect(this, &Emulator::key_press_signal,
 	        this, &Emulator::key_press);
@@ -595,6 +601,17 @@ Emulator::idle_process_events()
 		vblupdate();
 		video_timer_next += (qint64) video_timer_interval;
 	}
+}
+
+/**
+ * Generate video flyback event.
+ *
+ * Triggered by signal when video update completes.
+ */
+void
+Emulator::video_flyback()
+{
+	iomd_flyback(1);
 }
 
 /**

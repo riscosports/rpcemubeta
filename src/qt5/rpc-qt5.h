@@ -46,6 +46,8 @@ public:
 signals:
 	void finished();
 
+	void video_flyback_signal();
+
 	void key_press_signal(unsigned scan_code);
 
 	void key_release_signal(unsigned scan_code);
@@ -74,6 +76,8 @@ signals:
 
 public slots:
 	void mainemuloop();
+
+	void video_flyback();
 
 	void key_press(unsigned scan_code);
 

@@ -389,7 +389,6 @@ drawscr(int needredraw)
 	}
 
 	if (thr.needvsync) {
-		iomd_flyback(1);
 		thr.needvsync = 0;
 	}
 
