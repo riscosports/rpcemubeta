@@ -378,13 +378,13 @@ execrpcemu(void)
 		}
 	}
 
-        drawscr(drawscre);
-        if (drawscre>0)
-        {
-//                rpclog("Drawscre %i\n",drawscre);
-                drawscre--;
-                if (drawscre>5) drawscre=0;
-        }
+	if (drawscre > 0) {
+		drawscr(1);
+		drawscre--;
+		if (drawscre > 5) {
+			drawscre = 0;
+		}
+	}
 }
 
 /**
@@ -446,11 +446,12 @@ rpcemu_idle(void)
 		}
 		/* Run other periodic actions */
 		if (!armirq) {
-			drawscr(drawscre);
 			if (drawscre > 0) {
+				drawscr(1);
 				drawscre--;
-				if (drawscre > 5)
+				if (drawscre > 5) {
 					drawscre = 0;
+				}
 			}
 			rpcemu_idle_process_events();
 		}
