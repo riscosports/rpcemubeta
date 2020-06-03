@@ -390,11 +390,11 @@ drawscr(int needredraw)
 		iomd_flyback(0);
 	}
 
-	vidcreleasemutex();
-
 	if (needredraw) {
 		vidcwakeupthread();
 	}
+
+	vidcreleasemutex();
 }
 
 /**
