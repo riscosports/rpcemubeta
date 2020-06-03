@@ -379,7 +379,7 @@ execrpcemu(void)
 	}
 
 	if (drawscre > 0) {
-		drawscr(1);
+		drawscr();
 		drawscre--;
 		if (drawscre > 5) {
 			drawscre = 0;
@@ -447,7 +447,7 @@ rpcemu_idle(void)
 		/* Run other periodic actions */
 		if (!armirq) {
 			if (drawscre > 0) {
-				drawscr(1);
+				drawscr();
 				drawscre--;
 				if (drawscre > 5) {
 					drawscre = 0;
