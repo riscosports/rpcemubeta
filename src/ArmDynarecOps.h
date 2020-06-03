@@ -42,7 +42,7 @@ opANDregS(uint32_t opcode)
 		/* MULS */
 		arm.reg[MULRD] = (MULRD == MULRM) ? 0 :
 		    (arm.reg[MULRM] * arm.reg[MULRS]);
-		setzn(arm.reg[MULRD]);
+		arm_flags_logical(arm.reg[MULRD]);
 	} else {
 		lhs = GETADDR(RN);
 		if (RD == 15) {
@@ -50,7 +50,7 @@ opANDregS(uint32_t opcode)
 		} else {
 			dest = lhs & shift(opcode);
 			arm.reg[RD] = dest;
-			setzn(dest);
+			arm_flags_logical(dest);
 		}
 	}
 }
@@ -79,7 +79,7 @@ opEORregS(uint32_t opcode)
 		/* MLAS */
 		arm.reg[MULRD] = (MULRD == MULRM) ? 0 :
 		    (arm.reg[MULRM] * arm.reg[MULRS]) + arm.reg[MULRN];
-		setzn(arm.reg[MULRD]);
+		arm_flags_logical(arm.reg[MULRD]);
 	} else {
 		lhs = GETADDR(RN);
 		if (RD == 15) {
@@ -87,7 +87,7 @@ opEORregS(uint32_t opcode)
 		} else {
 			dest = lhs ^ shift(opcode);
 			arm.reg[RD] = dest;
-			setzn(dest);
+			arm_flags_logical(dest);
 		}
 	}
 }
@@ -112,7 +112,7 @@ opSUBregS(uint32_t opcode)
 	if (RD == 15) {
 		arm_write_r15(opcode, dest);
 	} else {
-		setsub(lhs, rhs, dest);
+		arm_flags_sub(lhs, rhs, dest);
 		arm.reg[RD] = dest;
 	}
 }
@@ -137,7 +137,7 @@ opRSBregS(uint32_t opcode)
 	if (RD == 15) {
 		arm_write_r15(opcode, dest);
 	} else {
-		setsub(rhs, lhs, dest);
+		arm_flags_sub(rhs, lhs, dest);
 		arm.reg[RD] = dest;
 	}
 }
@@ -183,7 +183,7 @@ opADDregS(uint32_t opcode)
 	if (RD == 15) {
 		arm_write_r15(opcode, dest);
 	} else {
-		setadd(lhs, rhs, dest);
+		arm_flags_add(lhs, rhs, dest);
 		arm.reg[RD] = dest;
 	}
 }
@@ -233,7 +233,7 @@ opADCregS(uint32_t opcode)
 	if (RD == 15) {
 		arm_write_r15(opcode, dest);
 	} else {
-		setadc(lhs, rhs, dest);
+		arm_flags_adc(lhs, rhs, dest);
 		arm.reg[RD] = dest;
 	}
 }
@@ -279,7 +279,7 @@ opSBCregS(uint32_t opcode)
 	if (RD == 15) {
 		arm_write_r15(opcode, dest);
 	} else {
-		setsbc(lhs, rhs, dest);
+		arm_flags_sbc(lhs, rhs, dest);
 		arm.reg[RD] = dest;
 	}
 }
@@ -329,7 +329,7 @@ opRSCregS(uint32_t opcode)
 	if (RD == 15) {
 		arm_write_r15(opcode, dest);
 	} else {
-		setsbc(rhs, lhs, dest);
+		arm_flags_sbc(rhs, lhs, dest);
 		arm.reg[RD] = dest;
 	}
 }
@@ -380,7 +380,7 @@ opTSTreg(uint32_t opcode)
 		/* TSTP reg */
 		arm_compare_rd15(opcode, lhs & shift2(opcode));
 	} else {
-		setzn(lhs & shift(opcode));
+		arm_flags_logical(lhs & shift(opcode));
 	}
 }
 
@@ -407,7 +407,7 @@ opTEQreg(uint32_t opcode)
 		/* TEQP reg */
 		arm_compare_rd15(opcode, lhs ^ shift2(opcode));
 	} else {
-		setzn(lhs ^ shift(opcode));
+		arm_flags_logical(lhs ^ shift(opcode));
 	}
 }
 
@@ -454,7 +454,7 @@ opCMPreg(uint32_t opcode)
 		/* CMPP reg */
 		arm_compare_rd15(opcode, dest);
 	} else {
-		setsub(lhs, rhs, dest);
+		arm_flags_sub(lhs, rhs, dest);
 	}
 }
 
@@ -483,7 +483,7 @@ opCMNreg(uint32_t opcode)
 		/* CMNP reg */
 		arm_compare_rd15(opcode, dest);
 	} else {
-		setadd(lhs, rhs, dest);
+		arm_flags_add(lhs, rhs, dest);
 	}
 }
 
@@ -507,7 +507,7 @@ opORRregS(uint32_t opcode)
 	} else {
 		dest = lhs | shift(opcode);
 		arm.reg[RD] = dest;
-		setzn(dest);
+		arm_flags_logical(dest);
 	}
 }
 
@@ -527,7 +527,7 @@ opMOVregS(uint32_t opcode)
 		arm_write_r15(opcode, shift2(opcode));
 	} else {
 		arm.reg[RD] = shift(opcode);
-		setzn(arm.reg[RD]);
+		arm_flags_logical(arm.reg[RD]);
 	}
 }
 
@@ -551,7 +551,7 @@ opBICregS(uint32_t opcode)
 	} else {
 		dest = lhs & ~shift(opcode);
 		arm.reg[RD] = dest;
-		setzn(dest);
+		arm_flags_logical(dest);
 	}
 }
 
@@ -571,7 +571,7 @@ opMVNregS(uint32_t opcode)
 		arm_write_r15(opcode, ~shift2(opcode));
 	} else {
 		arm.reg[RD] = ~shift(opcode);
-		setzn(arm.reg[RD]);
+		arm_flags_logical(arm.reg[RD]);
 	}
 }
 
@@ -595,7 +595,7 @@ opANDimmS(uint32_t opcode)
 	} else {
 		dest = lhs & arm_imm_cflag(opcode);
 		arm.reg[RD] = dest;
-		setzn(dest);
+		arm_flags_logical(dest);
 	}
 }
 
@@ -619,7 +619,7 @@ opEORimmS(uint32_t opcode)
 	} else {
 		dest = lhs ^ arm_imm_cflag(opcode);
 		arm.reg[RD] = dest;
-		setzn(dest);
+		arm_flags_logical(dest);
 	}
 }
 
@@ -644,7 +644,7 @@ opSUBimmS(uint32_t opcode)
 		arm_write_r15(opcode, dest);
 	} else {
 		arm.reg[RD] = dest;
-		setsub(lhs, rhs, dest);
+		arm_flags_sub(lhs, rhs, dest);
 	}
 }
 
@@ -668,7 +668,7 @@ opRSBimmS(uint32_t opcode)
 	if (RD == 15) {
 		arm_write_r15(opcode, dest);
 	} else {
-		setsub(rhs, lhs, dest);
+		arm_flags_sub(rhs, lhs, dest);
 		arm.reg[RD] = dest;
 	}
 }
@@ -693,7 +693,7 @@ opADDimmS(uint32_t opcode)
 	if (RD == 15) {
 		arm_write_r15(opcode, dest);
 	} else {
-		setadd(lhs, rhs, dest);
+		arm_flags_add(lhs, rhs, dest);
 		arm.reg[RD] = dest;
 	}
 }
@@ -718,7 +718,7 @@ opADCimmS(uint32_t opcode)
 	if (RD == 15) {
 		arm_write_r15(opcode, dest);
 	} else {
-		setadc(lhs, rhs, dest);
+		arm_flags_adc(lhs, rhs, dest);
 		arm.reg[RD] = dest;
 	}
 }
@@ -743,7 +743,7 @@ opSBCimmS(uint32_t opcode)
 	if (RD == 15) {
 		arm_write_r15(opcode, dest);
 	} else {
-		setsbc(lhs, rhs, dest);
+		arm_flags_sbc(lhs, rhs, dest);
 		arm.reg[RD] = dest;
 	}
 }
@@ -768,7 +768,7 @@ opRSCimmS(uint32_t opcode)
 	if (RD == 15) {
 		arm_write_r15(opcode, dest);
 	} else {
-		setsbc(rhs, lhs, dest);
+		arm_flags_sbc(rhs, lhs, dest);
 		arm.reg[RD] = dest;
 	}
 }
@@ -783,7 +783,7 @@ opTSTimm(uint32_t opcode)
 		/* TSTP imm */
 		arm_compare_rd15(opcode, lhs & arm_imm(opcode));
 	} else {
-		setzn(lhs & arm_imm_cflag(opcode));
+		arm_flags_logical(lhs & arm_imm_cflag(opcode));
 	}
 }
 
@@ -810,7 +810,7 @@ opTEQimm(uint32_t opcode)
 		/* TEQP imm */
 		arm_compare_rd15(opcode, lhs ^ arm_imm(opcode));
 	} else {
-		setzn(lhs ^ arm_imm_cflag(opcode));
+		arm_flags_logical(lhs ^ arm_imm_cflag(opcode));
 	}
 }
 
@@ -826,7 +826,7 @@ opCMPimm(uint32_t opcode)
 		/* CMPP imm */
 		arm_compare_rd15(opcode, dest);
 	} else {
-		setsub(lhs, rhs, dest);
+		arm_flags_sub(lhs, rhs, dest);
 	}
 }
 
@@ -855,7 +855,7 @@ opCMNimm(uint32_t opcode)
 		/* CMNP imm */
 		arm_compare_rd15(opcode, dest);
 	} else {
-		setadd(lhs, rhs, dest);
+		arm_flags_add(lhs, rhs, dest);
 	}
 }
 
@@ -879,7 +879,7 @@ opORRimmS(uint32_t opcode)
 	} else {
 		dest = lhs | arm_imm_cflag(opcode);
 		arm.reg[RD] = dest;
-		setzn(dest);
+		arm_flags_logical(dest);
 	}
 }
 
@@ -899,7 +899,7 @@ opMOVimmS(uint32_t opcode)
 		arm_write_r15(opcode, arm_imm(opcode));
 	} else {
 		arm.reg[RD] = arm_imm_cflag(opcode);
-		setzn(arm.reg[RD]);
+		arm_flags_logical(arm.reg[RD]);
 	}
 }
 
@@ -923,7 +923,7 @@ opBICimmS(uint32_t opcode)
 	} else {
 		dest = lhs & ~arm_imm_cflag(opcode);
 		arm.reg[RD] = dest;
-		setzn(dest);
+		arm_flags_logical(dest);
 	}
 }
 
@@ -943,7 +943,7 @@ opMVNimmS(uint32_t opcode)
 		arm_write_r15(opcode, ~arm_imm(opcode));
 	} else {
 		arm.reg[RD] = ~arm_imm_cflag(opcode);
-		setzn(arm.reg[RD]);
+		arm_flags_logical(arm.reg[RD]);
 	}
 }
 

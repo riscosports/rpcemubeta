@@ -107,8 +107,15 @@ arm_imm_cflag(uint32_t opcode)
 	return result;
 }
 
+/**
+ * Update the NZCV flags following an add instruction.
+ *
+ * @param op1 The left operand
+ * @param op2 The right operand
+ * @param result The result of the operation
+ */
 static inline void
-setadd(uint32_t op1, uint32_t op2, uint32_t result)
+arm_flags_add(uint32_t op1, uint32_t op2, uint32_t result)
 {
 	uint32_t flags = 0;
 
@@ -126,8 +133,15 @@ setadd(uint32_t op1, uint32_t op2, uint32_t result)
 	arm.reg[cpsr] = (arm.reg[cpsr] & 0x0fffffff) | flags;
 }
 
+/**
+ * Update the NZCV flags following a sub instruction.
+ *
+ * @param op1 The left operand
+ * @param op2 The right operand
+ * @param result The result of the operation
+ */
 static inline void
-setsub(uint32_t op1, uint32_t op2, uint32_t result)
+arm_flags_sub(uint32_t op1, uint32_t op2, uint32_t result)
 {
 	uint32_t flags = 0;
 
@@ -145,31 +159,15 @@ setsub(uint32_t op1, uint32_t op2, uint32_t result)
 	arm.reg[cpsr] = (arm.reg[cpsr] & 0x0fffffff) | flags;
 }
 
+/**
+ * Update the NZCV flags following an adc instruction.
+ *
+ * @param op1 The left operand
+ * @param op2 The right operand
+ * @param result The result of the operation
+ */
 static inline void
-setsbc(uint32_t op1, uint32_t op2, uint32_t result)
-{
-	arm.reg[cpsr] &= ~0xf0000000;
-
-	if (result == 0) {
-		arm.reg[cpsr] |= ZFLAG;
-	} else if (checkneg(result)) {
-		arm.reg[cpsr] |= NFLAG;
-	}
-	if ((checkneg(op1) && checkpos(op2)) ||
-	    (checkneg(op1) && checkpos(result)) ||
-	    (checkpos(op2) && checkpos(result)))
-	{
-		arm.reg[cpsr] |= CFLAG;
-	}
-	if ((checkneg(op1) && checkpos(op2) && checkpos(result)) ||
-	    (checkpos(op1) && checkneg(op2) && checkneg(result)))
-	{
-		arm.reg[cpsr] |= VFLAG;
-	}
-}
-
-static inline void
-setadc(uint32_t op1, uint32_t op2, uint32_t result)
+arm_flags_adc(uint32_t op1, uint32_t op2, uint32_t result)
 {
 	arm.reg[cpsr] &= ~0xf0000000;
 
@@ -191,8 +189,46 @@ setadc(uint32_t op1, uint32_t op2, uint32_t result)
 	}
 }
 
+/**
+ * Update the NZCV flags following a sbc instruction.
+ *
+ * @param op1 The left operand
+ * @param op2 The right operand
+ * @param result The result of the operation
+ */
 static inline void
-setzn(uint32_t op)
+arm_flags_sbc(uint32_t op1, uint32_t op2, uint32_t result)
+{
+	arm.reg[cpsr] &= ~0xf0000000;
+
+	if (result == 0) {
+		arm.reg[cpsr] |= ZFLAG;
+	} else if (checkneg(result)) {
+		arm.reg[cpsr] |= NFLAG;
+	}
+	if ((checkneg(op1) && checkpos(op2)) ||
+	    (checkneg(op1) && checkpos(result)) ||
+	    (checkpos(op2) && checkpos(result)))
+	{
+		arm.reg[cpsr] |= CFLAG;
+	}
+	if ((checkneg(op1) && checkpos(op2) && checkpos(result)) ||
+	    (checkpos(op1) && checkneg(op2) && checkneg(result)))
+	{
+		arm.reg[cpsr] |= VFLAG;
+	}
+}
+
+/**
+ * Update the N and Z flags following a logical or multiply instruction.
+ *
+ * The Z flag will be set if the result equals 0.
+ * The N flag will be set if the result has bit 31 set.
+ *
+ * @param result The result of the operation
+ */
+static inline void
+arm_flags_logical(uint32_t op)
 {
 	uint32_t flags;
 

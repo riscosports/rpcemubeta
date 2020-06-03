@@ -604,7 +604,7 @@ arm_exec(void)
 					// MULS
 					arm.reg[MULRD] = (MULRD == MULRM) ? 0 :
 					    (arm.reg[MULRM] * arm.reg[MULRS]);
-					setzn(arm.reg[MULRD]);
+					arm_flags_logical(arm.reg[MULRD]);
 				} else {
 					lhs = GETADDR(RN);
 					if (RD == 15) {
@@ -612,7 +612,7 @@ arm_exec(void)
 					} else {
 						dest = lhs & shift(opcode);
 						arm.reg[RD] = dest;
-						setzn(dest);
+						arm_flags_logical(dest);
 					}
 				}
 				break;
@@ -633,7 +633,7 @@ arm_exec(void)
 					// MLAS
 					arm.reg[MULRD] = (MULRD == MULRM) ? 0 :
 					    (arm.reg[MULRM] * arm.reg[MULRS]) + arm.reg[MULRN];
-					setzn(arm.reg[MULRD]);
+					arm_flags_logical(arm.reg[MULRD]);
 				} else {
 					lhs = GETADDR(RN);
 					if (RD == 15) {
@@ -641,7 +641,7 @@ arm_exec(void)
 					} else {
 						dest = lhs ^ shift(opcode);
 						arm.reg[RD] = dest;
-						setzn(dest);
+						arm_flags_logical(dest);
 					}
 				}
 				break;
@@ -658,7 +658,7 @@ arm_exec(void)
 				if (RD == 15) {
 					arm_write_r15(opcode, dest);
 				} else {
-					setsub(lhs, rhs, dest);
+					arm_flags_sub(lhs, rhs, dest);
 					arm.reg[RD] = dest;
 				}
 				break;
@@ -675,7 +675,7 @@ arm_exec(void)
 				if (RD == 15) {
 					arm_write_r15(opcode, dest);
 				} else {
-					setsub(rhs, lhs, dest);
+					arm_flags_sub(rhs, lhs, dest);
 					arm.reg[RD] = dest;
 				}
 				break;
@@ -713,7 +713,7 @@ arm_exec(void)
 				if (RD == 15) {
 					arm_write_r15(opcode, dest);
 				} else {
-					setadd(lhs, rhs, dest);
+					arm_flags_add(lhs, rhs, dest);
 					arm.reg[RD] = dest;
 				}
 				break;
@@ -755,7 +755,7 @@ arm_exec(void)
 				if (RD == 15) {
 					arm_write_r15(opcode, dest);
 				} else {
-					setadc(lhs, rhs, dest);
+					arm_flags_adc(lhs, rhs, dest);
 					arm.reg[RD] = dest;
 				}
 				break;
@@ -793,7 +793,7 @@ arm_exec(void)
 				if (RD == 15) {
 					arm_write_r15(opcode, dest);
 				} else {
-					setsbc(lhs, rhs, dest);
+					arm_flags_sbc(lhs, rhs, dest);
 					arm.reg[RD] = dest;
 				}
 				break;
@@ -835,7 +835,7 @@ arm_exec(void)
 				if (RD == 15) {
 					arm_write_r15(opcode, dest);
 				} else {
-					setsbc(rhs, lhs, dest);
+					arm_flags_sbc(rhs, lhs, dest);
 					arm.reg[RD] = dest;
 				}
 				break;
@@ -877,7 +877,7 @@ arm_exec(void)
 					// TSTP reg
 					arm_compare_rd15(opcode, lhs & shift2(opcode));
 				} else {
-					setzn(lhs & shift(opcode));
+					arm_flags_logical(lhs & shift(opcode));
 				}
 				break;
 
@@ -897,7 +897,7 @@ arm_exec(void)
 					// TEQP reg
 					arm_compare_rd15(opcode, lhs ^ shift2(opcode));
 				} else {
-					setzn(lhs ^ shift(opcode));
+					arm_flags_logical(lhs ^ shift(opcode));
 				}
 				break;
 
@@ -935,7 +935,7 @@ arm_exec(void)
 					// CMPP reg
 					arm_compare_rd15(opcode, dest);
 				} else {
-					setsub(lhs, rhs, dest);
+					arm_flags_sub(lhs, rhs, dest);
 				}
 				break;
 
@@ -957,7 +957,7 @@ arm_exec(void)
 					// CMNP reg
 					arm_compare_rd15(opcode, dest);
 				} else {
-					setadd(lhs, rhs, dest);
+					arm_flags_add(lhs, rhs, dest);
 				}
 				break;
 
@@ -973,7 +973,7 @@ arm_exec(void)
 				} else {
 					dest = lhs | shift(opcode);
 					arm.reg[RD] = dest;
-					setzn(dest);
+					arm_flags_logical(dest);
 				}
 				break;
 
@@ -987,7 +987,7 @@ arm_exec(void)
 					arm_write_r15(opcode, shift2(opcode));
 				} else {
 					arm.reg[RD] = shift(opcode);
-					setzn(arm.reg[RD]);
+					arm_flags_logical(arm.reg[RD]);
 				}
 				break;
 
@@ -1003,7 +1003,7 @@ arm_exec(void)
 				} else {
 					dest = lhs & ~shift(opcode);
 					arm.reg[RD] = dest;
-					setzn(dest);
+					arm_flags_logical(dest);
 				}
 				break;
 
@@ -1017,7 +1017,7 @@ arm_exec(void)
 					arm_write_r15(opcode, ~shift2(opcode));
 				} else {
 					arm.reg[RD] = ~shift(opcode);
-					setzn(arm.reg[RD]);
+					arm_flags_logical(arm.reg[RD]);
 				}
 				break;
 
@@ -1033,7 +1033,7 @@ arm_exec(void)
 				} else {
 					dest = lhs & arm_imm_cflag(opcode);
 					arm.reg[RD] = dest;
-					setzn(dest);
+					arm_flags_logical(dest);
 				}
 				break;
 
@@ -1049,7 +1049,7 @@ arm_exec(void)
 				} else {
 					dest = lhs ^ arm_imm_cflag(opcode);
 					arm.reg[RD] = dest;
-					setzn(dest);
+					arm_flags_logical(dest);
 				}
 				break;
 
@@ -1066,7 +1066,7 @@ arm_exec(void)
 					arm_write_r15(opcode, dest);
 				} else {
 					arm.reg[RD] = dest;
-					setsub(lhs, rhs, dest);
+					arm_flags_sub(lhs, rhs, dest);
 				}
 				break;
 
@@ -1082,7 +1082,7 @@ arm_exec(void)
 				if (RD == 15) {
 					arm_write_r15(opcode, dest);
 				} else {
-					setsub(rhs, lhs, dest);
+					arm_flags_sub(rhs, lhs, dest);
 					arm.reg[RD] = dest;
 				}
 				break;
@@ -1099,7 +1099,7 @@ arm_exec(void)
 				if (RD == 15) {
 					arm_write_r15(opcode, dest);
 				} else {
-					setadd(lhs, rhs, dest);
+					arm_flags_add(lhs, rhs, dest);
 					arm.reg[RD] = dest;
 				}
 				break;
@@ -1116,7 +1116,7 @@ arm_exec(void)
 				if (RD == 15) {
 					arm_write_r15(opcode, dest);
 				} else {
-					setadc(lhs, rhs, dest);
+					arm_flags_adc(lhs, rhs, dest);
 					arm.reg[RD] = dest;
 				}
 				break;
@@ -1133,7 +1133,7 @@ arm_exec(void)
 				if (RD == 15) {
 					arm_write_r15(opcode, dest);
 				} else {
-					setsbc(lhs, rhs, dest);
+					arm_flags_sbc(lhs, rhs, dest);
 					arm.reg[RD] = dest;
 				}
 				break;
@@ -1150,7 +1150,7 @@ arm_exec(void)
 				if (RD == 15) {
 					arm_write_r15(opcode, dest);
 				} else {
-					setsbc(rhs, lhs, dest);
+					arm_flags_sbc(rhs, lhs, dest);
 					arm.reg[RD] = dest;
 				}
 				break;
@@ -1161,7 +1161,7 @@ arm_exec(void)
 					// TSTP imm
 					arm_compare_rd15(opcode, lhs & arm_imm(opcode));
 				} else {
-					setzn(lhs & arm_imm_cflag(opcode));
+					arm_flags_logical(lhs & arm_imm_cflag(opcode));
 				}
 				break;
 
@@ -1181,7 +1181,7 @@ arm_exec(void)
 					// TEQP imm
 					arm_compare_rd15(opcode, lhs ^ arm_imm(opcode));
 				} else {
-					setzn(lhs ^ arm_imm_cflag(opcode));
+					arm_flags_logical(lhs ^ arm_imm_cflag(opcode));
 				}
 				break;
 
@@ -1193,7 +1193,7 @@ arm_exec(void)
 					// CMPP imm
 					arm_compare_rd15(opcode, dest);
 				} else {
-					setsub(lhs, rhs, dest);
+					arm_flags_sub(lhs, rhs, dest);
 				}
 				break;
 
@@ -1215,7 +1215,7 @@ arm_exec(void)
 					// CMNP imm
 					arm_compare_rd15(opcode, dest);
 				} else {
-					setadd(lhs, rhs, dest);
+					arm_flags_add(lhs, rhs, dest);
 				}
 				break;
 
@@ -1231,7 +1231,7 @@ arm_exec(void)
 				} else {
 					dest = lhs | arm_imm_cflag(opcode);
 					arm.reg[RD] = dest;
-					setzn(dest);
+					arm_flags_logical(dest);
 				}
 				break;
 
@@ -1245,7 +1245,7 @@ arm_exec(void)
 					arm_write_r15(opcode, arm_imm(opcode));
 				} else {
 					arm.reg[RD] = arm_imm_cflag(opcode);
-					setzn(arm.reg[RD]);
+					arm_flags_logical(arm.reg[RD]);
 				}
 				break;
 
@@ -1261,7 +1261,7 @@ arm_exec(void)
 				} else {
 					dest = lhs & ~arm_imm_cflag(opcode);
 					arm.reg[RD] = dest;
-					setzn(dest);
+					arm_flags_logical(dest);
 				}
 				break;
 
@@ -1275,7 +1275,7 @@ arm_exec(void)
 					arm_write_r15(opcode, ~arm_imm(opcode));
 				} else {
 					arm.reg[RD] = ~arm_imm_cflag(opcode);
-					setzn(arm.reg[RD]);
+					arm_flags_logical(arm.reg[RD]);
 				}
 				break;
 
