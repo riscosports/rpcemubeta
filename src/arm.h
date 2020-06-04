@@ -77,6 +77,7 @@ extern ARMState arm;
 
 extern int prog32;
 extern int blockend;
+extern int linecyc;
 
 extern int lastflagchange;
 

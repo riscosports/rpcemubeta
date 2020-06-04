@@ -1337,8 +1337,6 @@ generatepcinc(void)
         if (codeblockpos>=1200) blockend=1;
 }
 
-int linecyc;
-
 void
 endblock(uint32_t opcode)
 {

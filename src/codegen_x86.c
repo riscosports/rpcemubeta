@@ -33,8 +33,6 @@
 #include "arm.h"
 #include "arm_common.h"
 
-int linecyc;
-
 uint8_t rcodeblock[BLOCKS][1792+512+64] __attribute__ ((aligned (4096)));
 static const void *codeblockaddr[BLOCKS];
 uint32_t codeblockpc[0x8000];
