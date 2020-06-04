@@ -6,9 +6,14 @@ CONFIG += debug_and_release
 QT += core widgets gui multimedia
 INCLUDEPATH += ../
 
-# This ensures that using switch with enum requires every value to be handled
-QMAKE_CFLAGS += -Werror=switch
-QMAKE_CXXFLAGS += -Werror=switch
+# -Werror=switch
+#	Ensures that using switch with enum requires every value to be handled
+# -fno-common
+#	Common symbols across object files will produce a link error
+#	This is the default from GCC 10
+#
+QMAKE_CFLAGS   += -Werror=switch -fno-common
+QMAKE_CXXFLAGS += -Werror=switch -fno-common
 
 
 HEADERS =	../superio.h \
