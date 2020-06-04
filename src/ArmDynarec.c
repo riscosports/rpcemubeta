@@ -624,47 +624,46 @@ static const unsigned char validforskip[64]=
         1,        0,        1,        0,        1,       0,        1,       0
 };
 
-static const OpFn opcodes[256]=
-{
-	opANDreg, opANDregS,opEORreg, opEORregS,opSUBreg,opSUBregS,opRSBreg,opRSBregS,   //00
-	opADDreg, opADDregS,opADCreg, opADCregS,opSBCreg,opSBCregS,opRSCreg,opRSCregS,   //08
-	(OpFn)opSWPword,opTSTreg, opMSRcreg,opTEQreg, (OpFn)opSWPbyte,opCMPreg,opMSRsreg,opCMNreg,   //10
-	opORRreg, opORRregS,opMOVreg, opMOVregS,opBICreg,opBICregS,opMVNreg,opMVNregS,   //18
+static const OpFn opcodes[256] = {
+	opANDreg,  opANDregS, opEORreg,  opEORregS, opSUBreg,  opSUBregS, opRSBreg,  opRSBregS, // 00
+	opADDreg,  opADDregS, opADCreg,  opADCregS, opSBCreg,  opSBCregS, opRSCreg,  opRSCregS, // 08
+	opSWPword, opTSTreg,  opMSRcreg, opTEQreg,  opSWPbyte, opCMPreg,  opMSRsreg, opCMNreg,  // 10
+	opORRreg,  opORRregS, opMOVreg,  opMOVregS, opBICreg,  opBICregS, opMVNreg,  opMVNregS, // 18
 
-	opANDimm, opANDimmS,opEORimm, opEORimmS,opSUBimm, opSUBimmS,opRSBimm, opRSBimmS, //20
-	opADDimm, opADDimmS,opADCimm, opADCimmS,opSBCimm, opSBCimmS,opRSCimm, opRSCimmS, //28
-	opUNALLOC,opTSTimm, opMSRcimm,opTEQimm, opUNALLOC,opCMPimm, opMSRsimm,opCMNimm,  //30
-	opORRimm, opORRimmS,opMOVimm, opMOVimmS,opBICimm, opBICimmS,opMVNimm, opMVNimmS, //38
+	opANDimm,  opANDimmS, opEORimm,  opEORimmS, opSUBimm,  opSUBimmS, opRSBimm,  opRSBimmS, // 20
+	opADDimm,  opADDimmS, opADCimm,  opADCimmS, opSBCimm,  opSBCimmS, opRSCimm,  opRSCimmS, // 28
+	opUNALLOC, opTSTimm,  opMSRcimm, opTEQimm,  opUNALLOC, opCMPimm,  opMSRsimm, opCMNimm,  // 30
+	opORRimm,  opORRimmS, opMOVimm,  opMOVimmS, opBICimm,  opBICimmS, opMVNimm,  opMVNimmS, // 38
 
-	(OpFn)opSTR,    (OpFn)opLDR,    (OpFn)opSTRT,   (OpFn)opLDRT,   (OpFn)opSTRB,   (OpFn)opLDRB,   (OpFn)opSTRBT,  (OpFn)opLDRBT,   //40
-	(OpFn)opSTR,    (OpFn)opLDR,    (OpFn)opSTRT,   (OpFn)opLDRT,   (OpFn)opSTRB,   (OpFn)opLDRB,   (OpFn)opSTRBT,  (OpFn)opLDRBT,   //48
-	(OpFn)opSTR,    (OpFn)opLDR,    (OpFn)opSTR,    (OpFn)opLDR,    (OpFn)opSTRB,   (OpFn)opLDRB,   (OpFn)opSTRB,   (OpFn)opLDRB,    //50
-	(OpFn)opSTR,    (OpFn)opLDR,    (OpFn)opSTR,    (OpFn)opLDR,    (OpFn)opSTRB,   (OpFn)opLDRB,   (OpFn)opSTRB,   (OpFn)opLDRB,    //58
+	opSTR,    opLDR,    opSTRT,   opLDRT,   opSTRB,   opLDRB,   opSTRBT,  opLDRBT,   // 40
+	opSTR,    opLDR,    opSTRT,   opLDRT,   opSTRB,   opLDRB,   opSTRBT,  opLDRBT,   // 48
+	opSTR,    opLDR,    opSTR,    opLDR,    opSTRB,   opLDRB,   opSTRB,   opLDRB,    // 50
+	opSTR,    opLDR,    opSTR,    opLDR,    opSTRB,   opLDRB,   opSTRB,   opLDRB,    // 58
 
-	(OpFn)opSTR,    (OpFn)opLDR,    (OpFn)opSTRT,   (OpFn)opLDRT,   (OpFn)opSTRB,   (OpFn)opLDRB,   (OpFn)opSTRBT,  (OpFn)opLDRBT,   //60
-	(OpFn)opSTR,    (OpFn)opLDR,    (OpFn)opSTRT,   (OpFn)opLDRT,   (OpFn)opSTRB,   (OpFn)opLDRB,   (OpFn)opSTRBT,  (OpFn)opLDRBT,   //68
-	(OpFn)opSTR,    (OpFn)opLDR,    (OpFn)opSTR,    (OpFn)opLDR,    (OpFn)opSTRB,   (OpFn)opLDRB,   (OpFn)opSTRB,   (OpFn)opLDRB,    //70
-        (OpFn)opSTR,    (OpFn)opLDR,    (OpFn)opSTR,    (OpFn)opLDR,    (OpFn)opSTRB,   (OpFn)opLDRB,   (OpFn)opSTRB,   (OpFn)opLDRB,    //78
+	opSTR,    opLDR,    opSTRT,   opLDRT,   opSTRB,   opLDRB,   opSTRBT,  opLDRBT,   // 60
+	opSTR,    opLDR,    opSTRT,   opLDRT,   opSTRB,   opLDRB,   opSTRBT,  opLDRBT,   // 68
+	opSTR,    opLDR,    opSTR,    opLDR,    opSTRB,   opLDRB,   opSTRB,   opLDRB,    // 70
+	opSTR,    opLDR,    opSTR,    opLDR,    opSTRB,   opLDRB,   opSTRB,   opLDRB,    // 78
 
-	(OpFn)opSTMD,   (OpFn)opLDMD,   (OpFn)opSTMD,   (OpFn)opLDMD,   (OpFn)opSTMDS,  (OpFn)opLDMDS,  (OpFn)opSTMDS,  (OpFn)opLDMDS,   //80
-	(OpFn)opSTMI,   (OpFn)opLDMI,   (OpFn)opSTMI,   (OpFn)opLDMI,   (OpFn)opSTMIS,  (OpFn)opLDMIS,  (OpFn)opSTMIS,  (OpFn)opLDMIS,   //88
-	(OpFn)opSTMD,   (OpFn)opLDMD,   (OpFn)opSTMD,   (OpFn)opLDMD,   (OpFn)opSTMDS,  (OpFn)opLDMDS,  (OpFn)opSTMDS,  (OpFn)opLDMDS,   //90
-	(OpFn)opSTMI,   (OpFn)opLDMI,   (OpFn)opSTMI,   (OpFn)opLDMI,   (OpFn)opSTMIS,  (OpFn)opLDMIS,  (OpFn)opSTMIS,  (OpFn)opLDMIS,   //98
+	opSTMD,   opLDMD,   opSTMD,   opLDMD,   opSTMDS,  opLDMDS,  opSTMDS,  opLDMDS,   // 80
+	opSTMI,   opLDMI,   opSTMI,   opLDMI,   opSTMIS,  opLDMIS,  opSTMIS,  opLDMIS,   // 88
+	opSTMD,   opLDMD,   opSTMD,   opLDMD,   opSTMDS,  opLDMDS,  opSTMDS,  opLDMDS,   // 90
+	opSTMI,   opLDMI,   opSTMI,   opLDMI,   opSTMIS,  opLDMIS,  opSTMIS,  opLDMIS,   // 98
 
-	opB,	  opB,	    opB,      opB,      opB,      opB,      opB,      opB,       //A0
-	opB,	  opB,	    opB,      opB,      opB,      opB,      opB,      opB,       //A8
-	opBL,	  opBL,	    opBL,     opBL,     opBL,     opBL,     opBL,     opBL,      //B0
-	opBL,	  opBL,	    opBL,     opBL,     opBL,     opBL,     opBL,     opBL,      //B8
+	opB,      opB,      opB,      opB,      opB,      opB,      opB,      opB,       // a0
+	opB,      opB,      opB,      opB,      opB,      opB,      opB,      opB,       // a8
+	opBL,     opBL,     opBL,     opBL,     opBL,     opBL,     opBL,     opBL,      // b0
+	opBL,     opBL,     opBL,     opBL,     opBL,     opBL,     opBL,     opBL,      // b8
 
-	opcopro,  opcopro,  opcopro,  opcopro,  opcopro,  opcopro,  opcopro,  opcopro,   //C0
-	opcopro,  opcopro,  opcopro,  opcopro,  opcopro,  opcopro,  opcopro,  opcopro,   //C8
-	opcopro,  opcopro,  opcopro,  opcopro,  opcopro,  opcopro,  opcopro,  opcopro,   //D0
-	opcopro,  opcopro,  opcopro,  opcopro,  opcopro,  opcopro,  opcopro,  opcopro,   //D8
+	opcopro,  opcopro,  opcopro,  opcopro,  opcopro,  opcopro,  opcopro,  opcopro,   // c0
+	opcopro,  opcopro,  opcopro,  opcopro,  opcopro,  opcopro,  opcopro,  opcopro,   // c8
+	opcopro,  opcopro,  opcopro,  opcopro,  opcopro,  opcopro,  opcopro,  opcopro,   // d0
+	opcopro,  opcopro,  opcopro,  opcopro,  opcopro,  opcopro,  opcopro,  opcopro,   // d8
 
-	opMCR,    opMRC,    opMCR,    opMRC,    opMCR,    opMRC,    opMCR,    opMRC,     //E0
-	opMCR,    opMRC,    opMCR,    opMRC,    opMCR,    opMRC,    opMCR,    opMRC,     //E8
-	opSWI,	  opSWI,    opSWI,    opSWI,	opSWI,	  opSWI,    opSWI,    opSWI,     //F0
-	opSWI,	  opSWI,    opSWI,    opSWI,	opSWI,	  opSWI,    opSWI,    opSWI      //F8
+	opMCR,    opMRC,    opMCR,    opMRC,    opMCR,    opMRC,    opMCR,    opMRC,     // e0
+	opMCR,    opMRC,    opMCR,    opMRC,    opMCR,    opMRC,    opMCR,    opMRC,     // e8
+	opSWI,    opSWI,    opSWI,    opSWI,    opSWI,    opSWI,    opSWI,    opSWI,     // f0
+	opSWI,    opSWI,    opSWI,    opSWI,    opSWI,    opSWI,    opSWI,    opSWI      // f8
 };
 
 int linecyc=0;
@@ -703,16 +702,16 @@ arm_opcode_fn(uint32_t opcode)
 		if ((opcode & 0xe0000f0) == 0xb0) {
 			// LDRH/STRH
 			if (opcode & 0x100000) {
-				return (OpFn) opLDRH;
+				return opLDRH;
 			} else {
-				return (OpFn) opSTRH;
+				return opSTRH;
 			}
 		} else if ((opcode & 0xe1000d0) == 0x1000d0) {
 			// LDRSB/LDRSH
 			if ((opcode & 0xf0) == 0xd0) {
-				return (OpFn) opLDRSB;
+				return opLDRSB;
 			} else {
-				return (OpFn) opLDRSH;
+				return opLDRSH;
 			}
 		}
 	}

@@ -30,7 +30,7 @@ extern void arm_store_multiple(uint32_t opcode, uint32_t address, uint32_t write
 extern void arm_store_multiple_s(uint32_t opcode, uint32_t address, uint32_t writeback);
 extern void arm_load_multiple(uint32_t opcode, uint32_t address, uint32_t writeback);
 extern void arm_load_multiple_s(uint32_t opcode, uint32_t address, uint32_t writeback);
-extern void opSWI(uint32_t opcode);
+extern int opSWI(uint32_t opcode);
 
 #define refillpipeline() blockend=1;
 

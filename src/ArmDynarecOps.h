@@ -18,7 +18,7 @@
   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-static void
+static int
 opANDreg(uint32_t opcode)
 {
 	uint32_t dest;
@@ -31,9 +31,10 @@ opANDreg(uint32_t opcode)
 		dest = GETADDR(RN) & shift2(opcode);
 		arm_write_dest(opcode, dest);
 	}
+	return 0;
 }
 
-static void
+static int
 opANDregS(uint32_t opcode)
 {
 	uint32_t lhs, dest;
@@ -53,9 +54,10 @@ opANDregS(uint32_t opcode)
 			arm_flags_logical(dest);
 		}
 	}
+	return 0;
 }
 
-static void
+static int
 opEORreg(uint32_t opcode)
 {
 	uint32_t dest;
@@ -68,9 +70,10 @@ opEORreg(uint32_t opcode)
 		dest = GETADDR(RN) ^ shift2(opcode);
 		arm_write_dest(opcode, dest);
 	}
+	return 0;
 }
 
-static void
+static int
 opEORregS(uint32_t opcode)
 {
 	uint32_t lhs, dest;
@@ -90,18 +93,20 @@ opEORregS(uint32_t opcode)
 			arm_flags_logical(dest);
 		}
 	}
+	return 0;
 }
 
-static void
+static int
 opSUBreg(uint32_t opcode)
 {
 	uint32_t dest;
 
 	dest = GETADDR(RN) - shift2(opcode);
 	arm_write_dest(opcode, dest);
+	return 0;
 }
 
-static void
+static int
 opSUBregS(uint32_t opcode)
 {
 	uint32_t lhs, rhs, dest;
@@ -115,18 +120,20 @@ opSUBregS(uint32_t opcode)
 		arm_flags_sub(lhs, rhs, dest);
 		arm.reg[RD] = dest;
 	}
+	return 0;
 }
 
-static void
+static int
 opRSBreg(uint32_t opcode)
 {
 	uint32_t dest;
 
 	dest = shift2(opcode) - GETADDR(RN);
 	arm_write_dest(opcode, dest);
+	return 0;
 }
 
-static void
+static int
 opRSBregS(uint32_t opcode)
 {
 	uint32_t lhs, rhs, dest;
@@ -140,9 +147,10 @@ opRSBregS(uint32_t opcode)
 		arm_flags_sub(rhs, lhs, dest);
 		arm.reg[RD] = dest;
 	}
+	return 0;
 }
 
-static void
+static int
 opADDreg(uint32_t opcode)
 {
 	uint32_t dest;
@@ -155,13 +163,14 @@ opADDreg(uint32_t opcode)
 
 		arm.reg[MULRN] = (uint32_t) mulres;
 		arm.reg[MULRD] = (uint32_t) (mulres >> 32);
-		return;
+		return 0;
 	}
 	dest = GETADDR(RN) + shift2(opcode);
 	arm_write_dest(opcode, dest);
+	return 0;
 }
 
-static void
+static int
 opADDregS(uint32_t opcode)
 {
 	uint32_t lhs, rhs, dest;
@@ -175,7 +184,7 @@ opADDregS(uint32_t opcode)
 		arm.reg[MULRN] = (uint32_t) mulres;
 		arm.reg[MULRD] = (uint32_t) (mulres >> 32);
 		arm_flags_long_multiply(mulres);
-		return;
+		return 0;
 	}
 	lhs = GETADDR(RN);
 	rhs = shift2(opcode);
@@ -186,9 +195,10 @@ opADDregS(uint32_t opcode)
 		arm_flags_add(lhs, rhs, dest);
 		arm.reg[RD] = dest;
 	}
+	return 0;
 }
 
-static void
+static int
 opADCreg(uint32_t opcode)
 {
 	uint32_t dest;
@@ -203,13 +213,14 @@ opADCreg(uint32_t opcode)
 
 		arm.reg[MULRN] = (uint32_t) mulres;
 		arm.reg[MULRD] = (uint32_t) (mulres >> 32);
-		return;
+		return 0;
 	}
 	dest = GETADDR(RN) + shift2(opcode) + CFSET;
 	arm_write_dest(opcode, dest);
+	return 0;
 }
 
-static void
+static int
 opADCregS(uint32_t opcode)
 {
 	uint32_t lhs, rhs, dest;
@@ -225,7 +236,7 @@ opADCregS(uint32_t opcode)
 		arm.reg[MULRN] = (uint32_t) mulres;
 		arm.reg[MULRD] = (uint32_t) (mulres >> 32);
 		arm_flags_long_multiply(mulres);
-		return;
+		return 0;
 	}
 	lhs = GETADDR(RN);
 	rhs = shift2(opcode);
@@ -236,9 +247,10 @@ opADCregS(uint32_t opcode)
 		arm_flags_adc(lhs, rhs, dest);
 		arm.reg[RD] = dest;
 	}
+	return 0;
 }
 
-static void
+static int
 opSBCreg(uint32_t opcode)
 {
 	uint32_t dest;
@@ -251,13 +263,14 @@ opSBCreg(uint32_t opcode)
 
 		arm.reg[MULRN] = (uint32_t) mulres;
 		arm.reg[MULRD] = (uint32_t) (mulres >> 32);
-		return;
+		return 0;
 	}
 	dest = GETADDR(RN) - shift2(opcode) - ((CFSET) ? 0 : 1);
 	arm_write_dest(opcode, dest);
+	return 0;
 }
 
-static void
+static int
 opSBCregS(uint32_t opcode)
 {
 	uint32_t lhs, rhs, dest;
@@ -271,7 +284,7 @@ opSBCregS(uint32_t opcode)
 		arm.reg[MULRN] = (uint32_t) mulres;
 		arm.reg[MULRD] = (uint32_t) (mulres >> 32);
 		arm_flags_long_multiply(mulres);
-		return;
+		return 0;
 	}
 	lhs = GETADDR(RN);
 	rhs = shift2(opcode);
@@ -282,9 +295,10 @@ opSBCregS(uint32_t opcode)
 		arm_flags_sbc(lhs, rhs, dest);
 		arm.reg[RD] = dest;
 	}
+	return 0;
 }
 
-static void
+static int
 opRSCreg(uint32_t opcode)
 {
 	uint32_t dest;
@@ -299,13 +313,14 @@ opRSCreg(uint32_t opcode)
 
 		arm.reg[MULRN] = (uint32_t) mulres;
 		arm.reg[MULRD] = (uint32_t) (mulres >> 32);
-		return;
+		return 0;
 	}
 	dest = shift2(opcode) - GETADDR(RN) - ((CFSET) ? 0 : 1);
 	arm_write_dest(opcode, dest);
+	return 0;
 }
 
-static void
+static int
 opRSCregS(uint32_t opcode)
 {
 	uint32_t lhs, rhs, dest;
@@ -321,7 +336,7 @@ opRSCregS(uint32_t opcode)
 		arm.reg[MULRN] = (uint32_t) mulres;
 		arm.reg[MULRD] = (uint32_t) (mulres >> 32);
 		arm_flags_long_multiply(mulres);
-		return;
+		return 0;
 	}
 	lhs = GETADDR(RN);
 	rhs = shift2(opcode);
@@ -332,6 +347,7 @@ opRSCregS(uint32_t opcode)
 		arm_flags_sbc(rhs, lhs, dest);
 		arm.reg[RD] = dest;
 	}
+	return 0;
 }
 
 static int
@@ -370,7 +386,7 @@ opSWPword(uint32_t opcode)
 	return 0;
 }
 
-static void
+static int
 opTSTreg(uint32_t opcode)
 {
 	uint32_t lhs;
@@ -382,9 +398,10 @@ opTSTreg(uint32_t opcode)
 	} else {
 		arm_flags_logical(lhs & shift(opcode));
 	}
+	return 0;
 }
 
-static void
+static int
 opMSRcreg(uint32_t opcode)
 {
 	if ((opcode & 0xf010) == 0xf000) {
@@ -395,9 +412,10 @@ opMSRcreg(uint32_t opcode)
 	} else {
 		arm_unpredictable(opcode);
 	}
+	return 0;
 }
 
-static void
+static int
 opTEQreg(uint32_t opcode)
 {
 	uint32_t lhs;
@@ -409,6 +427,7 @@ opTEQreg(uint32_t opcode)
 	} else {
 		arm_flags_logical(lhs ^ shift(opcode));
 	}
+	return 0;
 }
 
 static int
@@ -442,7 +461,7 @@ opSWPbyte(uint32_t opcode)
 	return 0;
 }
 
-static void
+static int
 opCMPreg(uint32_t opcode)
 {
 	uint32_t lhs, rhs, dest;
@@ -456,9 +475,10 @@ opCMPreg(uint32_t opcode)
 	} else {
 		arm_flags_sub(lhs, rhs, dest);
 	}
+	return 0;
 }
 
-static void
+static int
 opMSRsreg(uint32_t opcode)
 {
 	if ((opcode & 0xf010) == 0xf000) {
@@ -469,9 +489,10 @@ opMSRsreg(uint32_t opcode)
 	} else {
 		arm_unpredictable(opcode);
 	}
+	return 0;
 }
 
-static void
+static int
 opCMNreg(uint32_t opcode)
 {
 	uint32_t lhs, rhs, dest;
@@ -485,18 +506,20 @@ opCMNreg(uint32_t opcode)
 	} else {
 		arm_flags_add(lhs, rhs, dest);
 	}
+	return 0;
 }
 
-static void
+static int
 opORRreg(uint32_t opcode)
 {
 	uint32_t dest;
 
 	dest = GETADDR(RN) | shift2(opcode);
 	arm_write_dest(opcode, dest);
+	return 0;
 }
 
-static void
+static int
 opORRregS(uint32_t opcode)
 {
 	uint32_t lhs, dest;
@@ -509,18 +532,20 @@ opORRregS(uint32_t opcode)
 		arm.reg[RD] = dest;
 		arm_flags_logical(dest);
 	}
+	return 0;
 }
 
-static void
+static int
 opMOVreg(uint32_t opcode)
 {
 	uint32_t dest;
 
 	dest = shift2(opcode);
 	arm_write_dest(opcode, dest);
+	return 0;
 }
 
-static void
+static int
 opMOVregS(uint32_t opcode)
 {
 	if (RD == 15) {
@@ -529,18 +554,20 @@ opMOVregS(uint32_t opcode)
 		arm.reg[RD] = shift(opcode);
 		arm_flags_logical(arm.reg[RD]);
 	}
+	return 0;
 }
 
-static void
+static int
 opBICreg(uint32_t opcode)
 {
 	uint32_t dest;
 
 	dest = GETADDR(RN) & ~shift2(opcode);
 	arm_write_dest(opcode, dest);
+	return 0;
 }
 
-static void
+static int
 opBICregS(uint32_t opcode)
 {
 	uint32_t lhs, dest;
@@ -553,18 +580,20 @@ opBICregS(uint32_t opcode)
 		arm.reg[RD] = dest;
 		arm_flags_logical(dest);
 	}
+	return 0;
 }
 
-static void
+static int
 opMVNreg(uint32_t opcode)
 {
 	uint32_t dest;
 
 	dest = ~shift2(opcode);
 	arm_write_dest(opcode, dest);
+	return 0;
 }
 
-static void
+static int
 opMVNregS(uint32_t opcode)
 {
 	if (RD == 15) {
@@ -573,18 +602,20 @@ opMVNregS(uint32_t opcode)
 		arm.reg[RD] = ~shift(opcode);
 		arm_flags_logical(arm.reg[RD]);
 	}
+	return 0;
 }
 
-static void
+static int
 opANDimm(uint32_t opcode)
 {
 	uint32_t dest;
 
 	dest = GETADDR(RN) & arm_imm(opcode);
 	arm_write_dest(opcode, dest);
+	return 0;
 }
 
-static void
+static int
 opANDimmS(uint32_t opcode)
 {
 	uint32_t lhs, dest;
@@ -597,18 +628,20 @@ opANDimmS(uint32_t opcode)
 		arm.reg[RD] = dest;
 		arm_flags_logical(dest);
 	}
+	return 0;
 }
 
-static void
+static int
 opEORimm(uint32_t opcode)
 {
 	uint32_t dest;
 
 	dest = GETADDR(RN) ^ arm_imm(opcode);
 	arm_write_dest(opcode, dest);
+	return 0;
 }
 
-static void
+static int
 opEORimmS(uint32_t opcode)
 {
 	uint32_t lhs, dest;
@@ -621,18 +654,20 @@ opEORimmS(uint32_t opcode)
 		arm.reg[RD] = dest;
 		arm_flags_logical(dest);
 	}
+	return 0;
 }
 
-static void
+static int
 opSUBimm(uint32_t opcode)
 {
 	uint32_t dest;
 
 	dest = GETADDR(RN) - arm_imm(opcode);
 	arm_write_dest(opcode, dest);
+	return 0;
 }
 
-static void
+static int
 opSUBimmS(uint32_t opcode)
 {
 	uint32_t lhs, rhs, dest;
@@ -646,18 +681,20 @@ opSUBimmS(uint32_t opcode)
 		arm.reg[RD] = dest;
 		arm_flags_sub(lhs, rhs, dest);
 	}
+	return 0;
 }
 
-static void
+static int
 opRSBimm(uint32_t opcode)
 {
 	uint32_t dest;
 
 	dest = arm_imm(opcode) - GETADDR(RN);
 	arm_write_dest(opcode, dest);
+	return 0;
 }
 
-static void
+static int
 opRSBimmS(uint32_t opcode)
 {
 	uint32_t lhs, rhs, dest;
@@ -671,18 +708,20 @@ opRSBimmS(uint32_t opcode)
 		arm_flags_sub(rhs, lhs, dest);
 		arm.reg[RD] = dest;
 	}
+	return 0;
 }
 
-static void
+static int
 opADDimm(uint32_t opcode)
 {
 	uint32_t dest;
 
 	dest = GETADDR(RN) + arm_imm(opcode);
 	arm_write_dest(opcode, dest);
+	return 0;
 }
 
-static void
+static int
 opADDimmS(uint32_t opcode)
 {
 	uint32_t lhs, rhs, dest;
@@ -696,18 +735,20 @@ opADDimmS(uint32_t opcode)
 		arm_flags_add(lhs, rhs, dest);
 		arm.reg[RD] = dest;
 	}
+	return 0;
 }
 
-static void
+static int
 opADCimm(uint32_t opcode)
 {
 	uint32_t dest;
 
 	dest = GETADDR(RN) + arm_imm(opcode) + CFSET;
 	arm_write_dest(opcode, dest);
+	return 0;
 }
 
-static void
+static int
 opADCimmS(uint32_t opcode)
 {
 	uint32_t lhs, rhs, dest;
@@ -721,18 +762,20 @@ opADCimmS(uint32_t opcode)
 		arm_flags_adc(lhs, rhs, dest);
 		arm.reg[RD] = dest;
 	}
+	return 0;
 }
 
-static void
+static int
 opSBCimm(uint32_t opcode)
 {
 	uint32_t dest;
 
 	dest = GETADDR(RN) - arm_imm(opcode) - ((CFSET) ? 0 : 1);
 	arm_write_dest(opcode, dest);
+	return 0;
 }
 
-static void
+static int
 opSBCimmS(uint32_t opcode)
 {
 	uint32_t lhs, rhs, dest;
@@ -746,18 +789,20 @@ opSBCimmS(uint32_t opcode)
 		arm_flags_sbc(lhs, rhs, dest);
 		arm.reg[RD] = dest;
 	}
+	return 0;
 }
 
-static void
+static int
 opRSCimm(uint32_t opcode)
 {
 	uint32_t dest;
 
 	dest = arm_imm(opcode) - GETADDR(RN) - ((CFSET) ? 0 : 1);
 	arm_write_dest(opcode, dest);
+	return 0;
 }
 
-static void
+static int
 opRSCimmS(uint32_t opcode)
 {
 	uint32_t lhs, rhs, dest;
@@ -771,9 +816,10 @@ opRSCimmS(uint32_t opcode)
 		arm_flags_sbc(rhs, lhs, dest);
 		arm.reg[RD] = dest;
 	}
+	return 0;
 }
 
-static void
+static int
 opTSTimm(uint32_t opcode)
 {
 	uint32_t lhs;
@@ -785,9 +831,10 @@ opTSTimm(uint32_t opcode)
 	} else {
 		arm_flags_logical(lhs & arm_imm_cflag(opcode));
 	}
+	return 0;
 }
 
-static void
+static int
 opMSRcimm(uint32_t opcode)
 {
 	if (RD == 15) {
@@ -798,9 +845,10 @@ opMSRcimm(uint32_t opcode)
 	} else {
 		arm_unpredictable(opcode);
 	}
+	return 0;
 }
 
-static void
+static int
 opTEQimm(uint32_t opcode)
 {
 	uint32_t lhs;
@@ -812,9 +860,10 @@ opTEQimm(uint32_t opcode)
 	} else {
 		arm_flags_logical(lhs ^ arm_imm_cflag(opcode));
 	}
+	return 0;
 }
 
-static void
+static int
 opCMPimm(uint32_t opcode)
 {
 	uint32_t lhs, rhs, dest;
@@ -828,9 +877,10 @@ opCMPimm(uint32_t opcode)
 	} else {
 		arm_flags_sub(lhs, rhs, dest);
 	}
+	return 0;
 }
 
-static void
+static int
 opMSRsimm(uint32_t opcode)
 {
 	if (RD == 15) {
@@ -841,9 +891,10 @@ opMSRsimm(uint32_t opcode)
 	} else {
 		arm_unpredictable(opcode);
 	}
+	return 0;
 }
 
-static void
+static int
 opCMNimm(uint32_t opcode)
 {
 	uint32_t lhs, rhs, dest;
@@ -857,18 +908,20 @@ opCMNimm(uint32_t opcode)
 	} else {
 		arm_flags_add(lhs, rhs, dest);
 	}
+	return 0;
 }
 
-static void
+static int
 opORRimm(uint32_t opcode)
 {
 	uint32_t dest;
 
 	dest = GETADDR(RN) | arm_imm(opcode);
 	arm_write_dest(opcode, dest);
+	return 0;
 }
 
-static void
+static int
 opORRimmS(uint32_t opcode)
 {
 	uint32_t lhs, dest;
@@ -881,18 +934,20 @@ opORRimmS(uint32_t opcode)
 		arm.reg[RD] = dest;
 		arm_flags_logical(dest);
 	}
+	return 0;
 }
 
-static void
+static int
 opMOVimm(uint32_t opcode)
 {
 	uint32_t dest;
 
 	dest = arm_imm(opcode);
 	arm_write_dest(opcode, dest);
+	return 0;
 }
 
-static void
+static int
 opMOVimmS(uint32_t opcode)
 {
 	if (RD == 15) {
@@ -901,18 +956,20 @@ opMOVimmS(uint32_t opcode)
 		arm.reg[RD] = arm_imm_cflag(opcode);
 		arm_flags_logical(arm.reg[RD]);
 	}
+	return 0;
 }
 
-static void
+static int
 opBICimm(uint32_t opcode)
 {
 	uint32_t dest;
 
 	dest = GETADDR(RN) & ~arm_imm(opcode);
 	arm_write_dest(opcode, dest);
+	return 0;
 }
 
-static void
+static int
 opBICimmS(uint32_t opcode)
 {
 	uint32_t lhs, dest;
@@ -925,18 +982,20 @@ opBICimmS(uint32_t opcode)
 		arm.reg[RD] = dest;
 		arm_flags_logical(dest);
 	}
+	return 0;
 }
 
-static void
+static int
 opMVNimm(uint32_t opcode)
 {
 	uint32_t dest;
 
 	dest = ~arm_imm(opcode);
 	arm_write_dest(opcode, dest);
+	return 0;
 }
 
-static void
+static int
 opMVNimmS(uint32_t opcode)
 {
 	if (RD == 15) {
@@ -945,6 +1004,7 @@ opMVNimmS(uint32_t opcode)
 		arm.reg[RD] = ~arm_imm_cflag(opcode);
 		arm_flags_logical(arm.reg[RD]);
 	}
+	return 0;
 }
 
 static int
@@ -1457,7 +1517,7 @@ opLDMIS(uint32_t opcode)
 	return (armirq & 0x40);
 }
 
-static void
+static int
 opB(uint32_t opcode)
 {
 	uint32_t offset;
@@ -1469,9 +1529,10 @@ opB(uint32_t opcode)
 	arm.reg[15] = ((arm.reg[15] + offset + 4) & arm.r15_mask) |
 	              (arm.reg[15] & ~arm.r15_mask);
 	blockend = 1;
+	return 0;
 }
 
-static void
+static int
 opBL(uint32_t opcode)
 {
 	uint32_t offset;
@@ -1484,29 +1545,31 @@ opBL(uint32_t opcode)
 	arm.reg[15] = ((arm.reg[15] + offset + 4) & arm.r15_mask) |
 	              (arm.reg[15] & ~arm.r15_mask);
 	refillpipeline();
+	return 0;
 }
 
-static void
+static int
 opcopro(uint32_t opcode)
 {
 #ifdef FPA
 	if ((opcode & 0xf00) == 0x100 || (opcode & 0xf00) == 0x200) {
 		fpaopcode(opcode);
-		return;
+		return 0;
 	}
 #endif
 	NOT_USED(opcode);
 
 	arm_exception_undefined();
+	return 0;
 }
 
-static void
+static int
 opMCR(uint32_t opcode)
 {
 #ifdef FPA
 	if ((opcode & 0xf00) == 0x100) {
 		fpaopcode(opcode);
-		return;
+		return 0;
 	}
 #endif
 	if ((opcode & 0xf10) == 0xf10) {
@@ -1514,15 +1577,16 @@ opMCR(uint32_t opcode)
 	} else {
 		arm_exception_undefined();
 	}
+	return 0;
 }
 
-static void
+static int
 opMRC(uint32_t opcode)
 {
 #ifdef FPA
 	if ((opcode & 0xf00) == 0x100) {
 		fpaopcode(opcode);
-		return;
+		return 0;
 	}
 #endif
 	if ((opcode & 0xf10) == 0xf10) {
@@ -1535,12 +1599,13 @@ opMRC(uint32_t opcode)
 	} else {
 		arm_exception_undefined();
 	}
+	return 0;
 }
 
 /**
  * This refers to the unallocated portions of the opcode space.
  */
-static void
+static int
 opUNALLOC(uint32_t opcode)
 {
 	NOT_USED(opcode);
@@ -1550,6 +1615,7 @@ opUNALLOC(uint32_t opcode)
 	} else {
 		arm_unpredictable(opcode);
 	}
+	return 0;
 }
 
 static int

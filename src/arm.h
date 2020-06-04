@@ -44,7 +44,7 @@ typedef struct {
 	uint8_t		arch_v4;
 } ARMState;
 
-typedef void (*OpFn)(uint32_t opcode);
+typedef int (*OpFn)(uint32_t opcode);
 
 extern void updatemode(uint32_t m);
 extern void resetcodeblocks(void);

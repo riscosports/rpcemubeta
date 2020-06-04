@@ -564,8 +564,9 @@ data_abort:
  * Called from dynarec and interpreted code modes.
  *
  * @param opcode Opcode of instruction being emulated
+ * @return 0
  */
-void
+int
 opSWI(uint32_t opcode)
 {
 	uint32_t swinum = opcode & 0xdffff;
@@ -584,11 +585,11 @@ opSWI(uint32_t opcode)
 		case SWI_Portable_ReadFeatures:
 			arm.reg[1] = (1u << 4);	/* Idle supported flag */
 			arm.reg[cpsr] &= ~VFLAG;
-			return;
+			return 0;
 		case SWI_Portable_Idle:
 			rpcemu_idle();
 			arm.reg[cpsr] &= ~VFLAG;
-			return;
+			return 0;
 		}
 	}
 
@@ -599,18 +600,18 @@ opSWI(uint32_t opcode)
 	if (swinum == SWI_OS_Word && arm.reg[0] == 21 && mem_read8(arm.reg[1]) == 1) {
 			/* OS_Word 21, 1 Define Mouse Coordinate bounding box */
 			mouse_hack_osword_21_1(arm.reg[1]);
-			return;
+			return 0;
 	}
 	
 	if (mousehack && swinum == SWI_OS_Word && arm.reg[0] == 21) {
 		if (mem_read8(arm.reg[1]) == 4) {
 			/* OS_Word 21, 4 Read unbuffered mouse position */
 			mouse_hack_osword_21_4(arm.reg[1]);
-			return;
+			return 0;
 		} else if (mem_read8(arm.reg[1]) == 3) {
 			/* OS_Word 21, 3 Move mouse */
 			mouse_hack_osword_21_3(arm.reg[1]);
-			return;
+			return 0;
 		} else {
 			goto realswi;
 		}
@@ -649,5 +650,7 @@ realswi:
 		}
 		exception(SUPERVISOR, 0xc, 4);
 	}
+
+	return 0;
 }
 #endif /* ifndef TEST */
