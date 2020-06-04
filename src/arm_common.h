@@ -117,13 +117,14 @@ arm_imm_cflag(uint32_t opcode)
 static inline void
 arm_flags_add(uint32_t op1, uint32_t op2, uint32_t result)
 {
-	uint32_t flags = 0;
+	uint32_t flags;
 
 	if (result == 0) {
 		flags = ZFLAG;
-	} else if (checkneg(result)) {
-		flags = NFLAG;
+	} else {
+		flags = 0;
 	}
+	flags |= result & NFLAG;
 	if (result < op1) {
 		flags |= CFLAG;
 	}
@@ -143,13 +144,14 @@ arm_flags_add(uint32_t op1, uint32_t op2, uint32_t result)
 static inline void
 arm_flags_sub(uint32_t op1, uint32_t op2, uint32_t result)
 {
-	uint32_t flags = 0;
+	uint32_t flags;
 
 	if (result == 0) {
 		flags = ZFLAG;
-	} else if (checkneg(result)) {
-		flags = NFLAG;
+	} else {
+		flags = 0;
 	}
+	flags |= result & NFLAG;
 	if (result <= op1) {
 		flags |= CFLAG;
 	}
@@ -169,24 +171,26 @@ arm_flags_sub(uint32_t op1, uint32_t op2, uint32_t result)
 static inline void
 arm_flags_adc(uint32_t op1, uint32_t op2, uint32_t result)
 {
-	arm.reg[cpsr] &= ~0xf0000000;
+	uint32_t flags;
 
 	if (result == 0) {
-		arm.reg[cpsr] |= ZFLAG;
-	} else if (checkneg(result)) {
-		arm.reg[cpsr] |= NFLAG;
+		flags = ZFLAG;
+	} else {
+		flags = 0;
 	}
+	flags |= result & NFLAG;
 	if ((checkneg(op1) && checkneg(op2)) ||
 	    (checkneg(op1) && checkpos(result)) ||
 	    (checkneg(op2) && checkpos(result)))
 	{
-		arm.reg[cpsr] |= CFLAG;
+		flags |= CFLAG;
 	}
 	if ((checkneg(op1) && checkneg(op2) && checkpos(result)) ||
 	    (checkpos(op1) && checkpos(op2) && checkneg(result)))
 	{
-		arm.reg[cpsr] |= VFLAG;
+		flags |= VFLAG;
 	}
+	arm.reg[cpsr] = (arm.reg[cpsr] & 0x0fffffff) | flags;
 }
 
 /**
@@ -199,24 +203,26 @@ arm_flags_adc(uint32_t op1, uint32_t op2, uint32_t result)
 static inline void
 arm_flags_sbc(uint32_t op1, uint32_t op2, uint32_t result)
 {
-	arm.reg[cpsr] &= ~0xf0000000;
+	uint32_t flags;
 
 	if (result == 0) {
-		arm.reg[cpsr] |= ZFLAG;
-	} else if (checkneg(result)) {
-		arm.reg[cpsr] |= NFLAG;
+		flags = ZFLAG;
+	} else {
+		flags = 0;
 	}
+	flags |= result & NFLAG;
 	if ((checkneg(op1) && checkpos(op2)) ||
 	    (checkneg(op1) && checkpos(result)) ||
 	    (checkpos(op2) && checkpos(result)))
 	{
-		arm.reg[cpsr] |= CFLAG;
+		flags |= CFLAG;
 	}
 	if ((checkneg(op1) && checkpos(op2) && checkpos(result)) ||
 	    (checkpos(op1) && checkneg(op2) && checkneg(result)))
 	{
-		arm.reg[cpsr] |= VFLAG;
+		flags |= VFLAG;
 	}
+	arm.reg[cpsr] = (arm.reg[cpsr] & 0x0fffffff) | flags;
 }
 
 /**
@@ -228,17 +234,16 @@ arm_flags_sbc(uint32_t op1, uint32_t op2, uint32_t result)
  * @param result The result of the operation
  */
 static inline void
-arm_flags_logical(uint32_t op)
+arm_flags_logical(uint32_t result)
 {
 	uint32_t flags;
 
-	if (op == 0) {
+	if (result == 0) {
 		flags = ZFLAG;
-	} else if (checkneg(op)) {
-		flags = NFLAG;
 	} else {
 		flags = 0;
 	}
+	flags |= result & NFLAG;
 	arm.reg[cpsr] = (arm.reg[cpsr] & 0x3fffffff) | flags;
 }
 
