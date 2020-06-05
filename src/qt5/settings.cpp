@@ -48,7 +48,7 @@ config_load(Config * config)
 	QStringList keys = settings.childKeys();
 	foreach (const QString &key, settings.childKeys()) {
 		sText = QString("config_load: %1 = \"%2\"\n").arg(key, settings.value(key).toString());
-		rpclog(sText.toLocal8Bit().constData());
+		rpclog("%s", sText.toLocal8Bit().constData());
 	}
 
 	sText = settings.value("mem_size", "16").toString();

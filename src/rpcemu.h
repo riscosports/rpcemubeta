@@ -179,8 +179,10 @@ typedef struct {
 	uint64_t	free;		/**< Free space on disk */
 } disk_info;
 
-extern void fatal(const char *format, ...) __attribute__((noreturn));
-extern void error(const char *format, ...);
+extern void fatal(const char *format, ...)
+	__attribute__((format(printf, 1, 2))) __attribute__((noreturn));
+extern void error(const char *format, ...)
+	__attribute__((format(printf, 1, 2)));
 
 extern int path_disk_info(const char *path, disk_info *d);
 
@@ -202,7 +204,8 @@ extern void rpcemu_idle(void);
 extern void endrpcemu(void);
 extern void resetrpc(void);
 extern void rpcemu_floppy_load(int drive, const char *filename);
-extern void rpclog(const char *format, ...);
+extern void rpclog(const char *format, ...)
+	__attribute__((format(printf, 1, 2)));
 extern void rpcemu_model_changed(Model model);
 extern const char *rpcemu_file_get_extension(const char *filename);
 extern int rpcemu_config_is_reset_required(const Config *new_config, Model new_model);
@@ -246,12 +249,14 @@ extern Perf perf;
     UNIMPLEMENTEDFL(__FILE__, __LINE__, (section), (format), ## args)
 
   void UNIMPLEMENTEDFL(const char *file, unsigned line,
-                       const char *section, const char *format, ...);
+                       const char *section, const char *format, ...)
+	__attribute__((format(printf, 4, 5)));
 #else
   /* This function has no corresponding body, the compiler
      is clever enough to use it to swallow the arguments to
      debugging calls */
-  void unimplemented_null(const char *section, const char *format, ...);
+  void unimplemented_null(const char *section, const char *format, ...)
+	__attribute__((format(printf, 2, 3)));
 
   #define UNIMPLEMENTED 1?(void)0:(void)unimplemented_null
 
