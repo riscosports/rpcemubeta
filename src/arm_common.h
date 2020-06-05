@@ -47,9 +47,6 @@ extern int opSWI(uint32_t opcode);
 /// Evaluate to non-zero if 'mode' has a SPSR (i.e. not USR26/USR32/Sys32)
 #define ARM_MODE_HAS_SPSR(mode)	(ARM_MODE_PRIV(mode) && ((mode) != 0x1f))
 
-#define checkneg(v)	(v & 0x80000000)
-#define checkpos(v)	(!(v & 0x80000000))
-
 /// Only certain bits within CPSR/SPSR can be modified on real hardware
 #define PSR_BITS_VALID	0xf00000df
 
@@ -179,15 +176,10 @@ arm_flags_adc(uint32_t op1, uint32_t op2, uint32_t result)
 		flags = 0;
 	}
 	flags |= result & NFLAG;
-	if ((checkneg(op1) && checkneg(op2)) ||
-	    (checkneg(op1) && checkpos(result)) ||
-	    (checkneg(op2) && checkpos(result)))
-	{
+	if (((op1 & op2) | ((op1 | op2) & ~result)) & 0x80000000) {
 		flags |= CFLAG;
 	}
-	if ((checkneg(op1) && checkneg(op2) && checkpos(result)) ||
-	    (checkpos(op1) && checkpos(op2) && checkneg(result)))
-	{
+	if (((op1 ^ result) & (op2 ^ result)) & 0x80000000) {
 		flags |= VFLAG;
 	}
 	arm.reg[cpsr] = (arm.reg[cpsr] & 0x0fffffff) | flags;
@@ -211,15 +203,10 @@ arm_flags_sbc(uint32_t op1, uint32_t op2, uint32_t result)
 		flags = 0;
 	}
 	flags |= result & NFLAG;
-	if ((checkneg(op1) && checkpos(op2)) ||
-	    (checkneg(op1) && checkpos(result)) ||
-	    (checkpos(op2) && checkpos(result)))
-	{
+	if (((op1 & ~op2) | ((op1 | ~op2) & ~result)) & 0x80000000) {
 		flags |= CFLAG;
 	}
-	if ((checkneg(op1) && checkpos(op2) && checkpos(result)) ||
-	    (checkpos(op1) && checkneg(op2) && checkneg(result)))
-	{
+	if (((op1 ^ op2) & (op1 ^ result)) & 0x80000000) {
 		flags |= VFLAG;
 	}
 	arm.reg[cpsr] = (arm.reg[cpsr] & 0x0fffffff) | flags;
