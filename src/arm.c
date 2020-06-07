@@ -1830,7 +1830,7 @@ arm_exec(void)
 				}
 #endif
 				if ((opcode & 0xf10) == 0xf10) {
-					cp15_write(RN, arm.reg[RD], opcode);
+					cp15_write(opcode, arm.reg[RD]);
 				} else {
 					arm_exception_undefined();
 				}
@@ -1847,9 +1847,9 @@ arm_exec(void)
 				if ((opcode & 0xf10) == 0xf10) {
 					if (RD == 15) {
 						arm.reg[RD] = (arm.reg[RD] & arm.r15_mask) |
-						              (cp15_read(RN) & ~arm.r15_mask);
+						              (cp15_read(opcode) & ~arm.r15_mask);
 					} else {
-						arm.reg[RD] = cp15_read(RN);
+						arm.reg[RD] = cp15_read(opcode);
 					}
 				} else {
 					arm_exception_undefined();

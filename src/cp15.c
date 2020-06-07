@@ -198,13 +198,20 @@ cp15_tlb_add_entry(uint32_t vaddr, uint32_t paddr)
 	tlbcachepos = (tlbcachepos + 1) & (TLBCACHESIZE - 1);
 }
 
+/**
+ * Perform a MCR to Co-processor 15.
+ *
+ * @param opcode Opcode of instruction being emulated
+ * @param val    Value from ARM register
+ */
 void
-cp15_write(uint32_t addr, uint32_t val, uint32_t opcode)
+cp15_write(uint32_t opcode, uint32_t val)
 {
-	uint32_t CRm = opcode & 0xf;
-	uint32_t OPC2 = (opcode >> 5) & 7;
+	const uint32_t crn = RN;
+	const uint32_t crm = RM;
+	const uint32_t opc2 = (opcode >> 5) & 7;
 
-	switch (addr & 0xf) {
+	switch (crn) {
 	case 1: /* Control */
 		if (!icache && (val & CP15_CTRL_ICACHE)) {
 			resetcodeblocks();
@@ -280,7 +287,7 @@ cp15_write(uint32_t addr, uint32_t val, uint32_t opcode)
 		case CPUModel_ARM710:
 		case CPUModel_ARM7500:
 		case CPUModel_ARM7500FE:
-			switch (addr & 0xf) {
+			switch (crn) {
 			case 5: /* TLB Flush */
 				cp15_tlb_flush_all();
 				break;
@@ -295,7 +302,7 @@ cp15_write(uint32_t addr, uint32_t val, uint32_t opcode)
 		/* ARMv4 Architecture */
 		case CPUModel_SA110:
 		case CPUModel_ARM810:
-			switch (addr & 0xf) {
+			switch (crn) {
 			case 5: /* Fault Status Register */
 				cp15.fault_status = val;
 				return;
@@ -314,7 +321,7 @@ cp15_write(uint32_t addr, uint32_t val, uint32_t opcode)
 		break;
 
 	case 7: /* Flush Cache */
-		if ((CRm & 1) && (OPC2 == 0)) {
+		if ((crm & 1) && (opc2 == 0)) {
 			resetcodeblocks();
 		}
 		pccache = 0xffffffff;
@@ -322,14 +329,14 @@ cp15_write(uint32_t addr, uint32_t val, uint32_t opcode)
 
 	case 8: /* TLB Operations (ARMv4) */
 		if (cp15.cpu_model == CPUModel_SA110 || cp15.cpu_model == CPUModel_ARM810) {
-			if (OPC2 == 0) {
+			if (opc2 == 0) {
 				/* TLB Flush */
 				cp15_tlb_flush_all();
 			} else {
 				/* TLB Purge */
 				cp15_tlb_flush_all();
 			}
-			if (CRm & 1) {
+			if (crm & 1) {
 				resetcodeblocks();
 			}
 			return;
@@ -339,7 +346,7 @@ cp15_write(uint32_t addr, uint32_t val, uint32_t opcode)
 	case 15:
 		if (cp15.cpu_model == CPUModel_SA110) {
 			/* Test, Clock and Idle control */
-			if (OPC2 == 2 && CRm == 1) {
+			if (opc2 == 2 && crm == 1) {
 				/* Enable clock switching - no need to implement */
 				return;
 			}
@@ -347,13 +354,21 @@ cp15_write(uint32_t addr, uint32_t val, uint32_t opcode)
 		break;
 	}
 
-	UNIMPLEMENTED("CP15 Write", "Register %u, opcode %08x", addr & 0xf, opcode);
+	UNIMPLEMENTED("CP15 Write", "Register %u, opcode %08x", crn, opcode);
 }
 
+/**
+ * Perform a MRC from Co-processor 15.
+ *
+ * @param opcode Opcode of instruction being emulated
+ * @return Value to ARM register
+ */
 uint32_t
-cp15_read(uint32_t addr)
+cp15_read(uint32_t opcode)
 {
-	switch (addr & 0xf) {
+	const uint32_t crn = RN;
+
+	switch (crn) {
 	case 0: /* ID */
 		switch (cp15.cpu_model) {
 		case CPUModel_ARM7500:   return 0x41027100;
@@ -375,9 +390,9 @@ cp15_read(uint32_t addr)
 	case 6: /* Fault Address */
 		return cp15.fault_address;
 	default:
-		UNIMPLEMENTED("CP15 Read", "Unknown register %u", addr & 0xf);
+		UNIMPLEMENTED("CP15 Read", "Unknown register %u, opcode %08x", crn, opcode);
 	}
-	fatal("Bad read CP15 %x %08x\n", addr, PC);
+	fatal("Bad read CP15 %08x %08x\n", opcode, PC);
 }
 
 /**
