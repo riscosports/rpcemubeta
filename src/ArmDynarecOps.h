@@ -1572,7 +1572,7 @@ opMCR(uint32_t opcode)
 		return 0;
 	}
 #endif
-	if ((opcode & 0xf10) == 0xf10) {
+	if ((opcode & 0xf10) == 0xf10 && ARM_MODE_PRIV(arm.mode)) {
 		cp15_write(opcode, arm.reg[RD]);
 	} else {
 		arm_exception_undefined();
@@ -1589,7 +1589,7 @@ opMRC(uint32_t opcode)
 		return 0;
 	}
 #endif
-	if ((opcode & 0xf10) == 0xf10) {
+	if ((opcode & 0xf10) == 0xf10 && ARM_MODE_PRIV(arm.mode)) {
 		if (RD == 15) {
 			arm.reg[RD] = (arm.reg[RD] & arm.r15_mask) |
 				      (cp15_read(opcode) & ~arm.r15_mask);
