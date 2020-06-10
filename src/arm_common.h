@@ -60,6 +60,19 @@ static const uint32_t msrlookup[16] = {
 };
 
 /**
+ * Perform a rotate-right operation on a 32-bit integer.
+ *
+ * @param x Value to rotate
+ * @param n Number of bit positions to rotate by
+ * @return Rotated value
+ */
+static inline uint32_t
+rotate_right32(uint32_t x, uint32_t n)
+{
+	return (x >> n) | (x << (32 - n));
+}
+
+/**
  * Return the immediate operand in an opcode.
  *
  * It is encoded as an 8-bit constant rotated by twice the value of a 4-bit
@@ -74,7 +87,7 @@ arm_imm(uint32_t opcode)
 	uint32_t val = opcode & 0xff;
 	uint32_t amount = ((opcode >> 8) & 0xf) << 1;
 
-	return (val >> amount) | (val << (32 - amount));
+	return rotate_right32(val, amount);
 }
 
 /**
@@ -465,7 +478,7 @@ arm_ldr_rotate(uint32_t value, uint32_t addr)
 {
 	uint32_t rotate = (addr & 3) * 8;
 
-	return (value >> rotate) | (value << (32 - rotate));
+	return rotate_right32(value, rotate);
 }
 
 /**

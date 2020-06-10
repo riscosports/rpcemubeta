@@ -418,10 +418,10 @@ shift3(uint32_t opcode)
 			return temp;
 		}
 		shiftamount &= 0x1f;
-		if (((temp >> shiftamount) | (temp << (32 - shiftamount))) & 0x80000000) {
+		if (rotate_right32(temp, shiftamount) & 0x80000000) {
 			arm.reg[cpsr] |= CFLAG;
 		}
-		return (temp >> shiftamount) | (temp << (32 - shiftamount));
+		return rotate_right32(temp, shiftamount);
 	}
 }
 
@@ -463,7 +463,7 @@ shift5(uint32_t opcode, uint32_t shiftmode, uint32_t shiftamount, uint32_t rm)
 			return (CFSET << 31) | (rm >> 1);
 		}
 		shiftamount &= 0x1f;
-		return (rm >> shiftamount) | (rm << (32 - shiftamount));
+		return rotate_right32(rm, shiftamount);
 	}
 }
 
@@ -492,7 +492,7 @@ shift4(uint32_t opcode)
 	case 0x40: /* ASR */
 		return (uint32_t) ((int32_t) rm >> shiftamount);
 	default: /* ROR */
-		return (rm >> shiftamount) | (rm << (32 - shiftamount));
+		return rotate_right32(rm, shiftamount);
 	}
 }
 
