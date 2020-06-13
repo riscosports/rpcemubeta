@@ -463,8 +463,6 @@ translateaddress2(uint32_t addr, int rw, int prefetch)
 	uint32_t access_permissions;
 	uint32_t phys_addr;
 
-	armirq &= ~0x40u;
-
 	tlbs++;
 
 	/* Fetch first-level descriptor */
@@ -565,7 +563,6 @@ getpccache(uint32_t addr)
 
 	addr &= ~0xfffu;
 	if (mmu) {
-		armirq &= ~0x40u;
 		phys_addr = translateaddress(addr, 0, 1);
 		if (armirq & 0x40) {
 			armirq &= ~0x40u;

@@ -279,6 +279,8 @@ arm_reset(CPUModel cpu_model)
 		arm.stm_writeback_at_end = 0;
 		arm.arch_v4 = 0;
 	}
+
+	armirq = 0;
 }
 
 void

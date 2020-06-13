@@ -294,6 +294,8 @@ arm_reset(CPUModel cpu_model)
 		arm.stm_writeback_at_end = 0;
 		arm.arch_v4 = 0;
 	}
+
+	armirq = 0;
 }
 
 void
@@ -728,7 +730,6 @@ int
 arm_exec(void)
 {
 	for (linecyc = 256; linecyc >= 0; linecyc--) {
-		armirq &= ~0x40u;
 		if (!isblockvalid(PC)) {
 			// Interpret block
 			if ((PC >> 12) != pccache) {
