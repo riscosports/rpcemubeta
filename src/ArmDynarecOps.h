@@ -1010,7 +1010,7 @@ opMVNimmS(uint32_t opcode)
 static int
 opSTRT(uint32_t opcode)
 {
-	uint32_t addr, data, offset, templ;
+	uint32_t addr, data, offset;
 
 	if ((opcode & 0x2000010) == 0x2000010) {
 		arm_exception_undefined();
@@ -1019,12 +1019,9 @@ opSTRT(uint32_t opcode)
 
 	addr = GETADDR(RN);
 
-	/* Temporarily switch to user permissions */
-	templ = memmode;
-	memmode = 0;
+	// Store with User mode privileges
 	data = GETREG(RD);
-	mem_write32(addr & ~3u, data);
-	memmode = templ;
+	mem_user_write32(addr & ~3u, data);
 
 	/* Check for Abort */
 	if (arm.abort_base_restored && (armirq & 0x40)) {
@@ -1049,7 +1046,7 @@ opSTRT(uint32_t opcode)
 static int
 opLDRT(uint32_t opcode)
 {
-	uint32_t addr, data, offset, templ;
+	uint32_t addr, data, offset;
 
 	if ((opcode & 0x2000010) == 0x2000010) {
 		arm_exception_undefined();
@@ -1058,11 +1055,8 @@ opLDRT(uint32_t opcode)
 
 	addr = GETADDR(RN);
 
-	/* Temporarily switch to user permissions */
-	templ = memmode;
-	memmode = 0;
-	data = mem_read32(addr & ~3u);
-	memmode = templ;
+	// Load with User mode privileges
+	data = mem_user_read32(addr & ~3u);
 
 	/* Check for Abort */
 	if (arm.abort_base_restored && (armirq & 0x40)) {
@@ -1098,7 +1092,7 @@ opLDRT(uint32_t opcode)
 static int
 opSTRBT(uint32_t opcode)
 {
-	uint32_t addr, data, offset, templ;
+	uint32_t addr, data, offset;
 
 	if ((opcode & 0x2000010) == 0x2000010) {
 		arm_exception_undefined();
@@ -1107,12 +1101,9 @@ opSTRBT(uint32_t opcode)
 
 	addr = GETADDR(RN);
 
-	/* Temporarily switch to user permissions */
-	templ = memmode;
-	memmode = 0;
+	// Store with User mode privileges
 	data = GETREG(RD);
-	mem_write8(addr, data);
-	memmode = templ;
+	mem_user_write8(addr, data);
 
 	/* Check for Abort */
 	if (arm.abort_base_restored && (armirq & 0x40)) {
@@ -1137,7 +1128,7 @@ opSTRBT(uint32_t opcode)
 static int
 opLDRBT(uint32_t opcode)
 {
-	uint32_t addr, data, offset, templ;
+	uint32_t addr, data, offset;
 
 	if ((opcode & 0x2000010) == 0x2000010) {
 		arm_exception_undefined();
@@ -1146,11 +1137,8 @@ opLDRBT(uint32_t opcode)
 
 	addr = GETADDR(RN);
 
-	/* Temporarily switch to user permissions */
-	templ = memmode;
-	memmode = 0;
-	data = mem_read8(addr);
-	memmode = templ;
+	// Load with User mode privileges
+	data = mem_user_read8(addr);
 
 	/* Check for Abort */
 	if (arm.abort_base_restored && (armirq & 0x40)) {

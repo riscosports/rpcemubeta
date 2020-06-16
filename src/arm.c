@@ -553,7 +553,7 @@ arm_exec(void)
 	for (linecyc = 0; linecyc < 200; linecyc++) {
 		uint32_t opcode;
 		uint32_t lhs, rhs, dest;
-		uint32_t templ, addr, data, offset, writeback;
+		uint32_t addr, data, offset, writeback;
 
 		if ((PC >> 12) != pccache) {
 			pccache = PC >> 12;
@@ -1292,12 +1292,9 @@ arm_exec(void)
 			case 0x4a: // STRT Rd, [Rn], #+imm
 				addr = GETADDR(RN);
 
-				// Temp switch to user permissions
-				templ = memmode;
-				memmode = 0;
+				// Store with User mode privileges
 				data = GETREG(RD);
-				mem_write32(addr & ~3u, data);
-				memmode = templ;
+				mem_user_write32(addr & ~3u, data);
 
 				// Check for Abort
 				if (arm.abort_base_restored && (armirq & 0x40)) {
@@ -1328,11 +1325,8 @@ arm_exec(void)
 			case 0x4b: // LDRT Rd, [Rn], #+imm
 				addr = GETADDR(RN);
 
-				// Temp switch to user permissions
-				templ = memmode;
-				memmode = 0;
-				data = mem_read32(addr & ~3u);
-				memmode = templ;
+				// Load with User mode privileges
+				data = mem_user_read32(addr & ~3u);
 
 				// Check for Abort
 				if (arm.abort_base_restored && (armirq & 0x40)) {
@@ -1374,12 +1368,9 @@ arm_exec(void)
 			case 0x4e: // STRBT Rd, [Rn], #+imm
 				addr = GETADDR(RN);
 
-				// Temp switch to user permissions
-				templ = memmode;
-				memmode = 0;
+				// Store with User mode privileges
 				data = GETREG(RD);
-				mem_write8(addr, data);
-				memmode = templ;
+				mem_user_write8(addr, data);
 
 				// Check for Abort
 				if (arm.abort_base_restored && (armirq & 0x40)) {
@@ -1410,11 +1401,8 @@ arm_exec(void)
 			case 0x4f: // LDRBT Rd, [Rn], #+imm
 				addr = GETADDR(RN);
 
-				// Temp switch to user permissions
-				templ = memmode;
-				memmode = 0;
-				data = mem_read8(addr);
-				memmode = templ;
+				// Load with User mode privileges
+				data = mem_user_read8(addr);
 
 				// Check for Abort
 				if (arm.abort_base_restored && (armirq & 0x40)) {
