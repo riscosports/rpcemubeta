@@ -397,7 +397,7 @@ void
 rpcemu_idle(void)
 {
 	/* Loop while no interrupts pending */
-	while (!armirq) {
+	while (!arm.event) {
 		/* Run down any callback timers */
 		if (kcallback) {
 			kcallback--;
@@ -433,7 +433,7 @@ rpcemu_idle(void)
 			updateirqs();
 		}
 		/* Sleep if no interrupts pending */
-		if (!armirq) {
+		if (!arm.event) {
 #ifdef RPCEMU_WIN
 			Sleep(1);
 #else
@@ -445,7 +445,7 @@ rpcemu_idle(void)
 #endif
 		}
 		/* Run other periodic actions */
-		if (!armirq) {
+		if (!arm.event) {
 			if (drawscre > 0) {
 				drawscr();
 				drawscre--;

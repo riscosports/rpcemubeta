@@ -537,7 +537,7 @@ translateaddress2(uint32_t addr, int rw, int prefetch)
 	exit(-1);
 
 do_fault:
-	armirq |= 0x40;
+	arm.event |= 0x40;
 	if (!prefetch) {
 		cp15.fault_address = addr;
 		cp15.fault_status = (domain << 4) | fault_code;
@@ -564,8 +564,8 @@ getpccache(uint32_t addr)
 	addr &= ~0xfffu;
 	if (mmu) {
 		phys_addr = translateaddress(addr, 0, 1);
-		if (armirq & 0x40) {
-			armirq &= ~0x40u;
+		if (arm.event & 0x40) {
+			arm.event &= ~0x40u;
 			return NULL;
 		}
 	} else {

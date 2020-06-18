@@ -206,22 +206,23 @@ static IOMDType iomd_type; /**< The current type of IOMD we're emulating */
 static int sndon = 0;
 static int flyback=0;
 
-void updateirqs(void)
+void
+updateirqs(void)
 {
-        if ((iomd.irqa.status & iomd.irqa.mask) ||
-            (iomd.irqb.status & iomd.irqb.mask) ||
-            (iomd.irqd.status & iomd.irqd.mask) ||
-            (iomd.irqdma.status & iomd.irqdma.mask))
-        {
-                armirq |= 1;
-        } else {
-                armirq &= ~1u;
-        }
-        if (iomd.fiq.status & iomd.fiq.mask) {
-                armirq |= 2;
-        } else {
-                armirq &= ~2u;
-        }
+	if ((iomd.irqa.status & iomd.irqa.mask) ||
+	    (iomd.irqb.status & iomd.irqb.mask) ||
+	    (iomd.irqd.status & iomd.irqd.mask) ||
+	    (iomd.irqdma.status & iomd.irqdma.mask))
+	{
+		arm.event |= 1;
+	} else {
+		arm.event &= ~1u;
+	}
+	if (iomd.fiq.status & iomd.fiq.mask) {
+		arm.event |= 2;
+	} else {
+		arm.event &= ~2u;
+	}
 }
 
 /**

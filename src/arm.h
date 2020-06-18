@@ -29,6 +29,8 @@ typedef struct {
 	uint32_t	mmask;
 	uint32_t	r15_mask;
 
+	uint32_t	event;
+
 	/* Banked registers */
 	uint32_t	user_reg[15];
 	uint32_t	fiq_reg[15];
@@ -59,7 +61,6 @@ extern void endblock(uint32_t opcode);
 extern void initcodeblock(uint32_t l);
 
 extern uint32_t *usrregs[16];
-extern uint32_t armirq;
 extern int cpsr;
 extern uint32_t pccache;
 

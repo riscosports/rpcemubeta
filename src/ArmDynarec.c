@@ -53,7 +53,6 @@ int blockend;
 ARMState arm;
 
 uint32_t inscount;
-uint32_t armirq = 0;
 int cpsr;
 uint32_t *pcpsr;
 
@@ -294,8 +293,6 @@ arm_reset(CPUModel cpu_model)
 		arm.stm_writeback_at_end = 0;
 		arm.arch_v4 = 0;
 	}
-
-	armirq = 0;
 }
 
 void
@@ -763,7 +760,7 @@ arm_exec(void)
 					blockend = 1;
 				}
 				inscount++;
-			} while (!blockend && !(armirq & 0x40));
+			} while (!blockend && !(arm.event & 0x40));
 		} else {
 			const uint32_t hash = HASH(PC);
 			/* if (pagedirty[PC>>9])
@@ -778,7 +775,7 @@ arm_exec(void)
 				gen_func = (void *) (&rcodeblock[templ][BLOCKSTART]);
 				// gen_func=(void *)(&codeblock[blocks[templ]>>24][blocks[templ]&0xFFF][4]);
 				gen_func();
-				if (armirq & 0x40) {
+				if (arm.event & 0x40) {
 					arm.reg[15] += 4;
 				}
 				if ((arm.reg[cpsr] & arm.mmask) != arm.mode) {
@@ -846,29 +843,29 @@ arm_exec(void)
 					if ((PC & 0xffc) == 0) {
 						blockend = 1;
 					}
-				} while (!blockend && !(armirq & 0x40));
+				} while (!blockend && !(arm.event & 0x40));
 				endblock(opcode);
 			}
 		}
 
-		if (armirq != 0) {
+		if (arm.event != 0) {
 			if (!ARM_MODE_32(arm.mode)) {
 				arm.reg[16] &= ~0xc0u;
 				arm.reg[16] |= ((arm.reg[15] & 0xc000000) >> 20);
 			}
 
-			if (armirq & 0x40) {
+			if (arm.event & 0x40) {
 				// Data Abort
 				arm.reg[15] -= 4;
 				exception(ABORT, 0x14, 0);
 				arm.reg[15] += 4;
-				armirq &= ~0x40u;
-			} else if ((armirq & 2) && !(arm.reg[16] & 0x40)) {
+				arm.event &= ~0x40u;
+			} else if ((arm.event & 2) && !(arm.reg[16] & 0x40)) {
 				// FIQ
 				arm.reg[15] -= 4;
 				exception(FIQ, 0x20, 0);
 				arm.reg[15] += 4;
-			} else if ((armirq & 1) && !(arm.reg[16] & 0x80)) {
+			} else if ((arm.event & 1) && !(arm.reg[16] & 0x80)) {
 				// IRQ
 				arm.reg[15] -= 4;
 				exception(IRQ, 0x1c, 0);

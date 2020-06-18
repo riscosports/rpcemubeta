@@ -432,7 +432,7 @@ generate_shift(uint32_t opcode)
 static void
 gen_test_armirq(void)
 {
-	addbyte(0xf6); addbyte(0x05); addrip_byte(&armirq, 0x40); // TESTB $0x40,armirq(%rip)
+	addbyte(0xf6); addbyte(0x05); addrip_byte(&arm.event, 0x40); // TESTB $0x40,arm.event(%rip)
 	gen_x86_jump(CC_NZ, 0);
 }
 
@@ -1348,7 +1348,7 @@ endblock(uint32_t opcode)
 	addbyte(0x83); addbyte(0x2d); addrip_byte(&linecyc, 1); // SUBL $1,linecyc(%rip)
 	gen_x86_jump(CC_S, 0);
 
-	addbyte(0xf6); addbyte(0x05); addrip_byte(&armirq, 0xff); // TESTB $0xff,armirq(%rip)
+	addbyte(0xf6); addbyte(0x05); addrip_byte(&arm.event, 0xff); // TESTB $0xff,arm.event(%rip)
 	gen_x86_jump(CC_NZ, 0);
 
 	addbyte(0x48); addbyte(0x8d); addbyte(0x0d); addrip(codeblockpc); // LEA codeblockpc(%rip),%rcx

@@ -37,7 +37,6 @@ ARMState arm;
 
 int blockend;
 uint32_t inscount;
-uint32_t armirq = 0;
 int cpsr;
 static uint32_t *pcpsr;
 
@@ -279,8 +278,6 @@ arm_reset(CPUModel cpu_model)
 		arm.stm_writeback_at_end = 0;
 		arm.arch_v4 = 0;
 	}
-
-	armirq = 0;
 }
 
 void
@@ -849,12 +846,12 @@ arm_exec(void)
 						addr = GETADDR(RN);
 						data = GETREG(RM);
 						dest = mem_read32(addr & ~3u);
-						if (armirq & 0x40) {
+						if (arm.event & 0x40) {
 							break;
 						}
 						dest = arm_ldr_rotate(dest, addr);
 						mem_write32(addr & ~3u, data);
-						if (armirq & 0x40) {
+						if (arm.event & 0x40) {
 							break;
 						}
 						LOADREG(RD, dest);
@@ -910,11 +907,11 @@ arm_exec(void)
 						addr = GETADDR(RN);
 						data = GETREG(RM);
 						dest = mem_read8(addr);
-						if (armirq & 0x40) {
+						if (arm.event & 0x40) {
 							break;
 						}
 						mem_write8(addr, data);
-						if (armirq & 0x40) {
+						if (arm.event & 0x40) {
 							break;
 						}
 						LOADREG(RD, dest);
@@ -1297,7 +1294,7 @@ arm_exec(void)
 				mem_user_write32(addr & ~3u, data);
 
 				// Check for Abort
-				if (arm.abort_base_restored && (armirq & 0x40)) {
+				if (arm.abort_base_restored && (arm.event & 0x40)) {
 					break;
 				}
 
@@ -1329,7 +1326,7 @@ arm_exec(void)
 				data = mem_user_read32(addr & ~3u);
 
 				// Check for Abort
-				if (arm.abort_base_restored && (armirq & 0x40)) {
+				if (arm.abort_base_restored && (arm.event & 0x40)) {
 					break;
 				}
 
@@ -1349,7 +1346,7 @@ arm_exec(void)
 				arm.reg[RN] = addr;
 
 				// Check for Abort (before writing Rd)
-				if (armirq & 0x40) {
+				if (arm.event & 0x40) {
 					break;
 				}
 
@@ -1373,7 +1370,7 @@ arm_exec(void)
 				mem_user_write8(addr, data);
 
 				// Check for Abort
-				if (arm.abort_base_restored && (armirq & 0x40)) {
+				if (arm.abort_base_restored && (arm.event & 0x40)) {
 					break;
 				}
 
@@ -1405,7 +1402,7 @@ arm_exec(void)
 				data = mem_user_read8(addr);
 
 				// Check for Abort
-				if (arm.abort_base_restored && (armirq & 0x40)) {
+				if (arm.abort_base_restored && (arm.event & 0x40)) {
 					break;
 				}
 
@@ -1422,7 +1419,7 @@ arm_exec(void)
 				arm.reg[RN] = addr;
 
 				// Check for Abort (before writing Rd)
-				if (armirq & 0x40) {
+				if (arm.event & 0x40) {
 					break;
 				}
 
@@ -1469,7 +1466,7 @@ arm_exec(void)
 				mem_write32(addr & ~3u, data);
 
 				// Check for Abort
-				if (arm.abort_base_restored && (armirq & 0x40)) {
+				if (arm.abort_base_restored && (arm.event & 0x40)) {
 					break;
 				}
 
@@ -1521,7 +1518,7 @@ arm_exec(void)
 				data = mem_read32(addr & ~3u);
 
 				// Check for Abort
-				if (arm.abort_base_restored && (armirq & 0x40)) {
+				if (arm.abort_base_restored && (arm.event & 0x40)) {
 					break;
 				}
 
@@ -1538,7 +1535,7 @@ arm_exec(void)
 				}
 
 				// Check for Abort (before writing Rd)
-				if (armirq & 0x40) {
+				if (arm.event & 0x40) {
 					break;
 				}
 
@@ -1585,7 +1582,7 @@ arm_exec(void)
 				mem_write8(addr, data);
 
 				// Check for Abort
-				if (arm.abort_base_restored && (armirq & 0x40)) {
+				if (arm.abort_base_restored && (arm.event & 0x40)) {
 					break;
 				}
 
@@ -1637,7 +1634,7 @@ arm_exec(void)
 				data = mem_read8(addr);
 
 				// Check for Abort
-				if (arm.abort_base_restored && (armirq & 0x40)) {
+				if (arm.abort_base_restored && (arm.event & 0x40)) {
 					break;
 				}
 
@@ -1651,7 +1648,7 @@ arm_exec(void)
 				}
 
 				// Check for Abort (before writing Rd)
-				if (armirq & 0x40) {
+				if (arm.event & 0x40) {
 					break;
 				}
 
@@ -1866,20 +1863,20 @@ arm_exec(void)
 	// This label is used to skip the switch above
 skip:
 
-		if (armirq != 0) {
+		if (arm.event != 0) {
 			if (!ARM_MODE_32(arm.mode)) {
 				arm.reg[16] &= ~0xc0u;
 				arm.reg[16] |= ((arm.reg[15] & 0xc000000) >> 20);
 			}
 
-			if (armirq & 0x40) {
+			if (arm.event & 0x40) {
 				// Data Abort
 				exception(ABORT, 0x14, 0);
-				armirq &= ~0x40u;
-			} else if ((armirq & 2) && !(arm.reg[16] & 0x40)) {
+				arm.event &= ~0x40u;
+			} else if ((arm.event & 2) && !(arm.reg[16] & 0x40)) {
 				// FIQ
 				exception(FIQ, 0x20, 0);
-			} else if ((armirq & 1) && !(arm.reg[16] & 0x80)) {
+			} else if ((arm.event & 1) && !(arm.reg[16] & 0x80)) {
 				// IRQ
 				exception(IRQ, 0x1c, 0);
 			}

@@ -361,12 +361,12 @@ opSWPword(uint32_t opcode)
 			addr = GETADDR(RN);
 			data = GETREG(RM);
 			dest = mem_read32(addr & ~3u);
-			if (armirq & 0x40) {
+			if (arm.event & 0x40) {
 				return 1;
 			}
 			dest = arm_ldr_rotate(dest, addr);
 			mem_write32(addr & ~3u, data);
-			if (armirq & 0x40) {
+			if (arm.event & 0x40) {
 				return 1;
 			}
 			LOADREG(RD, dest);
@@ -441,11 +441,11 @@ opSWPbyte(uint32_t opcode)
 			addr = GETADDR(RN);
 			data = GETREG(RM);
 			dest = mem_read8(addr);
-			if (armirq & 0x40) {
+			if (arm.event & 0x40) {
 				return 1;
 			}
 			mem_write8(addr, data);
-			if (armirq & 0x40) {
+			if (arm.event & 0x40) {
 				return 1;
 			}
 			LOADREG(RD, dest);
@@ -1024,7 +1024,7 @@ opSTRT(uint32_t opcode)
 	mem_user_write32(addr & ~3u, data);
 
 	/* Check for Abort */
-	if (arm.abort_base_restored && (armirq & 0x40)) {
+	if (arm.abort_base_restored && (arm.event & 0x40)) {
 		return 1;
 	}
 
@@ -1040,7 +1040,7 @@ opSTRT(uint32_t opcode)
 	addr += offset;
 	arm.reg[RN] = addr;
 
-	return (armirq & 0x40);
+	return (arm.event & 0x40);
 }
 
 static int
@@ -1059,7 +1059,7 @@ opLDRT(uint32_t opcode)
 	data = mem_user_read32(addr & ~3u);
 
 	/* Check for Abort */
-	if (arm.abort_base_restored && (armirq & 0x40)) {
+	if (arm.abort_base_restored && (arm.event & 0x40)) {
 		return 1;
 	}
 
@@ -1079,7 +1079,7 @@ opLDRT(uint32_t opcode)
 	arm.reg[RN] = addr;
 
 	/* Check for Abort (before writing Rd) */
-	if (armirq & 0x40) {
+	if (arm.event & 0x40) {
 		return 1;
 	}
 
@@ -1106,7 +1106,7 @@ opSTRBT(uint32_t opcode)
 	mem_user_write8(addr, data);
 
 	/* Check for Abort */
-	if (arm.abort_base_restored && (armirq & 0x40)) {
+	if (arm.abort_base_restored && (arm.event & 0x40)) {
 		return 1;
 	}
 
@@ -1122,7 +1122,7 @@ opSTRBT(uint32_t opcode)
 	addr += offset;
 	arm.reg[RN] = addr;
 
-	return (armirq & 0x40);
+	return (arm.event & 0x40);
 }
 
 static int
@@ -1141,7 +1141,7 @@ opLDRBT(uint32_t opcode)
 	data = mem_user_read8(addr);
 
 	/* Check for Abort */
-	if (arm.abort_base_restored && (armirq & 0x40)) {
+	if (arm.abort_base_restored && (arm.event & 0x40)) {
 		return 1;
 	}
 
@@ -1158,7 +1158,7 @@ opLDRBT(uint32_t opcode)
 	arm.reg[RN] = addr;
 
 	/* Check for Abort (before writing Rd) */
-	if (armirq & 0x40) {
+	if (arm.event & 0x40) {
 		return 1;
 	}
 
@@ -1200,7 +1200,7 @@ opSTR(uint32_t opcode)
 	mem_write32(addr & ~3u, data);
 
 	/* Check for Abort */
-	if (arm.abort_base_restored && (armirq & 0x40)) {
+	if (arm.abort_base_restored && (arm.event & 0x40)) {
 		return 1;
 	}
 
@@ -1213,7 +1213,7 @@ opSTR(uint32_t opcode)
 		arm.reg[RN] = addr;
 	}
 
-	return (armirq & 0x40);
+	return (arm.event & 0x40);
 }
 
 static int
@@ -1247,7 +1247,7 @@ opLDR(uint32_t opcode)
 	data = mem_read32(addr & ~3u);
 
 	/* Check for Abort */
-	if (arm.abort_base_restored && (armirq & 0x40)) {
+	if (arm.abort_base_restored && (arm.event & 0x40)) {
 		return 1;
 	}
 
@@ -1264,7 +1264,7 @@ opLDR(uint32_t opcode)
 	}
 
 	/* Check for Abort (before writing Rd) */
-	if (armirq & 0x40) {
+	if (arm.event & 0x40) {
 		return 1;
 	}
 
@@ -1306,7 +1306,7 @@ opSTRB(uint32_t opcode)
 	mem_write8(addr, data);
 
 	/* Check for Abort */
-	if (arm.abort_base_restored && (armirq & 0x40)) {
+	if (arm.abort_base_restored && (arm.event & 0x40)) {
 		return 1;
 	}
 
@@ -1319,7 +1319,7 @@ opSTRB(uint32_t opcode)
 		arm.reg[RN] = addr;
 	}
 
-	return (armirq & 0x40);
+	return (arm.event & 0x40);
 }
 
 static int
@@ -1353,7 +1353,7 @@ opLDRB(uint32_t opcode)
 	data = mem_read8(addr);
 
 	/* Check for Abort */
-	if (arm.abort_base_restored && (armirq & 0x40)) {
+	if (arm.abort_base_restored && (arm.event & 0x40)) {
 		return 1;
 	}
 
@@ -1367,7 +1367,7 @@ opLDRB(uint32_t opcode)
 	}
 
 	/* Check for Abort (before writing Rd) */
-	if (armirq & 0x40) {
+	if (arm.event & 0x40) {
 		return 1;
 	}
 
@@ -1390,7 +1390,7 @@ opSTMD(uint32_t opcode)
 		addr += 4;
 	}
 	arm_store_multiple(opcode, addr, writeback);
-	return (armirq & 0x40);
+	return (arm.event & 0x40);
 }
 
 static int
@@ -1406,7 +1406,7 @@ opSTMI(uint32_t opcode)
 		addr += 4;
 	}
 	arm_store_multiple(opcode, addr, writeback);
-	return (armirq & 0x40);
+	return (arm.event & 0x40);
 }
 
 static int
@@ -1422,7 +1422,7 @@ opSTMDS(uint32_t opcode)
 		addr += 4;
 	}
 	arm_store_multiple_s(opcode, addr, writeback);
-	return (armirq & 0x40);
+	return (arm.event & 0x40);
 }
 
 static int
@@ -1438,7 +1438,7 @@ opSTMIS(uint32_t opcode)
 		addr += 4;
 	}
 	arm_store_multiple_s(opcode, addr, writeback);
-	return (armirq & 0x40);
+	return (arm.event & 0x40);
 }
 
 static int
@@ -1454,7 +1454,7 @@ opLDMD(uint32_t opcode)
 		addr += 4;
 	}
 	arm_load_multiple(opcode, addr, writeback);
-	return (armirq & 0x40);
+	return (arm.event & 0x40);
 }
 
 static int
@@ -1470,7 +1470,7 @@ opLDMI(uint32_t opcode)
 		addr += 4;
 	}
 	arm_load_multiple(opcode, addr, writeback);
-	return (armirq & 0x40);
+	return (arm.event & 0x40);
 }
 
 static int
@@ -1486,7 +1486,7 @@ opLDMDS(uint32_t opcode)
 		addr += 4;
 	}
 	arm_load_multiple_s(opcode, addr, writeback);
-	return (armirq & 0x40);
+	return (arm.event & 0x40);
 }
 
 static int
@@ -1502,7 +1502,7 @@ opLDMIS(uint32_t opcode)
 		addr += 4;
 	}
 	arm_load_multiple_s(opcode, addr, writeback);
-	return (armirq & 0x40);
+	return (arm.event & 0x40);
 }
 
 static int
@@ -1610,26 +1610,26 @@ static int
 opLDRH(uint32_t opcode)
 {
 	arm_ldrh(opcode);
-	return (armirq & 0x40);
+	return (arm.event & 0x40);
 }
 
 static int
 opLDRSB(uint32_t opcode)
 {
 	arm_ldrsb(opcode);
-	return (armirq & 0x40);
+	return (arm.event & 0x40);
 }
 
 static int
 opLDRSH(uint32_t opcode)
 {
 	arm_ldrsh(opcode);
-	return (armirq & 0x40);
+	return (arm.event & 0x40);
 }
 
 static int
 opSTRH(uint32_t opcode)
 {
 	arm_strh(opcode);
-	return (armirq & 0x40);
+	return (arm.event & 0x40);
 }

@@ -610,7 +610,7 @@ readmemfl(uint32_t addr)
 		} else {
 			readmemcache = addr >> 12;
 			phys_addr = translateaddress(addr, 0, 0);
-			if (armirq & 0x40) {
+			if (arm.event & 0x40) {
 				vraddrl[addr >> 12] = readmemcache = 0xffffffff;
 				return 0;
 			}
@@ -707,7 +707,7 @@ readmemfb(uint32_t addr)
 		} else {
 			readmemcache = addr >> 12;
 			phys_addr = translateaddress(addr, 0, 0);
-			if (armirq & 0x40) {
+			if (arm.event & 0x40) {
 				readmemcache = 0xffffffff;
 				return 0;
 			}
@@ -783,7 +783,7 @@ writememfl(uint32_t addr, uint32_t val)
 		} else {
 			writememcache = addr >> 12;
 			phys_addr = translateaddress(addr, 1, 0);
-			if (armirq & 0x40) {
+			if (arm.event & 0x40) {
 				writememcache = 0xffffffff;
 				return;
 			}
@@ -838,7 +838,7 @@ writememfb(uint32_t addr, uint8_t val)
 		} else {
 			writemembcache = addr >> 12;
 			phys_addr = translateaddress(addr, 1, 0);
-			if (armirq & 0x40) {
+			if (arm.event & 0x40) {
 				writemembcache = 0xffffffff;
 				return;
 			}

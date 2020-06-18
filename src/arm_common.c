@@ -82,7 +82,7 @@ arm_strh(uint32_t opcode)
 	mem_write8(addr | 1, (uint8_t) (data >> 8));
 
 	// Check for Abort
-	if (armirq & 0x40) {
+	if (arm.event & 0x40) {
 		return;
 	}
 
@@ -137,7 +137,7 @@ arm_ldrh(uint32_t opcode)
 	}
 
 	// Check for Abort
-	if (armirq & 0x40) {
+	if (arm.event & 0x40) {
 		return;
 	}
 
@@ -195,7 +195,7 @@ arm_ldrsh(uint32_t opcode)
 	}
 
 	// Check for Abort
-	if (armirq & 0x40) {
+	if (arm.event & 0x40) {
 		return;
 	}
 
@@ -244,7 +244,7 @@ arm_ldrsb(uint32_t opcode)
 	data = (uint32_t) (int32_t) (int8_t) mem_read8(addr);
 
 	// Check for Abort
-	if (armirq & 0x40) {
+	if (arm.event & 0x40) {
 		return;
 	}
 
@@ -297,7 +297,7 @@ arm_store_multiple(uint32_t opcode, uint32_t address, uint32_t writeback)
 	}
 
 	/* Check for Abort from first Store */
-	if (armirq & 0x40) {
+	if (arm.event & 0x40) {
 		goto data_abort;
 	}
 
@@ -305,7 +305,7 @@ arm_store_multiple(uint32_t opcode, uint32_t address, uint32_t writeback)
 	for ( ; c < 15; c++) {
 		if (opcode & mask) {
 			mem_write32(addr, arm.reg[c]);
-			if (armirq & 0x40) {
+			if (arm.event & 0x40) {
 				goto data_abort;
 			}
 			addr += 4;
@@ -316,7 +316,7 @@ arm_store_multiple(uint32_t opcode, uint32_t address, uint32_t writeback)
 	/* Store R15 (if requested) */
 	if (opcode & (1 << 15)) {
 		mem_write32(addr, arm.reg[15] + arm.r15_diff);
-		if (armirq & 0x40) {
+		if (arm.event & 0x40) {
 			goto data_abort;
 		}
 	}
@@ -377,7 +377,7 @@ arm_store_multiple_s(uint32_t opcode, uint32_t address, uint32_t writeback)
 	}
 
 	/* Check for Abort from first Store */
-	if (armirq & 0x40) {
+	if (arm.event & 0x40) {
 		goto data_abort;
 	}
 
@@ -385,7 +385,7 @@ arm_store_multiple_s(uint32_t opcode, uint32_t address, uint32_t writeback)
 	for ( ; c < 15; c++) {
 		if (opcode & mask) {
 			mem_write32(addr, *usrregs[c]);
-			if (armirq & 0x40) {
+			if (arm.event & 0x40) {
 				goto data_abort;
 			}
 			addr += 4;
@@ -396,7 +396,7 @@ arm_store_multiple_s(uint32_t opcode, uint32_t address, uint32_t writeback)
 	/* Store R15 (if requested) */
 	if (opcode & (1 << 15)) {
 		mem_write32(addr, arm.reg[15] + arm.r15_diff);
-		if (armirq & 0x40) {
+		if (arm.event & 0x40) {
 			goto data_abort;
 		}
 	}
@@ -445,7 +445,7 @@ arm_load_multiple(uint32_t opcode, uint32_t address, uint32_t writeback)
 	for (c = 0; c < 15; c++) {
 		if (opcode & mask) {
 			temp = mem_read32(addr);
-			if (armirq & 0x40) {
+			if (arm.event & 0x40) {
 				goto data_abort;
 			}
 			arm.reg[c] = temp;
@@ -457,7 +457,7 @@ arm_load_multiple(uint32_t opcode, uint32_t address, uint32_t writeback)
 	/* Load R15 (if requested) */
 	if (opcode & (1 << 15)) {
 		temp = mem_read32(addr);
-		if (armirq & 0x40) {
+		if (arm.event & 0x40) {
 			goto data_abort;
 		}
 		/* Only update R15 if no Data Abort occurred */
@@ -513,7 +513,7 @@ arm_load_multiple_s(uint32_t opcode, uint32_t address, uint32_t writeback)
 		for (c = 0; c < 15; c++) {
 			if (opcode & mask) {
 				temp = mem_read32(addr);
-				if (armirq & 0x40) {
+				if (arm.event & 0x40) {
 					goto data_abort;
 				}
 				arm.reg[c] = temp;
@@ -524,7 +524,7 @@ arm_load_multiple_s(uint32_t opcode, uint32_t address, uint32_t writeback)
 
 		/* Perform load of R15 and update CPSR/flags */
 		temp = mem_read32(addr);
-		if (armirq & 0x40) {
+		if (arm.event & 0x40) {
 			goto data_abort;
 		}
 		arm_write_r15(opcode, temp);
@@ -534,7 +534,7 @@ arm_load_multiple_s(uint32_t opcode, uint32_t address, uint32_t writeback)
 		for (c = 0; c < 15; c++) {
 			if (opcode & mask) {
 				temp = mem_read32(addr);
-				if (armirq & 0x40) {
+				if (arm.event & 0x40) {
 					goto data_abort;
 				}
 				*usrregs[c] = temp;
