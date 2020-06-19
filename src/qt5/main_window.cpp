@@ -1298,13 +1298,14 @@ MainWindow::mips_timer_timeout()
 	assert(pconfig_copy);
 
 	// Read (and zero atomically) the instruction count from the emulator core
+	// 'instruction_count' is in multiples of 65536
 	const unsigned count = (unsigned) instruction_count.fetchAndStoreRelease(0);
 
 	// Calculate MIPS
-	const double mips = (double) count / 1000000.0;
+	const double mips = (double) count * 65536.0 / 1000000.0;
 
 	// Update variables used for average
-	mips_total_instructions += (uint64_t) count;
+	mips_total_instructions += (uint64_t) count << 16;
 	mips_seconds++;
 
 	// Calculate Average

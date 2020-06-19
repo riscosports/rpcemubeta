@@ -554,10 +554,11 @@ Emulator::mainemuloop()
 			video_timer_next += (qint64) video_timer_interval;
 		}
 
-		// If the instruction count is greater than 100000, update the shared counter
-		if (inscount >= 100000) {
-			instruction_count.fetchAndAddRelease((int) inscount);
-			inscount = 0;
+		// If the instruction count is greater than or equal to 0x20000, update the shared counter
+		// 'instruction_count' is in multiples of 65536
+		if (inscount >= 0x20000) {
+			instruction_count.fetchAndAddRelease((int) (inscount >> 16));
+			inscount &= 0xffff;
 		}
 
 		// If NAT networking, poll, but not too often
