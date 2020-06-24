@@ -38,7 +38,6 @@ uint32_t codeblockpc[0x8000];
 int codeblocknum[0x8000];
 static uint8_t codeblockpresent[0x10000];
 
-static int flagsdirty;
 //#define BLOCKS 4096
 //#define HASH(l) ((l>>3)&0x3fff)
 
@@ -219,7 +218,6 @@ initcodeblock(uint32_t l)
 
 	currentblockpc = arm.reg[15] & arm.r15_mask;
 	currentblockpc2 = PC;
-	flagsdirty = 0;
 }
 
 static const int recompileinstructions[256] = {
@@ -441,9 +439,7 @@ generaterotate(uint32_t opcode, uint32_t *pcpsr, uint8_t mask)
 {
 	uint32_t temp;
 
-	if (!flagsdirty) {
-		addbyte(0x8a); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // MOV pcpsr+3,%cl
-	}
+	addbyte(0x8a); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // MOV pcpsr+3,%cl
 	temp = arm_imm(opcode);
 	if (mask != 0xf0) {
 		if (opcode & 0xf00) {
@@ -463,38 +459,34 @@ generaterotate(uint32_t opcode, uint32_t *pcpsr, uint8_t mask)
 static void
 generatesetzn(uint32_t opcode, uint32_t *pcpsr)
 {
+	NOT_USED(opcode);
+
 	gen_x86_lahf();
 	addbyte(0x80); addbyte(0xe4); addbyte(0xc0); // AND $ZFLAG+NFLAG,%ah
 	addbyte(0x08); addbyte(0xe1); // OR %ah,%cl
-
-	if ((opcode >> 28) == 0xe) {
-		flagsdirty = 1;
-	}
 	addbyte(0x88); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // MOV %cl,pcpsr+3
 }
 
 static void
 generatesetzn2(uint32_t opcode, uint32_t *pcpsr)
 {
+	NOT_USED(opcode);
+
 	gen_x86_lahf();
 	addbyte(0x80); addbyte(0xe4); addbyte(0xc0); // AND $ZFLAG+NFLAG,%ah
 	addbyte(0x08); addbyte(0xe1); // OR %ah,%cl
-	if ((opcode >> 28) == 0xe) {
-		flagsdirty = 1;
-	}
 	addbyte(0x88); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // MOV %cl,pcpsr+3
 }
 
 static void
 generatesetznS(uint32_t opcode, uint32_t *pcpsr)
 {
+	NOT_USED(opcode);
+
 	//gen_x86_lahf();
 	addbyte(0x80); addbyte(0xe4); addbyte(0xc0); // AND $ZFLAG+NFLAG,%ah
 	addbyte(0x08); addbyte(0xe1); // OR %ah,%cl
 	addbyte(0x88); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // MOV %cl,pcpsr+3
-	if ((opcode >> 28) == 0xe) {
-		flagsdirty = 1;
-	}
 }
 
 static void
@@ -1052,7 +1044,6 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 			}
 			break;
 		}
-		flagsdirty = 0;
 		if (RD == 15 || RN == 15) return 0;
 		if (!generate_shift(opcode)) {
 			return 0;
@@ -1065,9 +1056,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 	case 0x01: // ANDS reg
 		if ((opcode & 0xf0) == 0x90) {
 			// MULS
-			if (!flagsdirty) {
-				addbyte(0x8a); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // MOV pcpsr+3,%cl
-			}
+			addbyte(0x8a); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // MOV pcpsr+3,%cl
 			addbyte(0x80); addbyte(0xe1); addbyte(0x3f); // AND $~(NFLAG|ZFLAG),%cl
 			if (MULRD == MULRM) {
 				addbyte(0x31); addbyte(0xc0); // XOR %eax,%eax
@@ -1080,7 +1069,6 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 			generatesetzn(opcode, pcpsr);
 			break;
 		}
-		flagsdirty = 0;
 		if (RD == 15 || RN == 15) return 0;
 		if (!generateshiftflags(opcode, pcpsr)) {
 			return 0;
@@ -1104,7 +1092,6 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 			}
 			break;
 		}
-		flagsdirty = 0;
 		if (RD == 15 || RN == 15) return 0;
 		if (!generate_shift(opcode)) {
 			return 0;
@@ -1117,9 +1104,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 	case 0x03: // EORS reg
 		if ((opcode & 0xf0) == 0x90) {
 			// MLAS
-			if (!flagsdirty) {
-				addbyte(0x8a); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // MOV pcpsr+3,%cl
-			}
+			addbyte(0x8a); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // MOV pcpsr+3,%cl
 			addbyte(0x80); addbyte(0xe1); addbyte(0x3f); // AND $~(NFLAG|ZFLAG),%cl
 			if (MULRD == MULRM) {
 				addbyte(0x31); addbyte(0xc0); // XOR %eax,%eax
@@ -1138,14 +1123,12 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 			return 0;
 		}
 		// Shifted val now in %eax
-		flagsdirty = 0;
 		addbyte(0x33); addbyte(0x46); addbyte(RN<<2); // XOR Rn,%eax
 		gen_save_reg(RD, EAX);
 		generatesetzn(opcode, pcpsr);
 		break;
 
 	case 0x04: // SUB reg
-		flagsdirty = 0;
 		if (RD == 15 || RN == 15) return 0;
 		if (!generate_shift(opcode)) {
 			return 0;
@@ -1157,7 +1140,6 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		break;
 
 	case 0x05: // SUBS reg
-		flagsdirty = 0;
 		if (RD == 15 || RN == 15) return 0;
 		if (!generate_shift(opcode)) {
 			return 0;
@@ -1178,7 +1160,6 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		break;
 
 	case 0x06: // RSB reg
-		flagsdirty = 0;
 		if (RD == 15 || RN == 15) return 0;
 		if (!generate_shift(opcode)) {
 			return 0;
@@ -1197,7 +1178,6 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 			gen_save_reg(MULRD, EDX);
 			break;
 		}
-		flagsdirty = 0;
 		if (RD == 15 || RN == 15) return 0;
 		if (!generate_shift(opcode)) {
 			return 0;
@@ -1210,9 +1190,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 	case 0x09: // ADDS reg
 		if ((opcode & 0xf0) == 0x90) {
 			// UMULLS
-			if (!flagsdirty) {
-				addbyte(0x8a); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // MOV pcpsr+3,%cl
-			}
+			addbyte(0x8a); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // MOV pcpsr+3,%cl
 			addbyte(0x80); addbyte(0xe1); addbyte(0x3f); // AND $~(NFLAG|ZFLAG),%cl
 			gen_load_reg(MULRM, EAX);
 			addbyte(0xf7); addbyte(0x66); addbyte(MULRS<<2); // MULL Rs
@@ -1225,7 +1203,6 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 			addbyte(0x75); addbyte(3); // JNZ testn
 			addbyte(0x80); addbyte(0xc9); addbyte(0x40); // OR $ZFLAG,%cl
 			addbyte(0x88); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // MOV %cl,pcpsr+3
-			flagsdirty = 1;
 			break;
 		}
 		if (RD == 15 || RN == 15) return 0;
@@ -1233,7 +1210,6 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 			return 0;
 		}
 		// Shifted val now in %eax
-		flagsdirty = 0;
 		addbyte(0x8a); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // MOV pcpsr+3,%cl
 		addbyte(0x80); addbyte(0xe1); addbyte(0x0f); // AND $~(NFLAG|ZFLAG|CFLAG|VFLAG),%cl
 		gen_load_reg(RN, EDX);
@@ -1254,7 +1230,6 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		break;
 
 	case 0x0a: // ADC reg
-		flagsdirty = 0;
 		if ((opcode & 0xf0) == 0x90) {
 			// UMLAL
 			return 0;
@@ -1274,7 +1249,6 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		break;
 
 	case 0x0b: // ADCS reg
-		flagsdirty = 0;
 		if ((opcode & 0xf0) == 0x90) {
 			// UMLALS
 			return 0;
@@ -1314,7 +1288,6 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 			return 0;
 		}
 		// Shifted val now in %eax
-		flagsdirty = 0;
 		addbyte(0xf6); addbyte(0x05); addptr(((char *) pcpsr) + 3); addbyte(0x20); // TESTB $0x20,pcpsr+3
 		addbyte(0x89); addbyte(0xc2); // MOV %eax,%edx
 		gen_load_reg(RN, EAX);
@@ -1325,7 +1298,6 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		break;
 
 	case 0x0e: // RSC reg
-		flagsdirty = 0;
 		if ((opcode & 0xf0) == 0x90) {
 			// SMLAL
 			gen_load_reg(MULRM, EAX);
@@ -1354,7 +1326,6 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		break;
 
 	case 0x11: // TST reg
-		flagsdirty = 0;
 		if (RD == 15 || RN == 15) return 0;
 		if (!generateshiftflags(opcode, pcpsr)) {
 			return 0;
@@ -1365,7 +1336,6 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		break;
 
 	case 0x13: // TEQ reg
-		flagsdirty = 0;
 		if (RD == 15 || RN == 15) return 0;
 		if (!generateshiftflags(opcode, pcpsr)) {
 			return 0;
@@ -1376,7 +1346,6 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		break;
 
 	case 0x15: // CMP reg
-		flagsdirty = 0;
 		if (RD == 15 || RN == 15) return 0;
 		if (!generate_shift(opcode)) {
 			return 0;
@@ -1393,11 +1362,9 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		// .notoverflow
 		addbyte(0x0a); addbyte(0x8a); addptr(lahftablesub); // OR lahftablesub(%edx),%cl
 		addbyte(0x88); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // MOV %cl,pcpsr+3
-		flagsdirty = 1;
 		break;
 
 	case 0x18: // ORR reg
-		flagsdirty = 0;
 		if (RD == 15 || RN == 15) return 0;
 		if (!generate_shift(opcode)) {
 			return 0;
@@ -1408,7 +1375,6 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		break;
 
 	case 0x19: // ORRS reg
-		flagsdirty = 0;
 		if (RD == 15 || RN == 15) return 0;
 		if (!generateshiftflags(opcode, pcpsr)) {
 			return 0;
@@ -1420,7 +1386,6 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		break;
 
 	case 0x1a: // MOV reg
-		flagsdirty = 0;
 		if (!generate_shift(opcode)) {
 			return 0;
 		}
@@ -1436,7 +1401,6 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		break;
 
 	case 0x1b: // MOVS reg
-		flagsdirty = 0;
 		if (RD == 15 || RN == 15) return 0;
 		if (!generateshiftflags(opcode, pcpsr)) {
 			return 0;
@@ -1448,7 +1412,6 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		break;
 
 	case 0x1c: // BIC reg
-		flagsdirty = 0;
 		if (RD == 15 || RN == 15) return 0;
 		if (!generate_shift(opcode)) {
 			return 0;
@@ -1460,7 +1423,6 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		break;
 
 	case 0x1d: // BICS reg
-		flagsdirty = 0;
 		if (RD == 15 || RN == 15) return 0;
 		if (!generateshiftflags(opcode, pcpsr)) {
 			return 0;
@@ -1473,7 +1435,6 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		break;
 
 	case 0x1e: // MVN reg
-		flagsdirty = 0;
 		if (RD == 15 || RN == 15) return 0;
 		if (!generate_shift(opcode)) return 0;
 		// Shifted val now in %eax
@@ -1482,7 +1443,6 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		break;
 
 	case 0x1f: // MVNS reg
-		flagsdirty = 0;
 		if (RD == 15 || RN == 15) return 0;
 		if (!generateshiftflags(opcode, pcpsr)) return 0;
 		// Shifted val now in %eax
@@ -1493,14 +1453,12 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		break;
 
 	case 0x20: // AND imm
-		// flagsdirty = 0;
 		if (RD == 15) return 0;
 		templ = arm_imm(opcode);
 		generatedataproc(opcode, X86_OP_AND, templ);
 		break;
 
 	case 0x21: // ANDS imm
-		// flagsdirty = 0;
 		if (RD == 15) return 0;
 		templ = generaterotate(opcode, pcpsr, 0xc0);
 		// addbyte(0x80); addbyte(0xe1); addbyte(0x3f); // AND $~(NFLAG|ZFLAG),%cl
@@ -1509,14 +1467,12 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		break;
 
 	case 0x22: // EOR imm
-		// flagsdirty = 0;
 		if (RD == 15) return 0;
 		templ = arm_imm(opcode);
 		generatedataproc(opcode, X86_OP_XOR, templ);
 		break;
 
 	case 0x23: // EORS imm
-		// flagsdirty = 0;
 		if (RD == 15) return 0;
 		templ = generaterotate(opcode, pcpsr, 0xc0);
 		// addbyte(0x80); addbyte(0xe1); addbyte(0x3f); // AND $~(NFLAG|ZFLAG),%cl
@@ -1525,14 +1481,12 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		break;
 
 	case 0x24: // SUB imm
-		// flagsdirty = 0;
 		if (RD == 15) return 0;
 		templ = arm_imm(opcode);
 		generatedataproc(opcode, X86_OP_SUB, templ);
 		break;
 
 	case 0x25: // SUBS imm
-		flagsdirty = 0;
 		if (RD == 15) return 0;
 		addbyte(0x80); addbyte(0x25); addptr(((char *) pcpsr) + 3); addbyte(0xf); // ANDB $0xf,pcpsr+3
 		templ = arm_imm(opcode);
@@ -1543,18 +1497,15 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		addbyte(0xc0); addbyte(0xe1); addbyte(4); // SHL $4,%cl
 		addbyte(0x0a); addbyte(0x8a); addptr(lahftablesub); // OR lahftablesub(%edx),%cl
 		addbyte(0x08); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // OR %cl,pcpsr+3
-		// flagsdirty = 1;
 		break;
 
 	case 0x28: // ADD imm
-		// flagsdirty = 0;
 		if (RD == 15) return 0;
 		templ = arm_imm(opcode);
 		generatedataproc(opcode, X86_OP_ADD, templ);
 		break;
 
 	case 0x29: // ADDS imm
-		flagsdirty = 0;
 		if (RD == 15) return 0;
 		addbyte(0x80); addbyte(0x25); addptr(((char *) pcpsr) + 3); addbyte(0xf); // ANDB $0xf,pcpsr+3
 		templ = arm_imm(opcode);
@@ -1564,11 +1515,9 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		addbyte(0xc0); addbyte(0xe1); addbyte(4); // SHL $4,%cl
 		addbyte(0x0a); addbyte(0x8a); addptr(lahftable); // OR lahftable(%edx),%cl
 		addbyte(0x08); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // OR %cl,pcpsr+3
-		// flagsdirty = 1;
 		break;
 
 	case 0x31: // TST imm
-		// flagsdirty = 0;
 		if (RD == 15) return 0;
 		templ = generaterotate(opcode, pcpsr, 0xc0);
 		gen_load_reg(RN, EAX);
@@ -1581,7 +1530,6 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		break;
 
 	case 0x33: // TEQ imm
-		// flagsdirty = 0;
 		if (RD == 15) return 0;
 		templ = generaterotate(opcode, pcpsr, 0xc0);
 		gen_load_reg(RN, EAX);
@@ -1594,7 +1542,6 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		break;
 
 	case 0x35: // CMP imm
-		flagsdirty = 0;
 		if (RD == 15) return 0;
 		addbyte(0x80); addbyte(0x25); addptr(((char *) pcpsr) + 3); addbyte(0xf); // ANDB $0xf,pcpsr+3
 		templ = arm_imm(opcode);
@@ -1609,14 +1556,12 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		break;
 
 	case 0x38: // ORR imm
-		// flagsdirty = 0;
 		if (RD == 15) return 0;
 		templ = arm_imm(opcode);
 		generatedataproc(opcode, X86_OP_OR, templ);
 		break;
 
 	case 0x39: // ORRS imm
-		// flagsdirty = 0;
 		if (RD == 15) return 0;
 		templ = generaterotate(opcode, pcpsr, 0xc0);
 		generatedataprocS(opcode, X86_OP_OR, templ);
@@ -1624,14 +1569,12 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		break;
 
 	case 0x3a: // MOV imm
-		// flagsdirty = 0;
 		if (RD == 15) return 0;
 		templ = arm_imm(opcode);
 		addbyte(0xc7); addbyte(0x46); addbyte(RD<<2); addlong(templ); // MOVL $templ,Rd
 		break;
 
 	case 0x3b: // MOVS imm
-		// flagsdirty = 0;
 		if (RD == 15) return 0;
 		templ = generaterotate(opcode, pcpsr, 0xc0);
 		// addbyte(0x80); addbyte(0xe1); addbyte(0x3f); // AND $~(NFLAG|ZFLAG),%cl
@@ -1642,20 +1585,15 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		}
 		addbyte(0xc7); addbyte(0x46); addbyte(RD<<2); addlong(templ); // MOVL $templ,Rd
 		addbyte(0x88); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // MOV %cl,pcpsr+3
-		if ((opcode >> 28) == 0xe) {
-			flagsdirty = 1;
-		}
 		break;
 
 	case 0x3c: // BIC imm
-		// flagsdirty = 0;
 		if (RD == 15) return 0;
 		templ = ~arm_imm(opcode);
 		generatedataproc(opcode, X86_OP_AND, templ);
 		break;
 
 	case 0x3d: // BICS imm
-		// flagsdirty = 0;
 		if (RD == 15) return 0;
 		templ = ~generaterotate(opcode, pcpsr, 0xc0);
 		// addbyte(0x80); addbyte(0xe1); addbyte(0x3f); // AND $~(NFLAG|ZFLAG),%cl
@@ -1664,14 +1602,12 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		break;
 
 	case 0x3e: // MVN imm
-		// flagsdirty = 0;
 		if (RD == 15) return 0;
 		templ = ~arm_imm(opcode);
 		addbyte(0xc7); addbyte(0x46); addbyte(RD<<2); addlong(templ); // MOVL $templ,Rd
 		break;
 
 	case 0x3f: // MVNS imm
-		// flagsdirty = 0;
 		if (RD == 15) return 0;
 		templ = ~generaterotate(opcode, pcpsr, 0xc0);
 		// addbyte(0x80); addbyte(0xe1); addbyte(0x3f); // AND $~(NFLAG|ZFLAG),%cl
@@ -1682,9 +1618,6 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		}
 		addbyte(0xc7); addbyte(0x46); addbyte(RD<<2); addlong(templ); // MOVL $templ,Rd
 		addbyte(0x88); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // MOV %cl,pcpsr+3
-		if ((opcode >> 28) == 0xe) {
-			flagsdirty = 1;
-		}
 		break;
 
 	case 0x40: // STR Rd, [Rn], #-imm
@@ -1700,7 +1633,6 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 			}
 			gen_x86_mov_reg32_stack(EAX, 8);
 		}
-		flagsdirty = 0;
 		gen_load_reg(RN, EBX);
 		gen_load_reg(RD, ECX);
 		genstr();
@@ -1741,7 +1673,6 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 			}
 			gen_x86_mov_reg32_stack(EAX, 8);
 		}
-		flagsdirty = 0;
 		gen_load_reg(RN, EBX);
 		gen_load_reg(RD, ECX);
 		genstrb();
@@ -1782,7 +1713,6 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 			}
 			gen_x86_mov_reg32_stack(EAX, 8);
 		}
-		flagsdirty = 0;
 		gen_load_reg(RN, EBX);
 		genldr();
 		if (opcode & 0x2000000) {
@@ -1823,7 +1753,6 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 			}
 			gen_x86_mov_reg32_stack(EAX, 8);
 		}
-		flagsdirty = 0;
 		gen_load_reg(RN, EBX);
 		genldrb();
 		if (opcode & 0x2000000) {
@@ -1869,7 +1798,6 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		} else {
 			addbyte(0xb8); addlong(opcode & 0xfff); // MOV $(opcode & 0xfff),%eax
 		}
-		flagsdirty = 0;
 		gen_load_reg(RN, EBX);
 		if (RN == 15) {
 			addbyte(0x81); addbyte(0xe3); addlong(arm.r15_mask); // AND $arm.r15_mask,%ebx
@@ -1908,7 +1836,6 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		} else {
 			addbyte(0xb8); addlong(opcode & 0xfff); // MOV $(opcode & 0xfff),%eax
 		}
-		flagsdirty = 0;
 		gen_load_reg(RN, EBX);
 		if (RN == 15) {
 			addbyte(0x81); addbyte(0xe3); addlong(arm.r15_mask); // AND $arm.r15_mask,%ebx
@@ -1947,7 +1874,6 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		} else {
 			addbyte(0xb8); addlong(opcode & 0xfff); // MOV $(opcode & 0xfff),%eax
 		}
-		flagsdirty = 0;
 		gen_load_reg(RN, EBX);
 		if (RN == 15) {
 			addbyte(0x81); addbyte(0xe3); addlong(arm.r15_mask); // AND $arm.r15_mask,%ebx
@@ -1986,7 +1912,6 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		} else {
 			addbyte(0xb8); addlong(opcode & 0xfff); // MOV $(opcode & 0xfff),%eax
 		}
-		flagsdirty = 0;
 		gen_load_reg(RN, EBX);
 		if (RN == 15) {
 			addbyte(0x81); addbyte(0xe3); addlong(arm.r15_mask); // AND $arm.r15_mask,%ebx
@@ -2014,7 +1939,6 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		if (RN == 15) {
 			return 0;
 		}
-		flagsdirty = 0;
 		offset = arm_ldm_stm_offset(opcode);
 		gen_arm_ldm_stm_decrement(opcode, offset);
 		gen_arm_store_multiple(opcode, offset);
@@ -2027,7 +1951,6 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		if (RN == 15) {
 			return 0;
 		}
-		flagsdirty = 0;
 		offset = arm_ldm_stm_offset(opcode);
 		gen_arm_ldm_stm_decrement(opcode, offset);
 		gen_arm_store_multiple_s(opcode, offset);
@@ -2040,7 +1963,6 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		if (RN == 15) {
 			return 0;
 		}
-		flagsdirty = 0;
 		offset = arm_ldm_stm_offset(opcode);
 		gen_arm_ldm_stm_increment(opcode, offset);
 		gen_arm_store_multiple(opcode, offset);
@@ -2053,7 +1975,6 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		if (RN == 15) {
 			return 0;
 		}
-		flagsdirty = 0;
 		offset = arm_ldm_stm_offset(opcode);
 		gen_arm_ldm_stm_increment(opcode, offset);
 		gen_arm_store_multiple_s(opcode, offset);
@@ -2066,7 +1987,6 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		if (RN == 15) {
 			return 0;
 		}
-		flagsdirty = 0;
 		offset = arm_ldm_stm_offset(opcode);
 		gen_arm_ldm_stm_decrement(opcode, offset);
 		gen_arm_load_multiple(opcode, offset);
@@ -2079,7 +1999,6 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		if (RN == 15 || (opcode & 0x8000)) {
 			return 0;
 		}
-		flagsdirty = 0;
 		offset = arm_ldm_stm_offset(opcode);
 		gen_arm_ldm_stm_decrement(opcode, offset);
 		gen_arm_load_multiple_s(opcode, offset);
@@ -2092,7 +2011,6 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		if (RN == 15) {
 			return 0;
 		}
-		flagsdirty = 0;
 		offset = arm_ldm_stm_offset(opcode);
 		gen_arm_ldm_stm_increment(opcode, offset);
 		gen_arm_load_multiple(opcode, offset);
@@ -2105,7 +2023,6 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		if (RN == 15 || (opcode & 0x8000)) {
 			return 0;
 		}
-		flagsdirty = 0;
 		offset = arm_ldm_stm_offset(opcode);
 		gen_arm_ldm_stm_increment(opcode, offset);
 		gen_arm_load_multiple_s(opcode, offset);
@@ -2115,7 +2032,6 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 	case 0xa4: case 0xa5: case 0xa6: case 0xa7:
 	case 0xa8: case 0xa9: case 0xaa: case 0xab:
 	case 0xac: case 0xad: case 0xae: case 0xaf:
-		flagsdirty = 0;
 		offset = (opcode << 8);
 		offset = (uint32_t) ((int32_t) offset >> 6);
 		offset += 4;
@@ -2160,7 +2076,6 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 	case 0xb4: case 0xb5: case 0xb6: case 0xb7:
 	case 0xb8: case 0xb9: case 0xba: case 0xbb:
 	case 0xbc: case 0xbd: case 0xbe: case 0xbf:
-		flagsdirty = 0;
 		offset = (opcode << 8);
 		offset = (uint32_t) ((int32_t) offset >> 6);
 		offset += 4;
@@ -2202,9 +2117,6 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 	if (lastflagchange != 0) {
 		gen_x86_jump_here_long(lastflagchange);
 	}
-	if ((opcode >> 28) != 0xf) {
-		flagsdirty = 0;
-	}
 	return 1;
 }
 
@@ -2222,7 +2134,6 @@ generatecall(OpFn addr, uint32_t opcode, uint32_t *pcpsr)
 		}
 	}
 
-	flagsdirty = 0;
 	codeblockpos = old;
 
 	addbyte(0xc7); addbyte(0x04); addbyte(0x24); addlong(opcode); // MOVL $opcode,(%esp)
@@ -2277,8 +2188,6 @@ generatepcinc(void)
 void
 endblock(uint32_t opcode)
 {
-	flagsdirty = 0;
-
 	generateupdatepc();
 	generateupdateinscount();
 
@@ -2326,53 +2235,31 @@ generateflagtestandbranch(uint32_t opcode, uint32_t *pcpsr)
 	switch (opcode >> 28) {
 	case 0: // EQ
 	case 1: // NE
-		if (flagsdirty) {
-			addbyte(0xf6); addbyte(0xc1); addbyte(0x40); // TEST $0x40,%cl
-		} else {
-			addbyte(0xf6); addbyte(0x05); addptr(((char *) pcpsr) + 3); addbyte(0x40); // TESTB $0x40,pcpsr+3
-		}
+		addbyte(0xf6); addbyte(0x05); addptr(((char *) pcpsr) + 3); addbyte(0x40); // TESTB $0x40,pcpsr+3
 		cond = ((opcode >> 28) & 1) ? CC_NE : CC_E;
 		break;
 	case 2: // CS
 	case 3: // CC
-		if (flagsdirty) {
-			addbyte(0xf6); addbyte(0xc1); addbyte(0x20); // TEST $0x20,%cl
-		} else {
-			addbyte(0xf6); addbyte(0x05); addptr(((char *) pcpsr) + 3); addbyte(0x20); // TESTB $0x20,pcpsr+3
-		}
+		addbyte(0xf6); addbyte(0x05); addptr(((char *) pcpsr) + 3); addbyte(0x20); // TESTB $0x20,pcpsr+3
 		cond = ((opcode >> 28) & 1) ? CC_NE : CC_E;
 		break;
 	case 4: // MI
 	case 5: // PL
-		if (flagsdirty) {
-			addbyte(0xf6); addbyte(0xc1); addbyte(0x80); // TEST $0x80,%cl
-		} else {
-			addbyte(0xf6); addbyte(0x05); addptr(((char *) pcpsr) + 3); addbyte(0x80); // TESTB $0x80,pcpsr+3
-		}
+		addbyte(0xf6); addbyte(0x05); addptr(((char *) pcpsr) + 3); addbyte(0x80); // TESTB $0x80,pcpsr+3
 		cond = ((opcode >> 28) & 1) ? CC_NE : CC_E;
 		break;
 	case 6: // VS
 	case 7: // VC
-		if (flagsdirty) {
-			addbyte(0xf6); addbyte(0xc1); addbyte(0x10); // TEST $0x10,%cl
-		} else {
-			addbyte(0xf6); addbyte(0x05); addptr(((char *) pcpsr) + 3); addbyte(0x10); // TESTB $0x10,pcpsr+3
-		}
+		addbyte(0xf6); addbyte(0x05); addptr(((char *) pcpsr) + 3); addbyte(0x10); // TESTB $0x10,pcpsr+3
 		cond = ((opcode >> 28) & 1) ? CC_NE : CC_E;
 		break;
 	default:
-		if (flagsdirty) {
-			addbyte(0x0f); addbyte(0xb6); addbyte(0xc1); // MOVZBL %cl,%eax
-			addbyte(0xc1); addbyte(0xe8); addbyte(4); // SHR $4,%eax
-		} else {
-			addbyte(0xa1); addptr(pcpsr); // MOV pcpsr,%eax
-			addbyte(0xc1); addbyte(0xe8); addbyte(28); // SHR $28,%eax
-		}
+		addbyte(0xa1); addptr(pcpsr); // MOV pcpsr,%eax
+		addbyte(0xc1); addbyte(0xe8); addbyte(28); // SHR $28,%eax
 		addbyte(0x80); addbyte(0xb8); addptr(&flaglookup[opcode >> 28][0]); addbyte(0); // CMPB $0,flaglookup(%eax)
 		cond = CC_E;
 		break;
 	}
-	// flagsdirty = 0;
 	lastflagchange = gen_x86_jump_forward_long(cond);
 }
 
