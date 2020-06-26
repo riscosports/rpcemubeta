@@ -354,7 +354,7 @@ generate_shift(uint32_t opcode)
 static int
 generateshiftflags(uint32_t opcode, uint32_t *pcpsr)
 {
-	uint32_t temp;
+	uint32_t shift_amount;
 
 	if (opcode & 0x10) {
 		// Can't do register shifts or multiplies
@@ -368,14 +368,14 @@ generateshiftflags(uint32_t opcode, uint32_t *pcpsr)
 		return 1;
 	}
 
-	temp = (opcode >> 7) & 0x1f;
+	shift_amount = (opcode >> 7) & 0x1f;
 	switch (opcode & 0x60) {
 	case 0x00: // LSL
 		addbyte(0x8a); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // MOV pcpsr+3,%cl
 		gen_load_reg(RM, EAX);
-		if (temp) {
+		if (shift_amount != 0) {
 			addbyte(0x80); addbyte(0xe1); addbyte(~0xe0); // AND $ZFLAG+NFLAG+CFLAG,%cl
-			addbyte(0xc1); addbyte(0xe0); addbyte(temp); // SHL $temp,%eax
+			addbyte(0xc1); addbyte(0xe0); addbyte(shift_amount); // SHL $shift_amount,%eax
 			addbyte(0x73); addbyte(3); // JNC nocarry
 			addbyte(0x80); addbyte(0xc9); addbyte(0x20); // OR $CFLAG,%cl
 		} else {
@@ -383,11 +383,11 @@ generateshiftflags(uint32_t opcode, uint32_t *pcpsr)
 		}
 		return 1;
 	case 0x20: // LSR
-		if (temp) {
+		if (shift_amount != 0) {
 			addbyte(0x8a); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // MOV pcpsr+3,%cl
 			addbyte(0x80); addbyte(0xe1); addbyte(~0xe0); // AND $ZFLAG+NFLAG+CFLAG,%cl
 			gen_load_reg(RM, EAX);
-			addbyte(0xc1); addbyte(0xe8); addbyte(temp); // SHR $temp,%eax
+			addbyte(0xc1); addbyte(0xe8); addbyte(shift_amount); // SHR $shift_amount,%eax
 			addbyte(0x73); addbyte(3); // JNC nocarry
 			addbyte(0x80); addbyte(0xc9); addbyte(0x20); // OR $CFLAG,%cl
 		} else {
@@ -404,7 +404,7 @@ generateshiftflags(uint32_t opcode, uint32_t *pcpsr)
 		return 0;
 		addbyte(0x8a); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // MOV pcpsr+3,%cl
 		addbyte(0x80); addbyte(0xe1); addbyte(~0xe0); // AND $ZFLAG+NFLAG+CFLAG,%cl
-		if (temp == 0) {
+		if (shift_amount == 0) {
 			gen_load_reg(RM, EAX);
 			addbyte(0xa9); addlong(0x80000000); // TEST $0x80000000,%eax
 			addbyte(0x74); addbyte(3); // JZ nocarry
@@ -412,21 +412,21 @@ generateshiftflags(uint32_t opcode, uint32_t *pcpsr)
 			addbyte(0xc1); addbyte(0xf8); addbyte(31); // SAR $31,%eax
 		} else {
 			gen_load_reg(RM, EAX);
-			addbyte(0xc1); addbyte(0xf8); addbyte(temp); // SAR $temp,%eax
+			addbyte(0xc1); addbyte(0xf8); addbyte(shift_amount); // SAR $shift_amount,%eax
 			addbyte(0x73); addbyte(3); // JNC nocarry
 			addbyte(0x80); addbyte(0xc9); addbyte(0x20); // OR $CFLAG,%cl
 		}
 		return 1;
 	default: // ROR
 		return 0;
-		if (temp == 0) {
+		if (shift_amount == 0) {
 			// RRX
 			break;
 		}
 		addbyte(0x8a); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // MOV pcpsr+3,%cl
 		gen_load_reg(RM, EAX);
 		addbyte(0x80); addbyte(0xe1); addbyte(~0xe0); // AND $ZFLAG+NFLAG+CFLAG,%cl
-		addbyte(0xc1); addbyte(0xc8); addbyte(temp); // ROR $temp,%eax
+		addbyte(0xc1); addbyte(0xc8); addbyte(shift_amount); // ROR $shift_amount,%eax
 		addbyte(0x73); addbyte(3); // JNC nocarry
 		addbyte(0x80); addbyte(0xc9); addbyte(0x20); // OR $CFLAG,%cl
 		return 1;
