@@ -468,17 +468,6 @@ generatesetzn(uint32_t opcode, uint32_t *pcpsr)
 }
 
 static void
-generatesetzn2(uint32_t opcode, uint32_t *pcpsr)
-{
-	NOT_USED(opcode);
-
-	gen_x86_lahf();
-	addbyte(0x80); addbyte(0xe4); addbyte(0xc0); // AND $ZFLAG+NFLAG,%ah
-	addbyte(0x08); addbyte(0xe1); // OR %ah,%cl
-	addbyte(0x88); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // MOV %cl,pcpsr+3
-}
-
-static void
 generatesetznS(uint32_t opcode, uint32_t *pcpsr)
 {
 	NOT_USED(opcode);
@@ -1408,7 +1397,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		// Shifted val now in %eax
 		addbyte(0x85); addbyte(0xc0); // TEST %eax,%eax
 		gen_save_reg(RD, EAX);
-		generatesetzn2(opcode, pcpsr);
+		generatesetzn(opcode, pcpsr);
 		break;
 
 	case 0x1c: // BIC reg
