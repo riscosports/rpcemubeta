@@ -263,39 +263,43 @@ gen_save_reg(int reg, int x86reg)
 }
 
 static void
-generatedataproc(uint32_t opcode, uint8_t dataop, uint32_t templ)
+generatedataproc(uint32_t opcode, uint8_t op, uint32_t imm)
 {
 	if (RN == RD) {
-		addbyte(0x81); addbyte(0x05|dataop); addptr(&arm.reg[RD]); addlong(templ); // OPL $templ,Rd
+		// Can use RMW instruction
+		addbyte(0x81); addbyte(0x05|op); addptr(&arm.reg[RD]); addlong(imm); // OPL $imm,RD
 	} else {
+		// Load/modify/store
 		gen_load_reg(RN, EAX);
 		if (RN == 15 && arm.r15_mask != 0xfffffffc) {
 			addbyte(0x25); addlong(arm.r15_mask); // AND $arm.r15_mask,%eax
 		}
-		if (!(templ & ~0x7f)) {
-			addbyte(0x83); addbyte(0xc0|dataop); addbyte(templ); // OP $templ,%eax
+		if (!(imm & ~0x7f)) {
+			addbyte(0x83); addbyte(0xc0|op); addbyte(imm); // OP $imm,%eax
 		} else {
-			addbyte(0x81); addbyte(0xc0|dataop); addlong(templ); // OP $templ,%eax
+			addbyte(0x81); addbyte(0xc0|op); addlong(imm); // OP $imm,%eax
 		}
 		gen_save_reg(RD, EAX);
 	}
 }
 
 static void
-generatedataprocS(uint32_t opcode, uint8_t dataop, uint32_t templ)
+generatedataprocS(uint32_t opcode, uint8_t op, uint32_t imm)
 {
 	if (RN == RD) {
-		addbyte(0x81); addbyte(0x05|dataop); addptr(&arm.reg[RD]); addlong(templ); // OPL $templ,RD
+		// Can use RMW instruction
+		addbyte(0x81); addbyte(0x05|op); addptr(&arm.reg[RD]); addlong(imm); // OPL $imm,RD
 		gen_x86_lahf();
 	} else {
+		// Load/modify/store
 		gen_load_reg(RN, EDX);
 		if (RN == 15 && arm.r15_mask != 0xfffffffc) {
 			addbyte(0x81); addbyte(0xe2); addlong(arm.r15_mask); // AND $arm.r15_mask,%edx
 		}
-		if (!(templ & ~0x7f)) {
-			addbyte(0x83); addbyte(0xc2|dataop); addbyte(templ); // OP $templ,%edx
+		if (!(imm & ~0x7f)) {
+			addbyte(0x83); addbyte(0xc2|op); addbyte(imm); // OP $imm,%edx
 		} else {
-			addbyte(0x81); addbyte(0xc2|dataop); addlong(templ); // OP $templ,%edx
+			addbyte(0x81); addbyte(0xc2|op); addlong(imm); // OP $imm,%edx
 		}
 		gen_x86_lahf();
 		gen_save_reg(RD, EDX);

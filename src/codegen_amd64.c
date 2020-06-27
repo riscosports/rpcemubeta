@@ -327,14 +327,14 @@ gen_save_reg(int reg, int x86reg)
 }
 
 static void
-generatedataproc(uint32_t opcode, uint8_t op, uint32_t val)
+generatedataproc(uint32_t opcode, uint8_t op, uint32_t imm)
 {
 	if (RN == RD) {
 		// Can use RMW instruction
-		if (val & ~0x7f) {
-			addbyte(0x41); addbyte(0x81); addbyte(0x47|op); addbyte(RD<<2); addlong(val); // OP $val,RD
+		if (imm & ~0x7f) {
+			addbyte(0x41); addbyte(0x81); addbyte(0x47|op); addbyte(RD<<2); addlong(imm); // OPL $imm,RD
 		} else {
-			addbyte(0x41); addbyte(0x83); addbyte(0x47|op); addbyte(RD<<2); addbyte(val); // OP $val,RD
+			addbyte(0x41); addbyte(0x83); addbyte(0x47|op); addbyte(RD<<2); addbyte(imm); // OPL $imm,RD
 		}
 	} else {
 		// Load/modify/store
@@ -342,7 +342,7 @@ generatedataproc(uint32_t opcode, uint8_t op, uint32_t val)
 		if (RN == 15) {
 			addbyte(0x25); addlong(arm.r15_mask); // AND $arm.r15_mask,%eax
 		}
-		addbyte(0x05|op); addlong(val); // OP $val,%eax
+		addbyte(0x05|op); addlong(imm); // OP $imm,%eax
 		gen_save_reg(RD, EAX);
 	}
 }
