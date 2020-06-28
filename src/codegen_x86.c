@@ -1010,7 +1010,7 @@ gen_arm_load_multiple_s(uint32_t opcode, uint32_t offset)
 static int
 recompile(uint32_t opcode, uint32_t *pcpsr)
 {
-	uint32_t templ;
+	uint32_t rhs;
 	uint32_t offset;
 
 	if (arm.arch_v4) {
@@ -1446,43 +1446,43 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 
 	case 0x20: // AND imm
 		if (RD == 15) return 0;
-		templ = arm_imm(opcode);
-		generatedataproc(opcode, X86_OP_AND, templ);
+		rhs = arm_imm(opcode);
+		generatedataproc(opcode, X86_OP_AND, rhs);
 		break;
 
 	case 0x21: // ANDS imm
 		if (RD == 15) return 0;
-		templ = generaterotate(opcode, pcpsr, 0xc0);
+		rhs = generaterotate(opcode, pcpsr, 0xc0);
 		// addbyte(0x80); addbyte(0xe1); addbyte(0x3f); // AND $~(NFLAG|ZFLAG),%cl
-		generatedataprocS(opcode, X86_OP_AND, templ);
+		generatedataprocS(opcode, X86_OP_AND, rhs);
 		generatesetznS(opcode, pcpsr);
 		break;
 
 	case 0x22: // EOR imm
 		if (RD == 15) return 0;
-		templ = arm_imm(opcode);
-		generatedataproc(opcode, X86_OP_XOR, templ);
+		rhs = arm_imm(opcode);
+		generatedataproc(opcode, X86_OP_XOR, rhs);
 		break;
 
 	case 0x23: // EORS imm
 		if (RD == 15) return 0;
-		templ = generaterotate(opcode, pcpsr, 0xc0);
+		rhs = generaterotate(opcode, pcpsr, 0xc0);
 		// addbyte(0x80); addbyte(0xe1); addbyte(0x3f); // AND $~(NFLAG|ZFLAG),%cl
-		generatedataprocS(opcode, X86_OP_XOR, templ);
+		generatedataprocS(opcode, X86_OP_XOR, rhs);
 		generatesetznS(opcode, pcpsr);
 		break;
 
 	case 0x24: // SUB imm
 		if (RD == 15) return 0;
-		templ = arm_imm(opcode);
-		generatedataproc(opcode, X86_OP_SUB, templ);
+		rhs = arm_imm(opcode);
+		generatedataproc(opcode, X86_OP_SUB, rhs);
 		break;
 
 	case 0x25: // SUBS imm
 		if (RD == 15) return 0;
 		addbyte(0x80); addbyte(0x25); addptr(((char *) pcpsr) + 3); addbyte(0xf); // ANDB $0xf,pcpsr+3
-		templ = arm_imm(opcode);
-		generatedataprocS(opcode, X86_OP_SUB, templ);
+		rhs = arm_imm(opcode);
+		generatedataprocS(opcode, X86_OP_SUB, rhs);
 		//gen_x86_lahf();
 		addbyte(0x0f); addbyte(0x90); addbyte(0xc1); // SETO %cl
 		addbyte(0x0f); addbyte(0xb6); addbyte(0xd4); // MOVZBL %ah,%edx
@@ -1493,15 +1493,15 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 
 	case 0x28: // ADD imm
 		if (RD == 15) return 0;
-		templ = arm_imm(opcode);
-		generatedataproc(opcode, X86_OP_ADD, templ);
+		rhs = arm_imm(opcode);
+		generatedataproc(opcode, X86_OP_ADD, rhs);
 		break;
 
 	case 0x29: // ADDS imm
 		if (RD == 15) return 0;
 		addbyte(0x80); addbyte(0x25); addptr(((char *) pcpsr) + 3); addbyte(0xf); // ANDB $0xf,pcpsr+3
-		templ = arm_imm(opcode);
-		generatedataprocS(opcode, X86_OP_ADD, templ);
+		rhs = arm_imm(opcode);
+		generatedataprocS(opcode, X86_OP_ADD, rhs);
 		addbyte(0x0f); addbyte(0x90); addbyte(0xc1); // SETO %cl
 		addbyte(0x0f); addbyte(0xb6); addbyte(0xd4); // MOVZBL %ah,%edx
 		addbyte(0xc0); addbyte(0xe1); addbyte(4); // SHL $4,%cl
@@ -1511,34 +1511,34 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 
 	case 0x31: // TST imm
 		if (RD == 15) return 0;
-		templ = generaterotate(opcode, pcpsr, 0xc0);
+		rhs = generaterotate(opcode, pcpsr, 0xc0);
 		gen_load_reg(RN, EAX);
 		addbyte(0x80); addbyte(0xe1); addbyte(0x3f); // AND $~(NFLAG|ZFLAG),%cl
 		if (RN == 15 && arm.r15_mask != 0xfffffffc) {
 			addbyte(0x25); addlong(arm.r15_mask); // AND $arm.r15_mask,%eax
 		}
-		addbyte(0xa9); addlong(templ); // TEST $templ,%eax
+		addbyte(0xa9); addlong(rhs); // TEST $rhs,%eax
 		generatesetzn(opcode, pcpsr);
 		break;
 
 	case 0x33: // TEQ imm
 		if (RD == 15) return 0;
-		templ = generaterotate(opcode, pcpsr, 0xc0);
+		rhs = generaterotate(opcode, pcpsr, 0xc0);
 		gen_load_reg(RN, EAX);
 		addbyte(0x80); addbyte(0xe1); addbyte(0x3f); // AND $~(NFLAG|ZFLAG),%cl
 		if (RN == 15 && arm.r15_mask != 0xfffffffc) {
 			addbyte(0x25); addlong(arm.r15_mask); // AND $arm.r15_mask,%eax
 		}
-		addbyte(0x35); addlong(templ); // XOR $templ,%eax
+		addbyte(0x35); addlong(rhs); // XOR $rhs,%eax
 		generatesetzn(opcode, pcpsr);
 		break;
 
 	case 0x35: // CMP imm
 		if (RD == 15) return 0;
 		addbyte(0x80); addbyte(0x25); addptr(((char *) pcpsr) + 3); addbyte(0xf); // ANDB $0xf,pcpsr+3
-		templ = arm_imm(opcode);
+		rhs = arm_imm(opcode);
 		gen_load_reg(RN, EAX);
-		addbyte(0x3d); addlong(templ); // CMP $templ,%eax
+		addbyte(0x3d); addlong(rhs); // CMP $rhs,%eax
 		gen_x86_lahf();
 		addbyte(0x0f); addbyte(0x90); addbyte(0xc1); // SETO %cl
 		addbyte(0x0f); addbyte(0xb6); addbyte(0xd4); // MOVZBL %ah,%edx
@@ -1549,66 +1549,66 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 
 	case 0x38: // ORR imm
 		if (RD == 15) return 0;
-		templ = arm_imm(opcode);
-		generatedataproc(opcode, X86_OP_OR, templ);
+		rhs = arm_imm(opcode);
+		generatedataproc(opcode, X86_OP_OR, rhs);
 		break;
 
 	case 0x39: // ORRS imm
 		if (RD == 15) return 0;
-		templ = generaterotate(opcode, pcpsr, 0xc0);
-		generatedataprocS(opcode, X86_OP_OR, templ);
+		rhs = generaterotate(opcode, pcpsr, 0xc0);
+		generatedataprocS(opcode, X86_OP_OR, rhs);
 		generatesetznS(opcode, pcpsr);
 		break;
 
 	case 0x3a: // MOV imm
 		if (RD == 15) return 0;
-		templ = arm_imm(opcode);
-		addbyte(0xc7); addbyte(0x46); addbyte(RD<<2); addlong(templ); // MOVL $templ,Rd
+		rhs = arm_imm(opcode);
+		addbyte(0xc7); addbyte(0x46); addbyte(RD<<2); addlong(rhs); // MOVL $rhs,Rd
 		break;
 
 	case 0x3b: // MOVS imm
 		if (RD == 15) return 0;
-		templ = generaterotate(opcode, pcpsr, 0xc0);
+		rhs = generaterotate(opcode, pcpsr, 0xc0);
 		// addbyte(0x80); addbyte(0xe1); addbyte(0x3f); // AND $~(NFLAG|ZFLAG),%cl
-		if (templ == 0) {
+		if (rhs == 0) {
 			addbyte(0x80); addbyte(0xc9); addbyte(0x40); // OR $ZFLAG,%cl
-		} else if (templ & 0x80000000) {
+		} else if (rhs & 0x80000000) {
 			addbyte(0x80); addbyte(0xc9); addbyte(0x80); // OR $NFLAG,%cl
 		}
-		addbyte(0xc7); addbyte(0x46); addbyte(RD<<2); addlong(templ); // MOVL $templ,Rd
+		addbyte(0xc7); addbyte(0x46); addbyte(RD<<2); addlong(rhs); // MOVL $rhs,Rd
 		addbyte(0x88); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // MOV %cl,pcpsr+3
 		break;
 
 	case 0x3c: // BIC imm
 		if (RD == 15) return 0;
-		templ = ~arm_imm(opcode);
-		generatedataproc(opcode, X86_OP_AND, templ);
+		rhs = ~arm_imm(opcode);
+		generatedataproc(opcode, X86_OP_AND, rhs);
 		break;
 
 	case 0x3d: // BICS imm
 		if (RD == 15) return 0;
-		templ = ~generaterotate(opcode, pcpsr, 0xc0);
+		rhs = ~generaterotate(opcode, pcpsr, 0xc0);
 		// addbyte(0x80); addbyte(0xe1); addbyte(0x3f); // AND $~(NFLAG|ZFLAG),%cl
-		generatedataprocS(opcode, X86_OP_AND, templ);
+		generatedataprocS(opcode, X86_OP_AND, rhs);
 		generatesetznS(opcode, pcpsr);
 		break;
 
 	case 0x3e: // MVN imm
 		if (RD == 15) return 0;
-		templ = ~arm_imm(opcode);
-		addbyte(0xc7); addbyte(0x46); addbyte(RD<<2); addlong(templ); // MOVL $templ,Rd
+		rhs = ~arm_imm(opcode);
+		addbyte(0xc7); addbyte(0x46); addbyte(RD<<2); addlong(rhs); // MOVL $rhs,Rd
 		break;
 
 	case 0x3f: // MVNS imm
 		if (RD == 15) return 0;
-		templ = ~generaterotate(opcode, pcpsr, 0xc0);
+		rhs = ~generaterotate(opcode, pcpsr, 0xc0);
 		// addbyte(0x80); addbyte(0xe1); addbyte(0x3f); // AND $~(NFLAG|ZFLAG),%cl
-		if (templ == 0) {
+		if (rhs == 0) {
 			addbyte(0x80); addbyte(0xc9); addbyte(0x40); // OR $ZFLAG,%cl
-		} else if (templ & 0x80000000) {
+		} else if (rhs & 0x80000000) {
 			addbyte(0x80); addbyte(0xc9); addbyte(0x80); // OR $NFLAG,%cl
 		}
-		addbyte(0xc7); addbyte(0x46); addbyte(RD<<2); addlong(templ); // MOVL $templ,Rd
+		addbyte(0xc7); addbyte(0x46); addbyte(RD<<2); addlong(rhs); // MOVL $rhs,Rd
 		addbyte(0x88); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // MOV %cl,pcpsr+3
 		break;
 

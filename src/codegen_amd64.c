@@ -771,7 +771,7 @@ gen_arm_load_multiple(uint32_t opcode, uint32_t offset)
 static int
 recompile(uint32_t opcode, uint32_t *pcpsr)
 {
-	uint32_t templ;
+	uint32_t rhs;
 	uint32_t offset;
 
 	NOT_USED(pcpsr);
@@ -848,26 +848,26 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 
 	case 0x20: // AND imm
 		if (RD == 15) return 0;
-		templ = arm_imm(opcode);
-		generatedataproc(opcode, X86_OP_AND, templ);
+		rhs = arm_imm(opcode);
+		generatedataproc(opcode, X86_OP_AND, rhs);
 		break;
 
 	case 0x22: // EOR imm
 		if (RD == 15) return 0;
-		templ = arm_imm(opcode);
-		generatedataproc(opcode, X86_OP_XOR, templ);
+		rhs = arm_imm(opcode);
+		generatedataproc(opcode, X86_OP_XOR, rhs);
 		break;
 
 	case 0x24: // SUB imm
 		if (RD == 15) return 0;
-		templ = arm_imm(opcode);
-		generatedataproc(opcode, X86_OP_SUB, templ);
+		rhs = arm_imm(opcode);
+		generatedataproc(opcode, X86_OP_SUB, rhs);
 		break;
 
 	case 0x28: // ADD imm
 		if (RD == 15) return 0;
-		templ = arm_imm(opcode);
-		generatedataproc(opcode, X86_OP_ADD, templ);
+		rhs = arm_imm(opcode);
+		generatedataproc(opcode, X86_OP_ADD, rhs);
 		break;
 
 	case 0x2a: // ADC imm
@@ -875,20 +875,20 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		if (RD == 15) return 0;
 		gen_load_reg(15, ECX);
 		addbyte(0xc1); addbyte(0xe1); addbyte(3); // SHL $3,%ecx - puts ARM carry into x64 carry
-		templ = arm_imm(opcode);
-		generatedataproc(opcode, X86_OP_ADC, templ);
+		rhs = arm_imm(opcode);
+		generatedataproc(opcode, X86_OP_ADC, rhs);
 		break;
 
 	case 0x38: // ORR imm
 		if (RD == 15) return 0;
-		templ = arm_imm(opcode);
-		generatedataproc(opcode, X86_OP_OR, templ);
+		rhs = arm_imm(opcode);
+		generatedataproc(opcode, X86_OP_OR, rhs);
 		break;
 
 	case 0x3a: // MOV imm
 		if (RD == 15) return 0;
-		templ = arm_imm(opcode);
-		genstoreimm(RD, templ);
+		rhs = arm_imm(opcode);
+		genstoreimm(RD, rhs);
 		break;
 
 	case 0x40: // STR Rd, [Rn], #-imm
