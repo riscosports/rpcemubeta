@@ -441,23 +441,22 @@ generateshiftflags(uint32_t opcode, uint32_t *pcpsr)
 static uint32_t
 generaterotate(uint32_t opcode, uint32_t *pcpsr, uint8_t mask)
 {
-	uint32_t temp;
+	const uint32_t imm = arm_imm(opcode);
 
 	addbyte(0x8a); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // MOV pcpsr+3,%cl
-	temp = arm_imm(opcode);
 	if (mask != 0xf0) {
 		if (opcode & 0xf00) {
-			if (temp & 0x80000000) {
+			if (imm & 0x80000000) {
 				addbyte(0x80); addbyte(0xc9); addbyte(0x20); // OR $CFLAG,%cl
 			} else {
 				addbyte(0x80); addbyte(0xe1); addbyte(~(0x20|mask)); // AND $~CFLAG,%cl
 			}
 		}
 	}
-	if (!(opcode & 0xf00) || (temp & 0x80000000) || mask == 0xf0) {
+	if (!(opcode & 0xf00) || (imm & 0x80000000) || mask == 0xf0) {
 		addbyte(0x80); addbyte(0xe1); addbyte(~mask); // AND $~mask,%cl
 	}
-	return temp;
+	return imm;
 }
 
 static void
