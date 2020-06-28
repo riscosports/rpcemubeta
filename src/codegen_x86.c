@@ -1603,9 +1603,8 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		if (RD == 15) return 0;
 		rhs = ~generaterotate(opcode, pcpsr, 0xc0);
 		// addbyte(0x80); addbyte(0xe1); addbyte(0x3f); // AND $~(NFLAG|ZFLAG),%cl
-		if (rhs == 0) {
-			addbyte(0x80); addbyte(0xc9); addbyte(0x40); // OR $ZFLAG,%cl
-		} else if (rhs & 0x80000000) {
+		// Not possible for 'rhs' to be zero here, so no need to set Z flag
+		if (rhs & 0x80000000) {
 			addbyte(0x80); addbyte(0xc9); addbyte(0x80); // OR $NFLAG,%cl
 		}
 		addbyte(0xc7); addbyte(0x46); addbyte(RD<<2); addlong(rhs); // MOVL $rhs,Rd
