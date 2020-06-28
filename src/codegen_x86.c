@@ -460,10 +460,8 @@ generaterotate(uint32_t opcode, uint32_t *pcpsr, uint8_t mask)
 }
 
 static void
-generatesetzn(uint32_t opcode, uint32_t *pcpsr)
+generatesetzn(uint32_t *pcpsr)
 {
-	NOT_USED(opcode);
-
 	gen_x86_lahf();
 	addbyte(0x80); addbyte(0xe4); addbyte(0xc0); // AND $ZFLAG+NFLAG,%ah
 	addbyte(0x08); addbyte(0xe1); // OR %ah,%cl
@@ -471,11 +469,8 @@ generatesetzn(uint32_t opcode, uint32_t *pcpsr)
 }
 
 static void
-generatesetznS(uint32_t opcode, uint32_t *pcpsr)
+generatesetznS(uint32_t *pcpsr)
 {
-	NOT_USED(opcode);
-
-	//gen_x86_lahf();
 	addbyte(0x80); addbyte(0xe4); addbyte(0xc0); // AND $ZFLAG+NFLAG,%ah
 	addbyte(0x08); addbyte(0xe1); // OR %ah,%cl
 	addbyte(0x88); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // MOV %cl,pcpsr+3
@@ -1058,7 +1053,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 				gen_save_reg(MULRD, EAX);
 			}
 			addbyte(0x85); addbyte(0xc0); // TEST %eax,%eax
-			generatesetzn(opcode, pcpsr);
+			generatesetzn(pcpsr);
 			break;
 		}
 		if (RD == 15 || RN == 15) return 0;
@@ -1068,7 +1063,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		// Shifted val now in %eax
 		addbyte(0x23); addbyte(0x46); addbyte(RN<<2); // AND Rn,%eax
 		gen_save_reg(RD, EAX);
-		generatesetzn(opcode, pcpsr);
+		generatesetzn(pcpsr);
 		break;
 
 	case 0x02: // EOR reg
@@ -1107,7 +1102,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 				gen_save_reg(MULRD, EAX);
 			}
 			addbyte(0x85); addbyte(0xc0); // TEST %eax,%eax
-			generatesetzn(opcode, pcpsr);
+			generatesetzn(pcpsr);
 			break;
 		}
 		if (RD == 15 || RN == 15) return 0;
@@ -1117,7 +1112,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		// Shifted val now in %eax
 		addbyte(0x33); addbyte(0x46); addbyte(RN<<2); // XOR Rn,%eax
 		gen_save_reg(RD, EAX);
-		generatesetzn(opcode, pcpsr);
+		generatesetzn(pcpsr);
 		break;
 
 	case 0x04: // SUB reg
@@ -1324,7 +1319,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		}
 		// Shifted val now in %eax
 		addbyte(0x85); addbyte(0x46); addbyte(RN<<2); // TEST %eax,Rn
-		generatesetzn(opcode, pcpsr);
+		generatesetzn(pcpsr);
 		break;
 
 	case 0x13: // TEQ reg
@@ -1334,7 +1329,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		}
 		// Shifted val now in %eax
 		addbyte(0x33); addbyte(0x46); addbyte(RN<<2); // XOR Rn,%eax
-		generatesetzn(opcode, pcpsr);
+		generatesetzn(pcpsr);
 		break;
 
 	case 0x15: // CMP reg
@@ -1374,7 +1369,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		// Shifted val now in %eax
 		addbyte(0x0b); addbyte(0x46); addbyte(RN<<2); // OR Rn,%eax
 		gen_save_reg(RD, EAX);
-		generatesetzn(opcode, pcpsr);
+		generatesetzn(pcpsr);
 		break;
 
 	case 0x1a: // MOV reg
@@ -1400,7 +1395,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		// Shifted val now in %eax
 		addbyte(0x85); addbyte(0xc0); // TEST %eax,%eax
 		gen_save_reg(RD, EAX);
-		generatesetzn(opcode, pcpsr);
+		generatesetzn(pcpsr);
 		break;
 
 	case 0x1c: // BIC reg
@@ -1423,7 +1418,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		addbyte(0xf7); addbyte(0xd0); // NOT %eax
 		addbyte(0x23); addbyte(0x46); addbyte(RN<<2); // AND Rn,%eax
 		gen_save_reg(RD, EAX);
-		generatesetzn(opcode, pcpsr);
+		generatesetzn(pcpsr);
 		break;
 
 	case 0x1e: // MVN reg
@@ -1441,7 +1436,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		addbyte(0xf7); addbyte(0xd0); // NOT %eax
 		addbyte(0x85); addbyte(0xc0); // TEST %eax,%eax
 		gen_save_reg(RD, EAX);
-		generatesetzn(opcode, pcpsr);
+		generatesetzn(pcpsr);
 		break;
 
 	case 0x20: // AND imm
@@ -1455,7 +1450,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		rhs = generaterotate(opcode, pcpsr, 0xc0);
 		// addbyte(0x80); addbyte(0xe1); addbyte(0x3f); // AND $~(NFLAG|ZFLAG),%cl
 		generatedataprocS(opcode, X86_OP_AND, rhs);
-		generatesetznS(opcode, pcpsr);
+		generatesetznS(pcpsr);
 		break;
 
 	case 0x22: // EOR imm
@@ -1469,7 +1464,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		rhs = generaterotate(opcode, pcpsr, 0xc0);
 		// addbyte(0x80); addbyte(0xe1); addbyte(0x3f); // AND $~(NFLAG|ZFLAG),%cl
 		generatedataprocS(opcode, X86_OP_XOR, rhs);
-		generatesetznS(opcode, pcpsr);
+		generatesetznS(pcpsr);
 		break;
 
 	case 0x24: // SUB imm
@@ -1518,7 +1513,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 			addbyte(0x25); addlong(arm.r15_mask); // AND $arm.r15_mask,%eax
 		}
 		addbyte(0xa9); addlong(rhs); // TEST $rhs,%eax
-		generatesetzn(opcode, pcpsr);
+		generatesetzn(pcpsr);
 		break;
 
 	case 0x33: // TEQ imm
@@ -1530,7 +1525,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 			addbyte(0x25); addlong(arm.r15_mask); // AND $arm.r15_mask,%eax
 		}
 		addbyte(0x35); addlong(rhs); // XOR $rhs,%eax
-		generatesetzn(opcode, pcpsr);
+		generatesetzn(pcpsr);
 		break;
 
 	case 0x35: // CMP imm
@@ -1557,7 +1552,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		if (RD == 15) return 0;
 		rhs = generaterotate(opcode, pcpsr, 0xc0);
 		generatedataprocS(opcode, X86_OP_OR, rhs);
-		generatesetznS(opcode, pcpsr);
+		generatesetznS(pcpsr);
 		break;
 
 	case 0x3a: // MOV imm
@@ -1590,7 +1585,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		rhs = ~generaterotate(opcode, pcpsr, 0xc0);
 		// addbyte(0x80); addbyte(0xe1); addbyte(0x3f); // AND $~(NFLAG|ZFLAG),%cl
 		generatedataprocS(opcode, X86_OP_AND, rhs);
-		generatesetznS(opcode, pcpsr);
+		generatesetznS(pcpsr);
 		break;
 
 	case 0x3e: // MVN imm
