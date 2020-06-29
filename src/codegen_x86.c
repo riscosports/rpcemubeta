@@ -345,7 +345,7 @@ generateshiftflags(uint32_t opcode, uint32_t *pcpsr)
 		// No shift
 		addbyte(0x8a); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // MOV pcpsr+3,%cl
 		gen_load_reg(RM, EAX);
-		addbyte(0x80); addbyte(0xe1); addbyte(~0xc0); //AND $ZFLAG+NFLAG,%cl
+		addbyte(0x80); addbyte(0xe1); addbyte(0x3f); // AND $~(NFLAG|ZFLAG),%cl
 		return 1;
 	}
 
@@ -355,18 +355,18 @@ generateshiftflags(uint32_t opcode, uint32_t *pcpsr)
 		addbyte(0x8a); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // MOV pcpsr+3,%cl
 		gen_load_reg(RM, EAX);
 		if (shift_amount != 0) {
-			addbyte(0x80); addbyte(0xe1); addbyte(~0xe0); // AND $ZFLAG+NFLAG+CFLAG,%cl
+			addbyte(0x80); addbyte(0xe1); addbyte(0x1f); // AND $~(NFLAG|ZFLAG|CFLAG),%cl
 			addbyte(0xc1); addbyte(0xe0); addbyte(shift_amount); // SHL $shift_amount,%eax
 			addbyte(0x73); addbyte(3); // JNC nocarry
 			addbyte(0x80); addbyte(0xc9); addbyte(0x20); // OR $CFLAG,%cl
 		} else {
-			addbyte(0x80); addbyte(0xe1); addbyte(~0xc0); // AND $ZFLAG+NFLAG,%cl
+			addbyte(0x80); addbyte(0xe1); addbyte(0x3f); // AND $~(NFLAG|ZFLAG),%cl
 		}
 		return 1;
 	case 0x20: // LSR
 		if (shift_amount != 0) {
 			addbyte(0x8a); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // MOV pcpsr+3,%cl
-			addbyte(0x80); addbyte(0xe1); addbyte(~0xe0); // AND $ZFLAG+NFLAG+CFLAG,%cl
+			addbyte(0x80); addbyte(0xe1); addbyte(0x1f); // AND $~(NFLAG|ZFLAG|CFLAG),%cl
 			gen_load_reg(RM, EAX);
 			addbyte(0xc1); addbyte(0xe8); addbyte(shift_amount); // SHR $shift_amount,%eax
 			addbyte(0x73); addbyte(3); // JNC nocarry
@@ -374,7 +374,7 @@ generateshiftflags(uint32_t opcode, uint32_t *pcpsr)
 		} else {
 			return 0;
 			addbyte(0x8a); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // MOV pcpsr+3,%cl
-			addbyte(0x80); addbyte(0xe1); addbyte(~0xe0); // AND $ZFLAG+NFLAG+CFLAG,%cl
+			addbyte(0x80); addbyte(0xe1); addbyte(0x1f); // AND $~(NFLAG|ZFLAG|CFLAG),%cl
 			addbyte(0xa9); addlong(0x80000000); // TEST $0x80000000,%eax
 			addbyte(0x74); addbyte(3); // JZ nocarry
 			addbyte(0x80); addbyte(0xc9); addbyte(0x20); // OR $CFLAG,%cl
@@ -384,7 +384,7 @@ generateshiftflags(uint32_t opcode, uint32_t *pcpsr)
 	case 0x40: // ASR
 		return 0;
 		addbyte(0x8a); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // MOV pcpsr+3,%cl
-		addbyte(0x80); addbyte(0xe1); addbyte(~0xe0); // AND $ZFLAG+NFLAG+CFLAG,%cl
+		addbyte(0x80); addbyte(0xe1); addbyte(0x1f); // AND $~(NFLAG|ZFLAG|CFLAG),%cl
 		if (shift_amount == 0) {
 			gen_load_reg(RM, EAX);
 			addbyte(0xa9); addlong(0x80000000); // TEST $0x80000000,%eax
@@ -406,7 +406,7 @@ generateshiftflags(uint32_t opcode, uint32_t *pcpsr)
 		}
 		addbyte(0x8a); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // MOV pcpsr+3,%cl
 		gen_load_reg(RM, EAX);
-		addbyte(0x80); addbyte(0xe1); addbyte(~0xe0); // AND $ZFLAG+NFLAG+CFLAG,%cl
+		addbyte(0x80); addbyte(0xe1); addbyte(0x1f); // AND $~(NFLAG|ZFLAG|CFLAG),%cl
 		addbyte(0xc1); addbyte(0xc8); addbyte(shift_amount); // ROR $shift_amount,%eax
 		addbyte(0x73); addbyte(3); // JNC nocarry
 		addbyte(0x80); addbyte(0xc9); addbyte(0x20); // OR $CFLAG,%cl
@@ -438,7 +438,7 @@ static void
 generatesetzn(uint32_t *pcpsr)
 {
 	gen_x86_lahf();
-	addbyte(0x80); addbyte(0xe4); addbyte(0xc0); // AND $ZFLAG+NFLAG,%ah
+	addbyte(0x80); addbyte(0xe4); addbyte(0xc0); // AND $(NFLAG|ZFLAG),%ah
 	addbyte(0x08); addbyte(0xe1); // OR %ah,%cl
 	addbyte(0x88); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // MOV %cl,pcpsr+3
 }
@@ -1390,7 +1390,9 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 
 	case 0x1e: // MVN reg
 		if (RD == 15 || RN == 15) return 0;
-		if (!generate_shift(opcode)) return 0;
+		if (!generate_shift(opcode)) {
+			return 0;
+		}
 		// Shifted val now in %eax
 		addbyte(0xf7); addbyte(0xd0); // NOT %eax
 		gen_save_reg(RD, EAX);
@@ -1398,7 +1400,9 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 
 	case 0x1f: // MVNS reg
 		if (RD == 15 || RN == 15) return 0;
-		if (!generateshiftflags(opcode, pcpsr)) return 0;
+		if (!generateshiftflags(opcode, pcpsr)) {
+			return 0;
+		}
 		// Shifted val now in %eax
 		addbyte(0xf7); addbyte(0xd0); // NOT %eax
 		addbyte(0x85); addbyte(0xc0); // TEST %eax,%eax
