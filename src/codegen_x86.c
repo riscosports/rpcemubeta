@@ -262,27 +262,6 @@ gen_save_reg(int reg, int x86reg)
 	}
 }
 
-static void
-generatedataproc(uint32_t opcode, uint8_t op, uint32_t imm)
-{
-	if (RN == RD) {
-		// Can use RMW instruction
-		addbyte(0x81); addbyte(0x05|op); addptr(&arm.reg[RD]); addlong(imm); // OPL $imm,RD
-	} else {
-		// Load/modify/store
-		gen_load_reg(RN, EAX);
-		if (RN == 15 && arm.r15_mask != 0xfffffffc) {
-			addbyte(0x25); addlong(arm.r15_mask); // AND $arm.r15_mask,%eax
-		}
-		if (!(imm & ~0x7f)) {
-			addbyte(0x83); addbyte(0xc0|op); addbyte(imm); // OP $imm,%eax
-		} else {
-			addbyte(0x81); addbyte(0xc0|op); addlong(imm); // OP $imm,%eax
-		}
-		gen_save_reg(RD, EAX);
-	}
-}
-
 static int
 generate_shift(uint32_t opcode)
 {
@@ -432,6 +411,27 @@ gen_imm_cflag(uint32_t opcode, uint32_t *pcpsr)
 		addbyte(0x80); addbyte(0xe1); addbyte(0x3f); // AND $~(NFLAG|ZFLAG),%cl
 	}
 	return imm;
+}
+
+static void
+gen_data_proc_imm(uint32_t opcode, uint8_t op, uint32_t imm)
+{
+	if (RN == RD) {
+		// Can use RMW instruction
+		addbyte(0x81); addbyte(0x05|op); addptr(&arm.reg[RD]); addlong(imm); // OPL $imm,RD
+	} else {
+		// Load/modify/store
+		gen_load_reg(RN, EAX);
+		if (RN == 15 && arm.r15_mask != 0xfffffffc) {
+			addbyte(0x25); addlong(arm.r15_mask); // AND $arm.r15_mask,%eax
+		}
+		if (!(imm & ~0x7f)) {
+			addbyte(0x83); addbyte(0xc0|op); addbyte(imm); // OP $imm,%eax
+		} else {
+			addbyte(0x81); addbyte(0xc0|op); addlong(imm); // OP $imm,%eax
+		}
+		gen_save_reg(RD, EAX);
+	}
 }
 
 static void
@@ -1413,40 +1413,40 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 	case 0x20: // AND imm
 		if (RD == 15) return 0;
 		rhs = arm_imm(opcode);
-		generatedataproc(opcode, X86_OP_AND, rhs);
+		gen_data_proc_imm(opcode, X86_OP_AND, rhs);
 		break;
 
 	case 0x21: // ANDS imm
 		if (RD == 15) return 0;
 		rhs = gen_imm_cflag(opcode, pcpsr);
-		generatedataproc(opcode, X86_OP_AND, rhs);
+		gen_data_proc_imm(opcode, X86_OP_AND, rhs);
 		generatesetzn(pcpsr);
 		break;
 
 	case 0x22: // EOR imm
 		if (RD == 15) return 0;
 		rhs = arm_imm(opcode);
-		generatedataproc(opcode, X86_OP_XOR, rhs);
+		gen_data_proc_imm(opcode, X86_OP_XOR, rhs);
 		break;
 
 	case 0x23: // EORS imm
 		if (RD == 15) return 0;
 		rhs = gen_imm_cflag(opcode, pcpsr);
-		generatedataproc(opcode, X86_OP_XOR, rhs);
+		gen_data_proc_imm(opcode, X86_OP_XOR, rhs);
 		generatesetzn(pcpsr);
 		break;
 
 	case 0x24: // SUB imm
 		if (RD == 15) return 0;
 		rhs = arm_imm(opcode);
-		generatedataproc(opcode, X86_OP_SUB, rhs);
+		gen_data_proc_imm(opcode, X86_OP_SUB, rhs);
 		break;
 
 	case 0x25: // SUBS imm
 		if (RD == 15) return 0;
 		addbyte(0x80); addbyte(0x25); addptr(((char *) pcpsr) + 3); addbyte(0xf); // ANDB $0xf,pcpsr+3
 		rhs = arm_imm(opcode);
-		generatedataproc(opcode, X86_OP_SUB, rhs);
+		gen_data_proc_imm(opcode, X86_OP_SUB, rhs);
 		gen_x86_lahf();
 		addbyte(0x0f); addbyte(0x90); addbyte(0xc1); // SETO %cl
 		addbyte(0x0f); addbyte(0xb6); addbyte(0xd4); // MOVZBL %ah,%edx
@@ -1458,14 +1458,14 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 	case 0x28: // ADD imm
 		if (RD == 15) return 0;
 		rhs = arm_imm(opcode);
-		generatedataproc(opcode, X86_OP_ADD, rhs);
+		gen_data_proc_imm(opcode, X86_OP_ADD, rhs);
 		break;
 
 	case 0x29: // ADDS imm
 		if (RD == 15) return 0;
 		addbyte(0x80); addbyte(0x25); addptr(((char *) pcpsr) + 3); addbyte(0xf); // ANDB $0xf,pcpsr+3
 		rhs = arm_imm(opcode);
-		generatedataproc(opcode, X86_OP_ADD, rhs);
+		gen_data_proc_imm(opcode, X86_OP_ADD, rhs);
 		gen_x86_lahf();
 		addbyte(0x0f); addbyte(0x90); addbyte(0xc1); // SETO %cl
 		addbyte(0x0f); addbyte(0xb6); addbyte(0xd4); // MOVZBL %ah,%edx
@@ -1515,13 +1515,13 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 	case 0x38: // ORR imm
 		if (RD == 15) return 0;
 		rhs = arm_imm(opcode);
-		generatedataproc(opcode, X86_OP_OR, rhs);
+		gen_data_proc_imm(opcode, X86_OP_OR, rhs);
 		break;
 
 	case 0x39: // ORRS imm
 		if (RD == 15) return 0;
 		rhs = gen_imm_cflag(opcode, pcpsr);
-		generatedataproc(opcode, X86_OP_OR, rhs);
+		gen_data_proc_imm(opcode, X86_OP_OR, rhs);
 		generatesetzn(pcpsr);
 		break;
 
@@ -1546,13 +1546,13 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 	case 0x3c: // BIC imm
 		if (RD == 15) return 0;
 		rhs = ~arm_imm(opcode);
-		generatedataproc(opcode, X86_OP_AND, rhs);
+		gen_data_proc_imm(opcode, X86_OP_AND, rhs);
 		break;
 
 	case 0x3d: // BICS imm
 		if (RD == 15) return 0;
 		rhs = ~gen_imm_cflag(opcode, pcpsr);
-		generatedataproc(opcode, X86_OP_AND, rhs);
+		gen_data_proc_imm(opcode, X86_OP_AND, rhs);
 		generatesetzn(pcpsr);
 		break;
 

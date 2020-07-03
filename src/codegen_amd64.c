@@ -327,27 +327,6 @@ gen_save_reg(int reg, int x86reg)
 }
 
 static void
-generatedataproc(uint32_t opcode, uint8_t op, uint32_t imm)
-{
-	if (RN == RD) {
-		// Can use RMW instruction
-		if (imm & ~0x7f) {
-			addbyte(0x41); addbyte(0x81); addbyte(0x47|op); addbyte(RD<<2); addlong(imm); // OPL $imm,RD
-		} else {
-			addbyte(0x41); addbyte(0x83); addbyte(0x47|op); addbyte(RD<<2); addbyte(imm); // OPL $imm,RD
-		}
-	} else {
-		// Load/modify/store
-		gen_load_reg(RN, EAX);
-		if (RN == 15) {
-			addbyte(0x25); addlong(arm.r15_mask); // AND $arm.r15_mask,%eax
-		}
-		addbyte(0x05|op); addlong(imm); // OP $imm,%eax
-		gen_save_reg(RD, EAX);
-	}
-}
-
-static void
 generateregdataproc(uint32_t opcode, uint8_t op, int dirmatters)
 {
 	if (dirmatters || RN == 15) {
@@ -410,6 +389,27 @@ generate_shift(uint32_t opcode)
 		return 1;
 	}
 	return 0;
+}
+
+static void
+gen_data_proc_imm(uint32_t opcode, uint8_t op, uint32_t imm)
+{
+	if (RN == RD) {
+		// Can use RMW instruction
+		if (imm & ~0x7f) {
+			addbyte(0x41); addbyte(0x81); addbyte(0x47|op); addbyte(RD<<2); addlong(imm); // OPL $imm,RD
+		} else {
+			addbyte(0x41); addbyte(0x83); addbyte(0x47|op); addbyte(RD<<2); addbyte(imm); // OPL $imm,RD
+		}
+	} else {
+		// Load/modify/store
+		gen_load_reg(RN, EAX);
+		if (RN == 15) {
+			addbyte(0x25); addlong(arm.r15_mask); // AND $arm.r15_mask,%eax
+		}
+		addbyte(0x05|op); addlong(imm); // OP $imm,%eax
+		gen_save_reg(RD, EAX);
+	}
 }
 
 static void
@@ -849,25 +849,25 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 	case 0x20: // AND imm
 		if (RD == 15) return 0;
 		rhs = arm_imm(opcode);
-		generatedataproc(opcode, X86_OP_AND, rhs);
+		gen_data_proc_imm(opcode, X86_OP_AND, rhs);
 		break;
 
 	case 0x22: // EOR imm
 		if (RD == 15) return 0;
 		rhs = arm_imm(opcode);
-		generatedataproc(opcode, X86_OP_XOR, rhs);
+		gen_data_proc_imm(opcode, X86_OP_XOR, rhs);
 		break;
 
 	case 0x24: // SUB imm
 		if (RD == 15) return 0;
 		rhs = arm_imm(opcode);
-		generatedataproc(opcode, X86_OP_SUB, rhs);
+		gen_data_proc_imm(opcode, X86_OP_SUB, rhs);
 		break;
 
 	case 0x28: // ADD imm
 		if (RD == 15) return 0;
 		rhs = arm_imm(opcode);
-		generatedataproc(opcode, X86_OP_ADD, rhs);
+		gen_data_proc_imm(opcode, X86_OP_ADD, rhs);
 		break;
 
 	case 0x2a: // ADC imm
@@ -876,13 +876,13 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		gen_load_reg(15, ECX);
 		addbyte(0xc1); addbyte(0xe1); addbyte(3); // SHL $3,%ecx - puts ARM carry into x64 carry
 		rhs = arm_imm(opcode);
-		generatedataproc(opcode, X86_OP_ADC, rhs);
+		gen_data_proc_imm(opcode, X86_OP_ADC, rhs);
 		break;
 
 	case 0x38: // ORR imm
 		if (RD == 15) return 0;
 		rhs = arm_imm(opcode);
-		generatedataproc(opcode, X86_OP_OR, rhs);
+		gen_data_proc_imm(opcode, X86_OP_OR, rhs);
 		break;
 
 	case 0x3a: // MOV imm
