@@ -326,22 +326,6 @@ gen_save_reg(int reg, int x86reg)
 	}
 }
 
-static void
-generateregdataproc(uint32_t opcode, uint8_t op, int dirmatters)
-{
-	if (dirmatters || RN == 15) {
-		gen_load_reg(RN, EDX);
-		if (RN == 15) {
-			addbyte(0x81); addbyte(0xe2); addlong(arm.r15_mask); // AND $arm.r15_mask,%edx
-		}
-		addbyte(0x01|op); addbyte(0xc2); // OP %eax,%edx
-		gen_save_reg(RD, EDX);
-	} else {
-		addbyte(0x41); addbyte(0x03|op); addbyte(0x47); addbyte(RN<<2); // OP RN,%eax
-		gen_save_reg(RD, EAX);
-	}
-}
-
 static int
 generate_shift(uint32_t opcode)
 {
@@ -389,6 +373,22 @@ generate_shift(uint32_t opcode)
 		return 1;
 	}
 	return 0;
+}
+
+static void
+gen_data_proc_reg(uint32_t opcode, uint8_t op, int dirmatters)
+{
+	if (dirmatters || RN == 15) {
+		gen_load_reg(RN, EDX);
+		if (RN == 15) {
+			addbyte(0x81); addbyte(0xe2); addlong(arm.r15_mask); // AND $arm.r15_mask,%edx
+		}
+		addbyte(0x01|op); addbyte(0xc2); // OP %eax,%edx
+		gen_save_reg(RD, EDX);
+	} else {
+		addbyte(0x41); addbyte(0x03|op); addbyte(0x47); addbyte(RN<<2); // OP RN,%eax
+		gen_save_reg(RD, EAX);
+	}
 }
 
 static void
@@ -792,7 +792,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		if (!generate_shift(opcode)) {
 			return 0;
 		}
-		generateregdataproc(opcode, X86_OP_AND, 1);
+		gen_data_proc_reg(opcode, X86_OP_AND, 1);
 		break;
 
 	case 0x02: // EOR reg
@@ -800,7 +800,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		if (!generate_shift(opcode)) {
 			return 0;
 		}
-		generateregdataproc(opcode, X86_OP_XOR, 0);
+		gen_data_proc_reg(opcode, X86_OP_XOR, 0);
 		break;
 
 	case 0x04: // SUB reg
@@ -808,7 +808,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		if (!generate_shift(opcode)) {
 			return 0;
 		}
-		generateregdataproc(opcode, X86_OP_SUB, 1);
+		gen_data_proc_reg(opcode, X86_OP_SUB, 1);
 		break;
 
 	case 0x08: // ADD reg
@@ -816,7 +816,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		if (!generate_shift(opcode)) {
 			return 0;
 		}
-		generateregdataproc(opcode, X86_OP_ADD, 0);
+		gen_data_proc_reg(opcode, X86_OP_ADD, 0);
 		break;
 
 	case 0x0a: // ADC reg
@@ -827,7 +827,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		}
 		gen_load_reg(15, ECX);
 		addbyte(0xc1); addbyte(0xe1); addbyte(3); // SHL $3,%ecx - puts ARM carry into x64 carry
-		generateregdataproc(opcode, X86_OP_ADC, 0);
+		gen_data_proc_reg(opcode, X86_OP_ADC, 0);
 		break;
 
 	case 0x18: // ORR reg
@@ -835,7 +835,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		if (!generate_shift(opcode)) {
 			return 0;
 		}
-		generateregdataproc(opcode, X86_OP_OR, 0);
+		gen_data_proc_reg(opcode, X86_OP_OR, 0);
 		break;
 
 	case 0x1a: // MOV reg
