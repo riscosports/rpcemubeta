@@ -418,7 +418,7 @@ gen_data_proc_imm(uint32_t opcode, uint8_t op, uint32_t imm)
 {
 	if (RN == RD) {
 		// Can use RMW instruction
-		addbyte(0x81); addbyte(0x05|op); addptr(&arm.reg[RD]); addlong(imm); // OPL $imm,RD
+		addbyte(0x81); addbyte(0x46|op); addbyte(RD<<2); addlong(imm); // OPL $imm,RD
 	} else {
 		// Load/modify/store
 		gen_load_reg(RN, EAX);
@@ -875,7 +875,7 @@ gen_arm_load_multiple(uint32_t opcode, uint32_t offset)
 		if (opcode & mask) {
 			addbyte(0x8b); addbyte(0x43); addbyte(d); // MOV d(%ebx),%eax
 			if (c == 15) {
-				addbyte(0x8b); addbyte(0x0d); addptr(&arm.r15_mask); // MOV arm.r15_mask,%ecx
+				addbyte(0x8b); addbyte(0x4e); addbyte(offsetof(ARMState, r15_mask)); // MOV arm.r15_mask,%ecx
 				gen_load_reg(15, EDX);
 				addbyte(0x83); addbyte(0xc0); addbyte(4); // ADD $4,%eax
 				addbyte(0x21); addbyte(0xc8); // AND %ecx,%eax
@@ -2094,7 +2094,7 @@ generatecall(OpFn addr, uint32_t opcode, uint32_t *pcpsr)
 
 	if (!flaglookup[opcode >> 28][(*pcpsr) >> 28] && (opcode & 0xe000000) == 0xa000000) {
 		if (pcinc != 0) {
-			addbyte(0x83); addbyte(0x05); addptr(&arm.reg[15]); addbyte(pcinc); // ADDL $pcinc,arm.reg[15]
+			addbyte(0x83); addbyte(0x46); addbyte(15<<2); addbyte(pcinc); // ADDL $pcinc,R15
 			// pcinc = 0;
 		}
 		gen_x86_jump(CC_ALWAYS, 8);
