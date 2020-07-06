@@ -446,7 +446,7 @@ generatesetzn(uint32_t *pcpsr)
 static void
 gen_test_armirq(void)
 {
-	addbyte(0xf6); addbyte(0x05); addptr(&arm.event); addbyte(0x40); // TESTB $0x40,arm.event
+	addbyte(0xf7); addbyte(0x46); addbyte(offsetof(ARMState, event)); addlong(0x40); // TESTL $0x40,arm.event
 	gen_x86_jump(CC_NZ, 0);
 }
 
@@ -2149,7 +2149,7 @@ endblock(uint32_t opcode)
 	addbyte(0xff); addbyte(0x0d); addptr(&linecyc); // DECL linecyc
 	gen_x86_jump(CC_S, 0);
 
-	addbyte(0xf6); addbyte(0x05); addptr(&arm.event); addbyte(0xff); // TESTB $0xff,arm.event
+	addbyte(0xf7); addbyte(0x46); addbyte(offsetof(ARMState, event)); addlong(0xff); // TESTL $0xff,arm.event
 	gen_x86_jump(CC_NZ, 0);
 
 	gen_load_reg(15, EAX);
