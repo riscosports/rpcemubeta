@@ -436,6 +436,28 @@ gen_data_proc_imm(uint32_t opcode, uint8_t op, uint32_t imm)
 }
 
 static void
+gen_flags_add(uint32_t *pcpsr)
+{
+	gen_x86_lahf();
+	addbyte(0x0f); addbyte(0x90); addbyte(0xc1); // SETO %cl
+	addbyte(0x0f); addbyte(0xb6); addbyte(0xd4); // MOVZBL %ah,%edx
+	addbyte(0xc0); addbyte(0xe1); addbyte(4); // SHL $4,%cl
+	addbyte(0x0a); addbyte(0x8a); addptr(lahf_table_add); // OR lahf_table_add(%edx),%cl
+	addbyte(0x08); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // OR %cl,pcpsr+3
+}
+
+static void
+gen_flags_sub(uint32_t *pcpsr)
+{
+	gen_x86_lahf();
+	addbyte(0x0f); addbyte(0x90); addbyte(0xc1); // SETO %cl
+	addbyte(0x0f); addbyte(0xb6); addbyte(0xd4); // MOVZBL %ah,%edx
+	addbyte(0xc0); addbyte(0xe1); addbyte(4); // SHL $4,%cl
+	addbyte(0x0a); addbyte(0x8a); addptr(lahf_table_sub); // OR lahf_table_sub(%edx),%cl
+	addbyte(0x08); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // OR %cl,pcpsr+3
+}
+
+static void
 generatesetzn(uint32_t *pcpsr)
 {
 	gen_x86_lahf();
@@ -1448,12 +1470,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		addbyte(0x80); addbyte(0x25); addptr(((char *) pcpsr) + 3); addbyte(0xf); // ANDB $0xf,pcpsr+3
 		rhs = arm_imm(opcode);
 		gen_data_proc_imm(opcode, X86_OP_SUB, rhs);
-		gen_x86_lahf();
-		addbyte(0x0f); addbyte(0x90); addbyte(0xc1); // SETO %cl
-		addbyte(0x0f); addbyte(0xb6); addbyte(0xd4); // MOVZBL %ah,%edx
-		addbyte(0xc0); addbyte(0xe1); addbyte(4); // SHL $4,%cl
-		addbyte(0x0a); addbyte(0x8a); addptr(lahf_table_sub); // OR lahf_table_sub(%edx),%cl
-		addbyte(0x08); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // OR %cl,pcpsr+3
+		gen_flags_sub(pcpsr);
 		break;
 
 	case 0x28: // ADD imm
@@ -1467,12 +1484,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		addbyte(0x80); addbyte(0x25); addptr(((char *) pcpsr) + 3); addbyte(0xf); // ANDB $0xf,pcpsr+3
 		rhs = arm_imm(opcode);
 		gen_data_proc_imm(opcode, X86_OP_ADD, rhs);
-		gen_x86_lahf();
-		addbyte(0x0f); addbyte(0x90); addbyte(0xc1); // SETO %cl
-		addbyte(0x0f); addbyte(0xb6); addbyte(0xd4); // MOVZBL %ah,%edx
-		addbyte(0xc0); addbyte(0xe1); addbyte(4); // SHL $4,%cl
-		addbyte(0x0a); addbyte(0x8a); addptr(lahf_table_add); // OR lahf_table_add(%edx),%cl
-		addbyte(0x08); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // OR %cl,pcpsr+3
+		gen_flags_add(pcpsr);
 		break;
 
 	case 0x31: // TST imm
@@ -1505,12 +1517,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		rhs = arm_imm(opcode);
 		gen_load_reg(RN, EAX);
 		addbyte(0x3d); addlong(rhs); // CMP $rhs,%eax
-		gen_x86_lahf();
-		addbyte(0x0f); addbyte(0x90); addbyte(0xc1); // SETO %cl
-		addbyte(0x0f); addbyte(0xb6); addbyte(0xd4); // MOVZBL %ah,%edx
-		addbyte(0xc0); addbyte(0xe1); addbyte(4); // SHL $4,%cl
-		addbyte(0x0a); addbyte(0x8a); addptr(lahf_table_sub); // OR lahf_table_sub(%edx),%cl
-		addbyte(0x08); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // OR %cl,pcpsr+3
+		gen_flags_sub(pcpsr);
 		break;
 
 	case 0x38: // ORR imm
