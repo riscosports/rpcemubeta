@@ -46,7 +46,8 @@ static int tempinscount;
 
 static int codeblockpos;
 
-static uint8_t lahftable[256], lahftablesub[256];
+static uint8_t lahf_table_add[256];
+static uint8_t lahf_table_sub[256];
 
 static void gen_load_reg(int reg, int x86reg);
 static void gen_save_reg(int reg, int x86reg);
@@ -120,12 +121,12 @@ initcodeblocks(void)
 	blockpoint = 0;
 
 	for (c = 0; c < 256; c++) {
-		lahftable[c] = 0;
+		lahf_table_add[c] = 0;
 		if (c & 1) {
-			lahftable[c] |= 0x20; // C flag
+			lahf_table_add[c] |= 0x20; // C flag
 		}
-		lahftable[c] |= (c & 0xc0); // N and Z flags
-		lahftablesub[c] = lahftable[c] ^ 0x20;
+		lahf_table_add[c] |= (c & 0xc0); // N and Z flags
+		lahf_table_sub[c] = lahf_table_add[c] ^ 0x20;
 	}
 
 	// Set memory pages containing rcodeblock[]s executable -
@@ -1109,7 +1110,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		addbyte(0x71); addbyte(3); // JNO notoverflow
 		addbyte(0x80); addbyte(0xc9); addbyte(0x10); // OR $VFLAG,%cl
 		// .notoverflow
-		addbyte(0x0a); addbyte(0x8a); addptr(lahftablesub); // OR lahftablesub(%edx),%cl
+		addbyte(0x0a); addbyte(0x8a); addptr(lahf_table_sub); // OR lahf_table_sub(%edx),%cl
 		addbyte(0x88); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // MOV %cl,pcpsr+3
 		break;
 
@@ -1224,7 +1225,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		addbyte(0x71); addbyte(3); // JNO notoverflow
 		addbyte(0x80); addbyte(0xc9); addbyte(0x10); // OR $VFLAG,%cl
 		// .notoverflow
-		addbyte(0x0a); addbyte(0x8a); addptr(lahftable); // OR lahftable(%edx),%cl
+		addbyte(0x0a); addbyte(0x8a); addptr(lahf_table_add); // OR lahf_table_add(%edx),%cl
 		addbyte(0x88); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // MOV %cl,pcpsr+3
 		break;
 
@@ -1314,7 +1315,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		addbyte(0x71); addbyte(3); // JNO notoverflow
 		addbyte(0x80); addbyte(0xc9); addbyte(0x10); // OR $VFLAG,%cl
 		// .notoverflow
-		addbyte(0x0a); addbyte(0x8a); addptr(lahftablesub); // OR lahftablesub(%edx),%cl
+		addbyte(0x0a); addbyte(0x8a); addptr(lahf_table_sub); // OR lahf_table_sub(%edx),%cl
 		addbyte(0x88); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // MOV %cl,pcpsr+3
 		break;
 
@@ -1451,7 +1452,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		addbyte(0x0f); addbyte(0x90); addbyte(0xc1); // SETO %cl
 		addbyte(0x0f); addbyte(0xb6); addbyte(0xd4); // MOVZBL %ah,%edx
 		addbyte(0xc0); addbyte(0xe1); addbyte(4); // SHL $4,%cl
-		addbyte(0x0a); addbyte(0x8a); addptr(lahftablesub); // OR lahftablesub(%edx),%cl
+		addbyte(0x0a); addbyte(0x8a); addptr(lahf_table_sub); // OR lahf_table_sub(%edx),%cl
 		addbyte(0x08); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // OR %cl,pcpsr+3
 		break;
 
@@ -1470,7 +1471,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		addbyte(0x0f); addbyte(0x90); addbyte(0xc1); // SETO %cl
 		addbyte(0x0f); addbyte(0xb6); addbyte(0xd4); // MOVZBL %ah,%edx
 		addbyte(0xc0); addbyte(0xe1); addbyte(4); // SHL $4,%cl
-		addbyte(0x0a); addbyte(0x8a); addptr(lahftable); // OR lahftable(%edx),%cl
+		addbyte(0x0a); addbyte(0x8a); addptr(lahf_table_add); // OR lahf_table_add(%edx),%cl
 		addbyte(0x08); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // OR %cl,pcpsr+3
 		break;
 
@@ -1508,7 +1509,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		addbyte(0x0f); addbyte(0x90); addbyte(0xc1); // SETO %cl
 		addbyte(0x0f); addbyte(0xb6); addbyte(0xd4); // MOVZBL %ah,%edx
 		addbyte(0xc0); addbyte(0xe1); addbyte(4); // SHL $4,%cl
-		addbyte(0x0a); addbyte(0x8a); addptr(lahftablesub); // OR lahftablesub(%edx),%cl
+		addbyte(0x0a); addbyte(0x8a); addptr(lahf_table_sub); // OR lahf_table_sub(%edx),%cl
 		addbyte(0x08); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // OR %cl,pcpsr+3
 		break;
 
