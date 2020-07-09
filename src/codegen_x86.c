@@ -1512,7 +1512,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		break;
 
 	case 0x35: // CMP imm
-		if (RD == 15) return 0;
+		if (RD == 15 || RN == 15) return 0;
 		addbyte(0x80); addbyte(0x25); addptr(((char *) pcpsr) + 3); addbyte(0xf); // ANDB $0xf,pcpsr+3
 		rhs = arm_imm(opcode);
 		gen_load_reg(RN, EAX);
