@@ -49,9 +49,6 @@ static int codeblockpos;
 static uint8_t lahf_table_add[256];
 static uint8_t lahf_table_sub[256];
 
-static void gen_load_reg(int reg, int x86reg);
-static void gen_save_reg(int reg, int x86reg);
-
 static int blockpoint, blockpoint2;
 static uint32_t blocks[BLOCKS];
 static int pcinc;
