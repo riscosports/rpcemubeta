@@ -446,12 +446,18 @@ gen_flags_add(uint32_t *pcpsr)
 static void
 gen_flags_sub(uint32_t *pcpsr)
 {
+	int jump_not_overflow;
+
 	gen_x86_lahf();
-	addbyte(0x0f); addbyte(0x90); addbyte(0xc1); // SETO %cl
-	addbyte(0x0f); addbyte(0xb6); addbyte(0xd4); // MOVZBL %ah,%edx
-	addbyte(0xc0); addbyte(0xe1); addbyte(4); // SHL $4,%cl
-	addbyte(0x0a); addbyte(0x8a); addptr(lahf_table_sub); // OR lahf_table_sub(%edx),%cl
-	addbyte(0x08); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // OR %cl,pcpsr+3
+	addbyte(0x0f); addbyte(0xb6); addbyte(0xc4); // MOVZBL %ah,%eax
+	jump_not_overflow = gen_x86_jump_forward(CC_NO);
+	addbyte(0x81); addbyte(0xc9); addlong(VFLAG); // OR $VFLAG,%ecx
+	// .not_overflow
+	gen_x86_jump_here(jump_not_overflow);
+	addbyte(0x0f); addbyte(0xb6); addbyte(0x80); addptr(lahf_table_sub); // MOVZBL lahf_table_sub(%eax),%eax
+	addbyte(0xc1); addbyte(0xe0); addbyte(24); // SHL $24,%eax
+	addbyte(0x09); addbyte(0xc1); // OR %eax,%ecx
+	addbyte(0x89); addbyte(0x0d); addptr(pcpsr); // MOV %ecx,pcpsr
 }
 
 static void
@@ -1464,7 +1470,8 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 
 	case 0x25: // SUBS imm
 		if (RD == 15) return 0;
-		addbyte(0x80); addbyte(0x25); addptr(((char *) pcpsr) + 3); addbyte(0xf); // ANDB $0xf,pcpsr+3
+		addbyte(0x8b); addbyte(0x0d); addptr(pcpsr); // MOV pcpsr,%ecx
+		addbyte(0x81); addbyte(0xe1); addlong(0x0fffffff); // AND $0x0fffffff,%ecx
 		rhs = arm_imm(opcode);
 		gen_data_proc_imm(opcode, X86_OP_SUB, rhs);
 		gen_flags_sub(pcpsr);
@@ -1510,7 +1517,8 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 
 	case 0x35: // CMP imm
 		if (RD == 15 || RN == 15) return 0;
-		addbyte(0x80); addbyte(0x25); addptr(((char *) pcpsr) + 3); addbyte(0xf); // ANDB $0xf,pcpsr+3
+		addbyte(0x8b); addbyte(0x0d); addptr(pcpsr); // MOV pcpsr,%ecx
+		addbyte(0x81); addbyte(0xe1); addlong(0x0fffffff); // AND $0x0fffffff,%ecx
 		rhs = arm_imm(opcode);
 		gen_load_reg(RN, EAX);
 		addbyte(0x3d); addlong(rhs); // CMP $rhs,%eax
