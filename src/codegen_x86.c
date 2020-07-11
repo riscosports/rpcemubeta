@@ -435,12 +435,18 @@ gen_data_proc_imm(uint32_t opcode, uint8_t op, uint32_t imm)
 static void
 gen_flags_add(uint32_t *pcpsr)
 {
+	int jump_not_overflow;
+
 	gen_x86_lahf();
-	addbyte(0x0f); addbyte(0x90); addbyte(0xc1); // SETO %cl
-	addbyte(0x0f); addbyte(0xb6); addbyte(0xd4); // MOVZBL %ah,%edx
-	addbyte(0xc0); addbyte(0xe1); addbyte(4); // SHL $4,%cl
-	addbyte(0x0a); addbyte(0x8a); addptr(lahf_table_add); // OR lahf_table_add(%edx),%cl
-	addbyte(0x08); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // OR %cl,pcpsr+3
+	addbyte(0x0f); addbyte(0xb6); addbyte(0xc4); // MOVZBL %ah,%eax
+	jump_not_overflow = gen_x86_jump_forward(CC_NO);
+	addbyte(0x81); addbyte(0xc9); addlong(VFLAG); // OR $VFLAG,%ecx
+	// .not_overflow
+	gen_x86_jump_here(jump_not_overflow);
+	addbyte(0x0f); addbyte(0xb6); addbyte(0x80); addptr(lahf_table_add); // MOVZBL lahf_table_add(%eax),%eax
+	addbyte(0xc1); addbyte(0xe0); addbyte(24); // SHL $24,%eax
+	addbyte(0x09); addbyte(0xc1); // OR %eax,%ecx
+	addbyte(0x89); addbyte(0x0d); addptr(pcpsr); // MOV %ecx,pcpsr
 }
 
 static void
@@ -1184,23 +1190,12 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 			return 0;
 		}
 		// Shifted val now in %eax
-		addbyte(0x8a); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // MOV pcpsr+3,%cl
-		addbyte(0x80); addbyte(0xe1); addbyte(0x0f); // AND $~(NFLAG|ZFLAG|CFLAG|VFLAG),%cl
+		addbyte(0x8b); addbyte(0x0d); addptr(pcpsr); // MOV pcpsr,%ecx
+		addbyte(0x81); addbyte(0xe1); addlong(0x0fffffff); // AND $0x0fffffff,%ecx
 		gen_load_reg(RN, EDX);
 		addbyte(0x01); addbyte(0xc2); // ADD %eax,%edx
-		gen_x86_lahf();
 		gen_save_reg(RD, EDX);
-		addbyte(0x71); addbyte(3); // JNO notoverflow
-		addbyte(0x80); addbyte(0xc9); addbyte(0x10); // OR $VFLAG,%cl
-		// .notoverflow
-		addbyte(0xf6); addbyte(0xc4); addbyte(1); // TEST $1,%ah
-		addbyte(0x74); addbyte(3); // JZ notc
-		addbyte(0x80); addbyte(0xc9); addbyte(0x20); // OR $CFLAG,%cl
-		// .notc
-		// Convenient trick here - Z & V flags are in the same place on x86 and ARM
-		addbyte(0x80); addbyte(0xe4); addbyte(0xc0); // AND $(NFLAG|ZFLAG),%ah
-		addbyte(0x08); addbyte(0xe1); // OR %ah,%cl
-		addbyte(0x88); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // MOV %cl,pcpsr+3
+		gen_flags_add(pcpsr);
 		break;
 
 	case 0x0a: // ADC reg
@@ -1473,7 +1468,8 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 
 	case 0x29: // ADDS imm
 		if (RD == 15) return 0;
-		addbyte(0x80); addbyte(0x25); addptr(((char *) pcpsr) + 3); addbyte(0xf); // ANDB $0xf,pcpsr+3
+		addbyte(0x8b); addbyte(0x0d); addptr(pcpsr); // MOV pcpsr,%ecx
+		addbyte(0x81); addbyte(0xe1); addlong(0x0fffffff); // AND $0x0fffffff,%ecx
 		rhs = arm_imm(opcode);
 		gen_data_proc_imm(opcode, X86_OP_ADD, rhs);
 		gen_flags_add(pcpsr);
