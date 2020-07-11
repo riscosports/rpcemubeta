@@ -1125,18 +1125,12 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 			return 0;
 		}
 		// Shifted val now in %eax
-		addbyte(0x8a); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // MOV pcpsr+3,%cl
-		addbyte(0x80); addbyte(0xe1); addbyte(0x0f); // AND $~(NFLAG|ZFLAG|CFLAG|VFLAG),%cl
+		addbyte(0x8b); addbyte(0x0d); addptr(pcpsr); // MOV pcpsr,%ecx
+		addbyte(0x81); addbyte(0xe1); addlong(0x0fffffff); // AND $0x0fffffff,%ecx
 		gen_load_reg(RN, EDX);
 		addbyte(0x29); addbyte(0xc2); // SUB %eax,%edx
-		gen_x86_lahf();
 		gen_save_reg(RD, EDX);
-		addbyte(0x0f); addbyte(0xb6); addbyte(0xd4); // MOVZBL %ah,%edx
-		addbyte(0x71); addbyte(3); // JNO notoverflow
-		addbyte(0x80); addbyte(0xc9); addbyte(0x10); // OR $VFLAG,%cl
-		// .notoverflow
-		addbyte(0x0a); addbyte(0x8a); addptr(lahf_table_sub); // OR lahf_table_sub(%edx),%cl
-		addbyte(0x88); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // MOV %cl,pcpsr+3
+		gen_flags_sub(pcpsr);
 		break;
 
 	case 0x06: // RSB reg
@@ -1331,17 +1325,11 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 			return 0;
 		}
 		// Shifted val now in %eax
-		addbyte(0x8a); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // MOV pcpsr+3,%cl
-		addbyte(0x80); addbyte(0xe1); addbyte(0x0f); // AND $~(NFLAG|ZFLAG|CFLAG|VFLAG),%cl
+		addbyte(0x8b); addbyte(0x0d); addptr(pcpsr); // MOV pcpsr,%ecx
+		addbyte(0x81); addbyte(0xe1); addlong(0x0fffffff); // AND $0x0fffffff,%ecx
 		gen_load_reg(RN, EDX);
 		addbyte(0x29); addbyte(0xc2); // SUB %eax,%edx
-		gen_x86_lahf();
-		addbyte(0x0f); addbyte(0xb6); addbyte(0xd4); // MOVZBL %ah,%edx
-		addbyte(0x71); addbyte(3); // JNO notoverflow
-		addbyte(0x80); addbyte(0xc9); addbyte(0x10); // OR $VFLAG,%cl
-		// .notoverflow
-		addbyte(0x0a); addbyte(0x8a); addptr(lahf_table_sub); // OR lahf_table_sub(%edx),%cl
-		addbyte(0x88); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // MOV %cl,pcpsr+3
+		gen_flags_sub(pcpsr);
 		break;
 
 	case 0x18: // ORR reg
