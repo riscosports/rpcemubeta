@@ -393,7 +393,7 @@ generateshiftflags(uint32_t opcode, uint32_t *pcpsr)
 }
 
 static uint32_t
-gen_imm_cflag(uint32_t opcode, uint32_t *pcpsr)
+gen_imm_cflag8(uint32_t opcode, uint32_t *pcpsr)
 {
 	const uint32_t imm = arm_imm(opcode);
 
@@ -1427,7 +1427,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 
 	case 0x21: // ANDS imm
 		if (RD == 15) return 0;
-		rhs = gen_imm_cflag(opcode, pcpsr);
+		rhs = gen_imm_cflag8(opcode, pcpsr);
 		gen_data_proc_imm(opcode, X86_OP_AND, rhs);
 		generatesetzn(pcpsr);
 		break;
@@ -1440,7 +1440,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 
 	case 0x23: // EORS imm
 		if (RD == 15) return 0;
-		rhs = gen_imm_cflag(opcode, pcpsr);
+		rhs = gen_imm_cflag8(opcode, pcpsr);
 		gen_data_proc_imm(opcode, X86_OP_XOR, rhs);
 		generatesetzn(pcpsr);
 		break;
@@ -1477,7 +1477,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 
 	case 0x31: // TST imm
 		if (RD == 15) return 0;
-		rhs = gen_imm_cflag(opcode, pcpsr);
+		rhs = gen_imm_cflag8(opcode, pcpsr);
 		gen_load_reg(RN, EAX);
 		addbyte(0x80); addbyte(0xe1); addbyte(0x3f); // AND $~(NFLAG|ZFLAG),%cl
 		if (RN == 15 && arm.r15_mask != 0xfffffffc) {
@@ -1489,7 +1489,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 
 	case 0x33: // TEQ imm
 		if (RD == 15) return 0;
-		rhs = gen_imm_cflag(opcode, pcpsr);
+		rhs = gen_imm_cflag8(opcode, pcpsr);
 		gen_load_reg(RN, EAX);
 		addbyte(0x80); addbyte(0xe1); addbyte(0x3f); // AND $~(NFLAG|ZFLAG),%cl
 		if (RN == 15 && arm.r15_mask != 0xfffffffc) {
@@ -1517,7 +1517,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 
 	case 0x39: // ORRS imm
 		if (RD == 15) return 0;
-		rhs = gen_imm_cflag(opcode, pcpsr);
+		rhs = gen_imm_cflag8(opcode, pcpsr);
 		gen_data_proc_imm(opcode, X86_OP_OR, rhs);
 		generatesetzn(pcpsr);
 		break;
@@ -1530,7 +1530,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 
 	case 0x3b: // MOVS imm
 		if (RD == 15) return 0;
-		rhs = gen_imm_cflag(opcode, pcpsr);
+		rhs = gen_imm_cflag8(opcode, pcpsr);
 		if (rhs == 0) {
 			addbyte(0x80); addbyte(0xc9); addbyte(0x40); // OR $ZFLAG,%cl
 		} else if (rhs & 0x80000000) {
@@ -1548,7 +1548,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 
 	case 0x3d: // BICS imm
 		if (RD == 15) return 0;
-		rhs = ~gen_imm_cflag(opcode, pcpsr);
+		rhs = ~gen_imm_cflag8(opcode, pcpsr);
 		gen_data_proc_imm(opcode, X86_OP_AND, rhs);
 		generatesetzn(pcpsr);
 		break;
@@ -1561,7 +1561,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 
 	case 0x3f: // MVNS imm
 		if (RD == 15) return 0;
-		rhs = ~gen_imm_cflag(opcode, pcpsr);
+		rhs = ~gen_imm_cflag8(opcode, pcpsr);
 		// Not possible for 'rhs' to be zero here, so no need to set Z flag
 		if (rhs & 0x80000000) {
 			addbyte(0x80); addbyte(0xc9); addbyte(0x80); // OR $NFLAG,%cl
