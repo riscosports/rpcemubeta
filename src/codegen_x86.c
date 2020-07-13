@@ -411,6 +411,25 @@ gen_imm_cflag8(uint32_t opcode, uint32_t *pcpsr)
 	return imm;
 }
 
+static uint32_t
+gen_imm_cflag(uint32_t opcode, uint32_t *pcpsr)
+{
+	const uint32_t imm = arm_imm(opcode);
+
+	addbyte(0x8b); addbyte(0x0d); addptr(pcpsr); // MOV pcpsr,%ecx
+	if (opcode & 0xf00) {
+		if (imm & 0x80000000) {
+			addbyte(0x81); addbyte(0xc9); addlong(CFLAG); // OR $CFLAG,%ecx
+		} else {
+			addbyte(0x81); addbyte(0xe1); addlong(0x1fffffff); // AND $~(NFLAG|ZFLAG|CFLAG),%ecx
+		}
+	}
+	if (!(opcode & 0xf00) || (imm & 0x80000000)) {
+		addbyte(0x81); addbyte(0xe1); addlong(0x3fffffff); // AND $~(NFLAG|ZFLAG),%ecx
+	}
+	return imm;
+}
+
 static void
 gen_data_proc_imm(uint32_t opcode, uint8_t op, uint32_t imm)
 {
@@ -461,6 +480,17 @@ gen_flags_sub(uint32_t *pcpsr)
 	// .not_overflow
 	gen_x86_jump_here(jump_not_overflow);
 	addbyte(0x0f); addbyte(0xb6); addbyte(0x80); addptr(lahf_table_sub); // MOVZBL lahf_table_sub(%eax),%eax
+	addbyte(0xc1); addbyte(0xe0); addbyte(24); // SHL $24,%eax
+	addbyte(0x09); addbyte(0xc1); // OR %eax,%ecx
+	addbyte(0x89); addbyte(0x0d); addptr(pcpsr); // MOV %ecx,pcpsr
+}
+
+static void
+gen_flags_logical(uint32_t *pcpsr)
+{
+	gen_x86_lahf();
+	addbyte(0x80); addbyte(0xe4); addbyte(0xc0); // AND $(NFLAG|ZFLAG),%ah
+	addbyte(0x0f); addbyte(0xb6); addbyte(0xc4); // MOVZBL %ah,%eax
 	addbyte(0xc1); addbyte(0xe0); addbyte(24); // SHL $24,%eax
 	addbyte(0x09); addbyte(0xc1); // OR %eax,%ecx
 	addbyte(0x89); addbyte(0x0d); addptr(pcpsr); // MOV %ecx,pcpsr
@@ -1427,9 +1457,9 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 
 	case 0x21: // ANDS imm
 		if (RD == 15) return 0;
-		rhs = gen_imm_cflag8(opcode, pcpsr);
+		rhs = gen_imm_cflag(opcode, pcpsr);
 		gen_data_proc_imm(opcode, X86_OP_AND, rhs);
-		generatesetzn(pcpsr);
+		gen_flags_logical(pcpsr);
 		break;
 
 	case 0x22: // EOR imm
@@ -1440,9 +1470,9 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 
 	case 0x23: // EORS imm
 		if (RD == 15) return 0;
-		rhs = gen_imm_cflag8(opcode, pcpsr);
+		rhs = gen_imm_cflag(opcode, pcpsr);
 		gen_data_proc_imm(opcode, X86_OP_XOR, rhs);
-		generatesetzn(pcpsr);
+		gen_flags_logical(pcpsr);
 		break;
 
 	case 0x24: // SUB imm
@@ -1517,9 +1547,9 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 
 	case 0x39: // ORRS imm
 		if (RD == 15) return 0;
-		rhs = gen_imm_cflag8(opcode, pcpsr);
+		rhs = gen_imm_cflag(opcode, pcpsr);
 		gen_data_proc_imm(opcode, X86_OP_OR, rhs);
-		generatesetzn(pcpsr);
+		gen_flags_logical(pcpsr);
 		break;
 
 	case 0x3a: // MOV imm
@@ -1548,9 +1578,9 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 
 	case 0x3d: // BICS imm
 		if (RD == 15) return 0;
-		rhs = ~gen_imm_cflag8(opcode, pcpsr);
+		rhs = ~gen_imm_cflag(opcode, pcpsr);
 		gen_data_proc_imm(opcode, X86_OP_AND, rhs);
-		generatesetzn(pcpsr);
+		gen_flags_logical(pcpsr);
 		break;
 
 	case 0x3e: // MVN imm
