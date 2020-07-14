@@ -1507,26 +1507,24 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 
 	case 0x31: // TST imm
 		if (RD == 15) return 0;
-		rhs = gen_imm_cflag8(opcode, pcpsr);
+		rhs = gen_imm_cflag(opcode, pcpsr);
 		gen_load_reg(RN, EAX);
-		addbyte(0x80); addbyte(0xe1); addbyte(0x3f); // AND $~(NFLAG|ZFLAG),%cl
 		if (RN == 15 && arm.r15_mask != 0xfffffffc) {
 			addbyte(0x25); addlong(arm.r15_mask); // AND $arm.r15_mask,%eax
 		}
 		addbyte(0xa9); addlong(rhs); // TEST $rhs,%eax
-		generatesetzn(pcpsr);
+		gen_flags_logical(pcpsr);
 		break;
 
 	case 0x33: // TEQ imm
 		if (RD == 15) return 0;
-		rhs = gen_imm_cflag8(opcode, pcpsr);
+		rhs = gen_imm_cflag(opcode, pcpsr);
 		gen_load_reg(RN, EAX);
-		addbyte(0x80); addbyte(0xe1); addbyte(0x3f); // AND $~(NFLAG|ZFLAG),%cl
 		if (RN == 15 && arm.r15_mask != 0xfffffffc) {
 			addbyte(0x25); addlong(arm.r15_mask); // AND $arm.r15_mask,%eax
 		}
 		addbyte(0x35); addlong(rhs); // XOR $rhs,%eax
-		generatesetzn(pcpsr);
+		gen_flags_logical(pcpsr);
 		break;
 
 	case 0x35: // CMP imm
