@@ -393,25 +393,6 @@ generateshiftflags(uint32_t opcode, uint32_t *pcpsr)
 }
 
 static uint32_t
-gen_imm_cflag8(uint32_t opcode, uint32_t *pcpsr)
-{
-	const uint32_t imm = arm_imm(opcode);
-
-	addbyte(0x8a); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // MOV pcpsr+3,%cl
-	if (opcode & 0xf00) {
-		if (imm & 0x80000000) {
-			addbyte(0x80); addbyte(0xc9); addbyte(0x20); // OR $CFLAG,%cl
-		} else {
-			addbyte(0x80); addbyte(0xe1); addbyte(0x1f); // AND $~(NFLAG|ZFLAG|CFLAG),%cl
-		}
-	}
-	if (!(opcode & 0xf00) || (imm & 0x80000000)) {
-		addbyte(0x80); addbyte(0xe1); addbyte(0x3f); // AND $~(NFLAG|ZFLAG),%cl
-	}
-	return imm;
-}
-
-static uint32_t
 gen_imm_cflag(uint32_t opcode, uint32_t *pcpsr)
 {
 	const uint32_t imm = arm_imm(opcode);
@@ -1558,14 +1539,14 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 
 	case 0x3b: // MOVS imm
 		if (RD == 15) return 0;
-		rhs = gen_imm_cflag8(opcode, pcpsr);
+		rhs = gen_imm_cflag(opcode, pcpsr);
 		if (rhs == 0) {
-			addbyte(0x80); addbyte(0xc9); addbyte(0x40); // OR $ZFLAG,%cl
+			addbyte(0x81); addbyte(0xc9); addlong(ZFLAG); // OR $ZFLAG,%ecx
 		} else if (rhs & 0x80000000) {
-			addbyte(0x80); addbyte(0xc9); addbyte(0x80); // OR $NFLAG,%cl
+			addbyte(0x81); addbyte(0xc9); addlong(NFLAG); // OR $NFLAG,%ecx
 		}
 		addbyte(0xc7); addbyte(0x46); addbyte(RD<<2); addlong(rhs); // MOVL $rhs,Rd
-		addbyte(0x88); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // MOV %cl,pcpsr+3
+		addbyte(0x89); addbyte(0x0d); addptr(pcpsr); // MOV %ecx,pcpsr
 		break;
 
 	case 0x3c: // BIC imm
@@ -1589,13 +1570,13 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 
 	case 0x3f: // MVNS imm
 		if (RD == 15) return 0;
-		rhs = ~gen_imm_cflag8(opcode, pcpsr);
+		rhs = ~gen_imm_cflag(opcode, pcpsr);
 		// Not possible for 'rhs' to be zero here, so no need to set Z flag
 		if (rhs & 0x80000000) {
-			addbyte(0x80); addbyte(0xc9); addbyte(0x80); // OR $NFLAG,%cl
+			addbyte(0x81); addbyte(0xc9); addlong(NFLAG); // OR $NFLAG,%ecx
 		}
 		addbyte(0xc7); addbyte(0x46); addbyte(RD<<2); addlong(rhs); // MOVL $rhs,Rd
-		addbyte(0x88); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // MOV %cl,pcpsr+3
+		addbyte(0x89); addbyte(0x0d); addptr(pcpsr); // MOV %ecx,pcpsr
 		break;
 
 	case 0x40: // STR Rd, [Rn], #-imm
