@@ -1053,8 +1053,8 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 	case 0x01: // ANDS reg
 		if ((opcode & 0xf0) == 0x90) {
 			// MULS
-			addbyte(0x8a); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // MOV pcpsr+3,%cl
-			addbyte(0x80); addbyte(0xe1); addbyte(0x3f); // AND $~(NFLAG|ZFLAG),%cl
+			addbyte(0x8b); addbyte(0x0d); addptr(pcpsr); // MOV pcpsr,%ecx
+			addbyte(0x81); addbyte(0xe1); addlong(0x3fffffff); // AND $~(NFLAG|ZFLAG),%ecx
 			if (MULRD == MULRM) {
 				addbyte(0x31); addbyte(0xc0); // XOR %eax,%eax
 			} else {
@@ -1063,7 +1063,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 				gen_save_reg(MULRD, EAX);
 			}
 			addbyte(0x85); addbyte(0xc0); // TEST %eax,%eax
-			generatesetzn(pcpsr);
+			gen_flags_logical(pcpsr);
 			break;
 		}
 		if (RD == 15 || RN == 15) return 0;
@@ -1101,8 +1101,8 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 	case 0x03: // EORS reg
 		if ((opcode & 0xf0) == 0x90) {
 			// MLAS
-			addbyte(0x8a); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // MOV pcpsr+3,%cl
-			addbyte(0x80); addbyte(0xe1); addbyte(0x3f); // AND $~(NFLAG|ZFLAG),%cl
+			addbyte(0x8b); addbyte(0x0d); addptr(pcpsr); // MOV pcpsr,%ecx
+			addbyte(0x81); addbyte(0xe1); addlong(0x3fffffff); // AND $~(NFLAG|ZFLAG),%ecx
 			if (MULRD == MULRM) {
 				addbyte(0x31); addbyte(0xc0); // XOR %eax,%eax
 			} else {
@@ -1112,7 +1112,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 				gen_save_reg(MULRD, EAX);
 			}
 			addbyte(0x85); addbyte(0xc0); // TEST %eax,%eax
-			generatesetzn(pcpsr);
+			gen_flags_logical(pcpsr);
 			break;
 		}
 		if (RD == 15 || RN == 15) return 0;
