@@ -478,6 +478,21 @@ gen_flags_logical(uint32_t *pcpsr)
 }
 
 static void
+gen_flags_long_multiply(uint32_t *pcpsr)
+{
+	int jump_not_zero;
+
+	addbyte(0x09); addbyte(0xd0); // OR %edx,%eax
+	jump_not_zero = gen_x86_jump_forward(CC_NZ);
+	addbyte(0x81); addbyte(0xc9); addlong(ZFLAG); // OR $ZFLAG,%ecx
+	// .not_zero
+	gen_x86_jump_here(jump_not_zero);
+	addbyte(0x81); addbyte(0xe2); addlong(NFLAG); // AND $NFLAG,%edx
+	addbyte(0x09); addbyte(0xd1); // OR %edx,%ecx
+	addbyte(0x89); addbyte(0x0d); addptr(pcpsr); // MOV %ecx,pcpsr
+}
+
+static void
 gen_test_armirq(void)
 {
 	addbyte(0xf7); addbyte(0x46); addbyte(offsetof(ARMState, event)); addlong(0x40); // TESTL $0x40,arm.event
@@ -1172,19 +1187,13 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 	case 0x09: // ADDS reg
 		if ((opcode & 0xf0) == 0x90) {
 			// UMULLS
-			addbyte(0x8a); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // MOV pcpsr+3,%cl
-			addbyte(0x80); addbyte(0xe1); addbyte(0x3f); // AND $~(NFLAG|ZFLAG),%cl
+			addbyte(0x8b); addbyte(0x0d); addptr(pcpsr); // MOV pcpsr,%ecx
+			addbyte(0x81); addbyte(0xe1); addlong(0x3fffffff); // AND $~(NFLAG|ZFLAG),%ecx
 			gen_load_reg(MULRM, EAX);
 			addbyte(0xf7); addbyte(0x66); addbyte(MULRS<<2); // MULL Rs
 			gen_save_reg(MULRN, EAX);
 			gen_save_reg(MULRD, EDX);
-			addbyte(0x85); addbyte(0xd2); // TEST %edx,%edx
-			addbyte(0x79); addbyte(3); // JNS notn
-			addbyte(0x80); addbyte(0xc9); addbyte(0x80); // OR $NFLAG,%cl
-			addbyte(0x09); addbyte(0xd0); // OR %edx,%eax
-			addbyte(0x75); addbyte(3); // JNZ testn
-			addbyte(0x80); addbyte(0xc9); addbyte(0x40); // OR $ZFLAG,%cl
-			addbyte(0x88); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // MOV %cl,pcpsr+3
+			gen_flags_long_multiply(pcpsr);
 			break;
 		}
 		if (RD == 15 || RN == 15) return 0;
