@@ -1039,12 +1039,11 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		if ((opcode & 0xf0) == 0x90) {
 			// MUL
 			if (MULRD == MULRM) {
-				addbyte(0x31); addbyte(0xc0); // XOR %eax,%eax
-			} else {
-				gen_load_reg(MULRM, EAX);
-				addbyte(0xf7); addbyte(0x66); addbyte(MULRS<<2); // MULL Rs
-				gen_save_reg(MULRD, EAX);
+				return 0;
 			}
+			gen_load_reg(MULRM, EAX);
+			addbyte(0xf7); addbyte(0x66); addbyte(MULRS<<2); // MULL Rs
+			gen_save_reg(MULRD, EAX);
 			break;
 		}
 		if (RD == 15 || RN == 15) return 0;
@@ -1059,15 +1058,14 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 	case 0x01: // ANDS reg
 		if ((opcode & 0xf0) == 0x90) {
 			// MULS
+			if (MULRD == MULRM) {
+				return 0;
+			}
 			addbyte(0x8b); addbyte(0x0d); addptr(pcpsr); // MOV pcpsr,%ecx
 			addbyte(0x81); addbyte(0xe1); addlong(0x3fffffff); // AND $~(NFLAG|ZFLAG),%ecx
-			if (MULRD == MULRM) {
-				addbyte(0x31); addbyte(0xc0); // XOR %eax,%eax
-			} else {
-				gen_load_reg(MULRM, EAX);
-				addbyte(0xf7); addbyte(0x66); addbyte(MULRS<<2); // MULL Rs
-				gen_save_reg(MULRD, EAX);
-			}
+			gen_load_reg(MULRM, EAX);
+			addbyte(0xf7); addbyte(0x66); addbyte(MULRS<<2); // MULL Rs
+			gen_save_reg(MULRD, EAX);
 			addbyte(0x85); addbyte(0xc0); // TEST %eax,%eax
 			gen_flags_logical(pcpsr);
 			break;
@@ -1086,13 +1084,12 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		if ((opcode & 0xf0) == 0x90) {
 			// MLA
 			if (MULRD == MULRM) {
-				addbyte(0x31); addbyte(0xc0); // XOR %eax,%eax
-			} else {
-				gen_load_reg(MULRM, EAX);
-				addbyte(0xf7); addbyte(0x66); addbyte(MULRS<<2); // MULL Rs
-				addbyte(0x03); addbyte(0x46); addbyte(MULRN<<2); // ADD Rn,%eax
-				gen_save_reg(MULRD, EAX);
+				return 0;
 			}
+			gen_load_reg(MULRM, EAX);
+			addbyte(0xf7); addbyte(0x66); addbyte(MULRS<<2); // MULL Rs
+			addbyte(0x03); addbyte(0x46); addbyte(MULRN<<2); // ADD Rn,%eax
+			gen_save_reg(MULRD, EAX);
 			break;
 		}
 		if (RD == 15 || RN == 15) return 0;
@@ -1107,16 +1104,15 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 	case 0x03: // EORS reg
 		if ((opcode & 0xf0) == 0x90) {
 			// MLAS
+			if (MULRD == MULRM) {
+				return 0;
+			}
 			addbyte(0x8b); addbyte(0x0d); addptr(pcpsr); // MOV pcpsr,%ecx
 			addbyte(0x81); addbyte(0xe1); addlong(0x3fffffff); // AND $~(NFLAG|ZFLAG),%ecx
-			if (MULRD == MULRM) {
-				addbyte(0x31); addbyte(0xc0); // XOR %eax,%eax
-			} else {
-				gen_load_reg(MULRM, EAX);
-				addbyte(0xf7); addbyte(0x66); addbyte(MULRS<<2); // MULL Rs
-				addbyte(0x03); addbyte(0x46); addbyte(MULRN<<2); // ADD Rn,%eax
-				gen_save_reg(MULRD, EAX);
-			}
+			gen_load_reg(MULRM, EAX);
+			addbyte(0xf7); addbyte(0x66); addbyte(MULRS<<2); // MULL Rs
+			addbyte(0x03); addbyte(0x46); addbyte(MULRN<<2); // ADD Rn,%eax
+			gen_save_reg(MULRD, EAX);
 			addbyte(0x85); addbyte(0xc0); // TEST %eax,%eax
 			gen_flags_logical(pcpsr);
 			break;
