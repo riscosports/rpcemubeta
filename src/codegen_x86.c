@@ -2081,7 +2081,6 @@ generatecall(OpFn addr, uint32_t opcode, uint32_t *pcpsr)
 	const int old = codeblockpos;
 
 	lastrecompiled = 0;
-	tempinscount++;
 
 	if (recompileinstructions[(opcode >> 20) & 0xff]) {
 		if (recompile(opcode, pcpsr)) {
@@ -2131,6 +2130,7 @@ generateupdateinscount(void)
 void
 generatepcinc(void)
 {
+	tempinscount++;
 	pcinc += 4;
 	if (pcinc == 124) {
 		generateupdatepc();

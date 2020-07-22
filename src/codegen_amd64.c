@@ -1311,7 +1311,6 @@ void
 generatecall(OpFn addr, uint32_t opcode, uint32_t *pcpsr)
 {
 	lastrecompiled = 0;
-	tempinscount++;
 
 	if (canrecompile[(opcode >> 20) & 0xff]) {
 		if (recompile(opcode, pcpsr)) {
@@ -1364,6 +1363,7 @@ void
 generatepcinc(void)
 {
 	lastjumppos = 0;
+	tempinscount++;
 	pcinc += 4;
 	if (pcinc == 124) {
 		generateupdatepc();
