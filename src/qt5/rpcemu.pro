@@ -67,8 +67,12 @@ SOURCES =	../superio.c \
 
 # NAT Networking
 linux | win32 {
-	HEADERS +=	../network-nat.h
-	SOURCES += 	../network-nat.c
+	HEADERS +=	../network-nat.h \
+			nat_edit_dialog.h \
+			nat_list_dialog.h
+	SOURCES += 	../network-nat.c \
+			nat_edit_dialog.cpp \
+			nat_list_dialog.cpp
 
 	HEADERS += 	../slirp/bootp.h \
 			../slirp/cutils.h \

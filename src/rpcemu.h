@@ -166,6 +166,26 @@ typedef struct {
 
 extern Machine machine; /**< The details of the current model being emulated */
 
+typedef enum {
+	PORT_FORWARD_NONE = 0,		///< No valid rule stored
+	PORT_FORWARD_TCP  = 1,		///< A TCP rule
+	PORT_FORWARD_UDP  = 2,		///< A UDP rule
+	// All other values reserved
+} PortForwardType;
+
+typedef struct {
+	PortForwardType	type;		///< Which type of rule to use, or NONE for no rule
+	uint16_t	emu_port;	///< Port to connect to on the emulated machine
+	uint16_t	host_port;	///< Port to connect to on the host machine
+} PortForwardRule;
+
+#define MAX_PORT_FORWARDS 32
+
+extern PortForwardRule port_forward_rules[MAX_PORT_FORWARDS]; ///< Port forward rules accross the NAT
+
+extern void rpcemu_nat_forward_add(PortForwardRule rule);
+extern void rpcemu_nat_forward_remove(PortForwardRule rule);
+
 extern uint32_t inscount;
 
 /* These functions can optionally be overridden by a platform. If not
@@ -215,6 +235,7 @@ extern void rpcemu_config_apply_new_settings(Config *new_config, Model new_model
 extern void rpcemu_video_update(const uint32_t *buffer, int xsize, int ysize, int yl, int yh, int double_size, int host_xsize, int host_ysize);
 extern void rpcemu_move_host_mouse(uint16_t x, uint16_t y);
 extern void rpcemu_idle_process_events(void);
+extern void rpcemu_send_nat_rule_to_gui(PortForwardRule rule);
 
 extern int drawscre;
 extern int quited;
