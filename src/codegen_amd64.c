@@ -788,6 +788,16 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 
 	switch ((opcode >> 20) & 0xff) {
 	case 0x00: // AND reg
+		if ((opcode & 0xf0) == 0x90) {
+			// MUL
+			if (MULRD == MULRM) {
+				return 0;
+			}
+			gen_load_reg(MULRM, EAX);
+			addbyte(0x41); addbyte(0xf7); addbyte(0x67); addbyte(MULRS<<2); // MULL Rs
+			gen_save_reg(MULRD, EAX);
+			break;
+		}
 		if (RD == 15) return 0;
 		if (!generate_shift(opcode)) {
 			return 0;
@@ -796,6 +806,17 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		break;
 
 	case 0x02: // EOR reg
+		if ((opcode & 0xf0) == 0x90) {
+			// MLA
+			if (MULRD == MULRM) {
+				return 0;
+			}
+			gen_load_reg(MULRM, EAX);
+			addbyte(0x41); addbyte(0xf7); addbyte(0x67); addbyte(MULRS<<2); // MULL Rs
+			addbyte(0x41); addbyte(0x03); addbyte(0x47); addbyte(MULRN<<2); // ADD Rn,%eax
+			gen_save_reg(MULRD, EAX);
+			break;
+		}
 		if (RD == 15) return 0;
 		if (!generate_shift(opcode)) {
 			return 0;
