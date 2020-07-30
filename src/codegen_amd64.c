@@ -282,7 +282,7 @@ static const int canrecompile[256] = {
 	1,0,1,0,1,0,0,0,1,0,0,0,0,0,0,0, // 00
 	0,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0, // 10
 	1,0,1,0,1,0,0,0,1,0,0,0,0,0,0,0, // 20
-	0,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0, // 30
+	0,0,0,0,0,0,0,0,1,0,1,0,1,0,1,0, // 30
 
 	1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0, // 40
 	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1, // 50
@@ -909,6 +909,18 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 	case 0x3a: // MOV imm
 		if (RD == 15) return 0;
 		rhs = arm_imm(opcode);
+		genstoreimm(RD, rhs);
+		break;
+
+	case 0x3c: // BIC imm
+		if (RD == 15) return 0;
+		rhs = ~arm_imm(opcode);
+		gen_data_proc_imm(opcode, X86_OP_AND, rhs);
+		break;
+
+	case 0x3e: // MVN imm
+		if (RD == 15) return 0;
+		rhs = ~arm_imm(opcode);
 		genstoreimm(RD, rhs);
 		break;
 
