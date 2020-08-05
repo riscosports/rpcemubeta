@@ -802,7 +802,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		if (!generate_shift(opcode)) {
 			return 0;
 		}
-		gen_data_proc_reg(opcode, X86_OP_AND, 1);
+		gen_data_proc_reg(opcode, X86_OP_AND, 0);
 		break;
 
 	case 0x02: // EOR reg
