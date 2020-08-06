@@ -1277,13 +1277,9 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		if ((opcode & 0xf0) == 0x90) {
 			// SMLAL
 			gen_load_reg(MULRM, EAX);
-			gen_load_reg(MULRN, EBX);
-			gen_load_reg(MULRD, ECX);
 			addbyte(0xf7); addbyte(0x6e); addbyte(MULRS<<2); // IMULL Rs
-			addbyte(0x01); addbyte(0xd8); // ADD %ebx,%eax
-			addbyte(0x11); addbyte(0xca); // ADC %ecx,%edx
-			gen_save_reg(MULRN, EAX);
-			gen_save_reg(MULRD, EDX);
+			addbyte(0x01); addbyte(0x46); addbyte(MULRN<<2); // ADD %eax,Rn
+			addbyte(0x11); addbyte(0x56); addbyte(MULRD<<2); // ADC %edx,Rd
 			break;
 		}
 		if (RD == 15 || RN == 15) return 0;
