@@ -1367,7 +1367,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		break;
 
 	case 0x1b: // MOVS reg
-		if (RD == 15 || RN == 15) return 0;
+		if (RD == 15) return 0;
 		if (!generateshiftflags(opcode, pcpsr)) {
 			return 0;
 		}
@@ -1401,7 +1401,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		break;
 
 	case 0x1e: // MVN reg
-		if (RD == 15 || RN == 15) return 0;
+		if (RD == 15) return 0;
 		if (!generate_shift(opcode)) {
 			return 0;
 		}
@@ -1411,7 +1411,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		break;
 
 	case 0x1f: // MVNS reg
-		if (RD == 15 || RN == 15) return 0;
+		if (RD == 15) return 0;
 		if (!generateshiftflags(opcode, pcpsr)) {
 			return 0;
 		}
