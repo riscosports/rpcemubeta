@@ -1163,7 +1163,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		break;
 
 	case 0x08: // ADD reg
-		if ((opcode & 0xf0) == 0x90) {
+		if (arm.arch_v4 && (opcode & 0xf0) == 0x90) {
 			// UMULL
 			gen_load_reg(MULRM, EAX);
 			addbyte(0xf7); addbyte(0x66); addbyte(MULRS<<2); // MULL Rs
@@ -1181,7 +1181,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		break;
 
 	case 0x09: // ADDS reg
-		if ((opcode & 0xf0) == 0x90) {
+		if (arm.arch_v4 && (opcode & 0xf0) == 0x90) {
 			// UMULLS
 			addbyte(0x8b); addbyte(0x0d); addptr(pcpsr); // MOV pcpsr,%ecx
 			addbyte(0x81); addbyte(0xe1); addlong(0x3fffffff); // AND $~(NFLAG|ZFLAG),%ecx
@@ -1206,7 +1206,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		break;
 
 	case 0x0a: // ADC reg
-		if ((opcode & 0xf0) == 0x90) {
+		if (arm.arch_v4 && (opcode & 0xf0) == 0x90) {
 			// UMLAL
 			return 0;
 		}
@@ -1225,7 +1225,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		break;
 
 	case 0x0b: // ADCS reg
-		if ((opcode & 0xf0) == 0x90) {
+		if (arm.arch_v4 && (opcode & 0xf0) == 0x90) {
 			// UMLALS
 			return 0;
 		}
@@ -1251,7 +1251,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		break;
 
 	case 0x0c: // SBC reg
-		if ((opcode & 0xf0) == 0x90) {
+		if (arm.arch_v4 && (opcode & 0xf0) == 0x90) {
 			// SMULL
 			gen_load_reg(MULRM, EAX);
 			addbyte(0xf7); addbyte(0x6e); addbyte(MULRS<<2); // IMULL Rs
@@ -1274,7 +1274,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		break;
 
 	case 0x0e: // RSC reg
-		if ((opcode & 0xf0) == 0x90) {
+		if (arm.arch_v4 && (opcode & 0xf0) == 0x90) {
 			// SMLAL
 			gen_load_reg(MULRM, EAX);
 			addbyte(0xf7); addbyte(0x6e); addbyte(MULRS<<2); // IMULL Rs
