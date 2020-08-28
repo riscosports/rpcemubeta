@@ -280,7 +280,7 @@ initcodeblock(uint32_t l)
 
 static const int canrecompile[256] = {
 	1,0,1,0,1,0,0,0,1,0,0,0,0,0,0,0, // 00
-	0,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0, // 10
+	0,0,0,0,0,0,0,0,1,0,1,0,0,0,1,0, // 10
 	1,0,1,0,1,0,0,0,1,0,0,0,0,0,0,0, // 20
 	0,0,0,0,0,0,0,0,1,0,1,0,1,0,1,0, // 30
 
@@ -864,6 +864,15 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		if (!generate_shift(opcode)) {
 			return 0;
 		}
+		gen_save_reg(RD, EAX);
+		break;
+
+	case 0x1e: // MVN reg
+		if (RD == 15) return 0;
+		if (!generate_shift(opcode)) {
+			return 0;
+		}
+		addbyte(0xf7); addbyte(0xd0); // NOT %eax
 		gen_save_reg(RD, EAX);
 		break;
 
