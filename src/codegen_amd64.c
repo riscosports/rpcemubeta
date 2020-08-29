@@ -833,6 +833,14 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		break;
 
 	case 0x08: // ADD reg
+		if (arm.arch_v4 && (opcode & 0xf0) == 0x90) {
+			// UMULL
+			gen_load_reg(MULRM, EAX);
+			addbyte(0x41); addbyte(0xf7); addbyte(0x67); addbyte(MULRS<<2); // MULL Rs
+			gen_save_reg(MULRN, EAX);
+			gen_save_reg(MULRD, EDX);
+			break;
+		}
 		if (RD == 15) return 0;
 		if (!generate_shift(opcode)) {
 			return 0;
