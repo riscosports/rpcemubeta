@@ -412,6 +412,22 @@ gen_imm_cflag(uint32_t opcode, uint32_t *pcpsr)
 }
 
 static void
+gen_data_proc_reg(uint32_t opcode, uint8_t op, int dirmatters)
+{
+	if (dirmatters || RN == 15) {
+		gen_load_reg(RN, EDX);
+		if (RN == 15) {
+			addbyte(0x81); addbyte(0xe2); addlong(arm.r15_mask); // AND $arm.r15_mask,%edx
+		}
+		addbyte(0x01|op); addbyte(0xc2); // OP %eax,%edx
+		gen_save_reg(RD, EDX);
+	} else {
+		addbyte(0x03|op); addbyte(0x46); addbyte(RN<<2); // OP RN,%eax
+		gen_save_reg(RD, EAX);
+	}
+}
+
+static void
 gen_data_proc_imm(uint32_t opcode, uint8_t op, uint32_t imm)
 {
 	if (RN == RD) {
@@ -1050,9 +1066,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		if (!generate_shift(opcode)) {
 			return 0;
 		}
-		// Shifted val now in %eax
-		addbyte(0x23); addbyte(0x46); addbyte(RN<<2); // AND Rn,%eax
-		gen_save_reg(RD, EAX);
+		gen_data_proc_reg(opcode, X86_OP_AND, 0);
 		break;
 
 	case 0x01: // ANDS reg
@@ -1096,9 +1110,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		if (!generate_shift(opcode)) {
 			return 0;
 		}
-		// Shifted val now in %eax
-		addbyte(0x33); addbyte(0x46); addbyte(RN<<2); // XOR Rn,%eax
-		gen_save_reg(RD, EAX);
+		gen_data_proc_reg(opcode, X86_OP_XOR, 0);
 		break;
 
 	case 0x03: // EORS reg
@@ -1132,10 +1144,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		if (!generate_shift(opcode)) {
 			return 0;
 		}
-		// Shifted val now in %eax
-		gen_load_reg(RN, EDX);
-		addbyte(0x29); addbyte(0xc2); // SUB %eax,%edx
-		gen_save_reg(RD, EDX);
+		gen_data_proc_reg(opcode, X86_OP_SUB, 1);
 		break;
 
 	case 0x05: // SUBS reg
@@ -1157,7 +1166,6 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		if (!generate_shift(opcode)) {
 			return 0;
 		}
-		// Shifted val now in %eax
 		addbyte(0x2b); addbyte(0x46); addbyte(RN<<2); // SUB Rn,%eax
 		gen_save_reg(RD, EAX);
 		break;
@@ -1175,9 +1183,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		if (!generate_shift(opcode)) {
 			return 0;
 		}
-		// Shifted val now in %eax
-		addbyte(0x03); addbyte(0x46); addbyte(RN<<2); // ADD Rn,%eax
-		gen_save_reg(RD, EAX);
+		gen_data_proc_reg(opcode, X86_OP_ADD, 0);
 		break;
 
 	case 0x09: // ADDS reg
@@ -1302,7 +1308,6 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		if (!generateshiftflags(opcode, pcpsr)) {
 			return 0;
 		}
-		// Shifted val now in %eax
 		addbyte(0x85); addbyte(0x46); addbyte(RN<<2); // TEST %eax,Rn
 		gen_flags_logical(pcpsr);
 		break;
@@ -1312,7 +1317,6 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		if (!generateshiftflags(opcode, pcpsr)) {
 			return 0;
 		}
-		// Shifted val now in %eax
 		addbyte(0x33); addbyte(0x46); addbyte(RN<<2); // XOR Rn,%eax
 		gen_flags_logical(pcpsr);
 		break;
@@ -1322,7 +1326,6 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		if (!generate_shift(opcode)) {
 			return 0;
 		}
-		// Shifted val now in %eax
 		addbyte(0x8b); addbyte(0x0d); addptr(pcpsr); // MOV pcpsr,%ecx
 		addbyte(0x81); addbyte(0xe1); addlong(0x0fffffff); // AND $0x0fffffff,%ecx
 		gen_load_reg(RN, EDX);
@@ -1335,9 +1338,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		if (!generate_shift(opcode)) {
 			return 0;
 		}
-		// Shifted val now in %eax
-		addbyte(0x0b); addbyte(0x46); addbyte(RN<<2); // OR Rn,%eax
-		gen_save_reg(RD, EAX);
+		gen_data_proc_reg(opcode, X86_OP_OR, 0);
 		break;
 
 	case 0x19: // ORRS reg
@@ -1355,7 +1356,6 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		if (!generate_shift(opcode)) {
 			return 0;
 		}
-		// Shifted val now in %eax
 		if (RD == 15) {
 			gen_load_reg(15, EDX);
 			addbyte(0x83); addbyte(0xc0); addbyte(4); // ADD $4,%eax
@@ -1371,7 +1371,6 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		if (!generateshiftflags(opcode, pcpsr)) {
 			return 0;
 		}
-		// Shifted val now in %eax
 		addbyte(0x85); addbyte(0xc0); // TEST %eax,%eax
 		gen_save_reg(RD, EAX);
 		gen_flags_logical(pcpsr);
@@ -1382,10 +1381,8 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		if (!generate_shift(opcode)) {
 			return 0;
 		}
-		// Shifted val now in %eax
 		addbyte(0xf7); addbyte(0xd0); // NOT %eax
-		addbyte(0x23); addbyte(0x46); addbyte(RN<<2); // AND Rn,%eax
-		gen_save_reg(RD, EAX);
+		gen_data_proc_reg(opcode, X86_OP_AND, 0);
 		break;
 
 	case 0x1d: // BICS reg
@@ -1405,7 +1402,6 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		if (!generate_shift(opcode)) {
 			return 0;
 		}
-		// Shifted val now in %eax
 		addbyte(0xf7); addbyte(0xd0); // NOT %eax
 		gen_save_reg(RD, EAX);
 		break;
