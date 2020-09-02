@@ -1088,9 +1088,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		if (!generateshiftflags(opcode, pcpsr)) {
 			return 0;
 		}
-		// Shifted val now in %eax
-		addbyte(0x23); addbyte(0x46); addbyte(RN<<2); // AND Rn,%eax
-		gen_save_reg(RD, EAX);
+		gen_data_proc_reg(opcode, X86_OP_AND, 0);
 		gen_flags_logical(pcpsr);
 		break;
 
@@ -1133,9 +1131,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		if (!generateshiftflags(opcode, pcpsr)) {
 			return 0;
 		}
-		// Shifted val now in %eax
-		addbyte(0x33); addbyte(0x46); addbyte(RN<<2); // XOR Rn,%eax
-		gen_save_reg(RD, EAX);
+		gen_data_proc_reg(opcode, X86_OP_XOR, 0);
 		gen_flags_logical(pcpsr);
 		break;
 
@@ -1152,12 +1148,9 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		if (!generate_shift(opcode)) {
 			return 0;
 		}
-		// Shifted val now in %eax
 		addbyte(0x8b); addbyte(0x0d); addptr(pcpsr); // MOV pcpsr,%ecx
 		addbyte(0x81); addbyte(0xe1); addlong(0x0fffffff); // AND $0x0fffffff,%ecx
-		gen_load_reg(RN, EDX);
-		addbyte(0x29); addbyte(0xc2); // SUB %eax,%edx
-		gen_save_reg(RD, EDX);
+		gen_data_proc_reg(opcode, X86_OP_SUB, 1);
 		gen_flags_sub(pcpsr);
 		break;
 
@@ -1202,12 +1195,9 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		if (!generate_shift(opcode)) {
 			return 0;
 		}
-		// Shifted val now in %eax
 		addbyte(0x8b); addbyte(0x0d); addptr(pcpsr); // MOV pcpsr,%ecx
 		addbyte(0x81); addbyte(0xe1); addlong(0x0fffffff); // AND $0x0fffffff,%ecx
-		gen_load_reg(RN, EDX);
-		addbyte(0x01); addbyte(0xc2); // ADD %eax,%edx
-		gen_save_reg(RD, EDX);
+		gen_data_proc_reg(opcode, X86_OP_ADD, 0);
 		gen_flags_add(pcpsr);
 		break;
 
@@ -1346,9 +1336,7 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		if (!generateshiftflags(opcode, pcpsr)) {
 			return 0;
 		}
-		// Shifted val now in %eax
-		addbyte(0x0b); addbyte(0x46); addbyte(RN<<2); // OR Rn,%eax
-		gen_save_reg(RD, EAX);
+		gen_data_proc_reg(opcode, X86_OP_OR, 0);
 		gen_flags_logical(pcpsr);
 		break;
 
@@ -1390,10 +1378,8 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		if (!generateshiftflags(opcode, pcpsr)) {
 			return 0;
 		}
-		// Shifted val now in %eax
 		addbyte(0xf7); addbyte(0xd0); // NOT %eax
-		addbyte(0x23); addbyte(0x46); addbyte(RN<<2); // AND Rn,%eax
-		gen_save_reg(RD, EAX);
+		gen_data_proc_reg(opcode, X86_OP_AND, 0);
 		gen_flags_logical(pcpsr);
 		break;
 
@@ -1411,7 +1397,6 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		if (!generateshiftflags(opcode, pcpsr)) {
 			return 0;
 		}
-		// Shifted val now in %eax
 		addbyte(0xf7); addbyte(0xd0); // NOT %eax
 		addbyte(0x85); addbyte(0xc0); // TEST %eax,%eax
 		gen_save_reg(RD, EAX);
