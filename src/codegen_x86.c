@@ -1256,14 +1256,12 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		if (!generate_shift(opcode)) {
 			return 0;
 		}
-		// Shifted val now in %eax
-		addbyte(0xf6); addbyte(0x05); addptr(((char *) pcpsr) + 3); addbyte(0x20); // TESTB $0x20,pcpsr+3
-		addbyte(0x89); addbyte(0xc2); // MOV %eax,%edx
-		gen_load_reg(RN, EAX);
-		addbyte(0x75); addbyte(1); // JNZ +1
-		addbyte(0x42); // INC %edx
-		addbyte(0x29); addbyte(0xd0); // SUB %edx,%eax
-		gen_save_reg(RD, EAX);
+		addbyte(0x8b); addbyte(0x0d); addptr(pcpsr); // MOV pcpsr,%ecx
+		gen_load_reg(RN, EDX);
+		addbyte(0xc1); addbyte(0xe1); addbyte(3); // SHL $3,%ecx - put ARM carry into x86 carry
+		gen_x86_cmc();
+		addbyte(0x19); addbyte(0xc2); // SBB %eax,%edx
+		gen_save_reg(RD, EDX);
 		break;
 
 	case 0x0e: // RSC reg
