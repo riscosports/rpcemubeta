@@ -1226,21 +1226,14 @@ recompile(uint32_t opcode, uint32_t *pcpsr)
 		if (!generate_shift(opcode)) {
 			return 0;
 		}
-		// Shifted val now in %eax
-		addbyte(0x8a); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // MOV pcpsr+3,%cl
-		addbyte(0x88); addbyte(0xcd); // MOV %cl,%ch
-		addbyte(0x80); addbyte(0xe1); addbyte(0x0f); // AND $~(NFLAG|ZFLAG|CFLAG|VFLAG),%cl
 		gen_load_reg(RN, EDX);
-		addbyte(0xc0); addbyte(0xe5); addbyte(3); // SHL $3,%ch - put ARM carry into x86 carry
+		addbyte(0x8b); addbyte(0x0d); addptr(pcpsr); // MOV pcpsr,%ecx
+		addbyte(0x89); addbyte(0xcb); // MOV %ecx,%ebx
+		addbyte(0x81); addbyte(0xe1); addlong(0x0fffffff); // AND $~(NFLAG|ZFLAG|CFLAG|VFLAG),%ecx
+		addbyte(0xc1); addbyte(0xe3); addbyte(3); // SHL $3,%ebx - put ARM carry into x86 carry
 		addbyte(0x11); addbyte(0xc2); // ADC %eax,%edx
-		gen_x86_lahf();
 		gen_save_reg(RD, EDX);
-		addbyte(0x0f); addbyte(0xb6); addbyte(0xd4); // MOVZBL %ah,%edx
-		addbyte(0x71); addbyte(3); // JNO notoverflow
-		addbyte(0x80); addbyte(0xc9); addbyte(0x10); // OR $VFLAG,%cl
-		// .notoverflow
-		addbyte(0x0a); addbyte(0x8a); addptr(lahf_table_add); // OR lahf_table_add(%edx),%cl
-		addbyte(0x88); addbyte(0x0d); addptr(((char *) pcpsr) + 3); // MOV %cl,pcpsr+3
+		gen_flags_add(pcpsr);
 		break;
 
 	case 0x0c: // SBC reg
