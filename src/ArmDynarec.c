@@ -610,19 +610,6 @@ set_memory_executable(void *ptr, size_t len)
 
 #include "ArmDynarecOps.h"
 
-static const unsigned char validforskip[64]=
-{
-        1,        1,        1,        1,        1,       1,        1,       1,
-        1,        1,        1,        1,        1,       1,        1,       1,
-        0,        0,        0,        0,        0,       0,        0,       0,
-        1,        1,        0,        0,        1,       1,        1,       1,
-        
-        0,        0,        1,        0,        1,       0,        1,       0,
-        1,        0,        1,        0,        1,       0,        1,       0,
-        0,        0,        0,        0,        0,       0,        0,       0,
-        1,        0,        1,        0,        1,       0,        1,       0
-};
-
 static const OpFn opcodes[256] = {
 	opANDreg,  opANDregS, opEORreg,  opEORregS, opSUBreg,  opSUBregS, opRSBreg,  opRSBregS, // 00
 	opADDreg,  opADDregS, opADCreg,  opADCregS, opSBCreg,  opSBCregS, opRSCreg,  opRSCregS, // 08
@@ -666,6 +653,28 @@ static const OpFn opcodes[256] = {
 };
 
 int linecyc=0;
+
+static inline int
+arm_opcode_needs_pc(uint32_t opcode)
+{
+	// Is this a load, store, branch, co-pro or SWI?
+	if (opcode & 0xc000000) {
+		return 1;
+	}
+	// Is this a swap, status register transfer, or unallocated instruction?
+	if ((opcode & 0xd900000) == 0x1000000) {
+		return 1;
+	}
+	// Is this a data-processing operation that uses PC?
+	if (RN == 15 || RD == 15 || ((opcode & 0x2000000) == 0 && (RM == 15))) {
+		return 1;
+	}
+	// Is this a load/store extension?
+	if (arm.arch_v4 && (((opcode & 0xe0000f0) == 0xb0) || ((opcode & 0xe1000d0) == 0x1000d0))) {
+		return 1;
+	}
+	return 0;
+}
 
 static inline int
 arm_opcode_may_abort(uint32_t opcode)
@@ -803,17 +812,9 @@ arm_exec(void)
 						// NV condition code
 						generatepcinc();
 					} else {
-#ifdef ABORTCHECKING
-						generateupdatepc();
-#else
-						if ((opcode & 0x0e000000) == 0x00000000/* && (RN==15 || RD==15 || RM==15 || !validforskip[(opcode>>20)&63])*/) generateupdatepc();
-						if ((opcode & 0x0e000000) == 0x02000000/* && (RN==15 || RD==15 ||           !validforskip[(opcode>>20)&63])*/) generateupdatepc();
-						if ((opcode & 0x0c000000) == 0x04000000 && (RN == 15 || RD == 15 || RM == 15)) generateupdatepc();
-						if ((opcode & 0x0e000000) == 0x08000000 && ((opcode & 0x8000) || (RN == 15))) generateupdatepc();
-						if ((opcode & 0x0f000000) >= 0x0a000000) generateupdatepc();
-#endif
-						// if (((opcode + 0x06000000) & 0x0f000000) >= 0x0a000000) generateupdatepc();
-						// generateupdatepc();
+						if (arm_opcode_needs_pc(opcode)) {
+							generateupdatepc();
+						}
 						generatepcinc();
 						if ((opcode & 0x0e000000) == 0x0a000000) {
 							generateupdateinscount();
@@ -824,11 +825,9 @@ arm_exec(void)
 							lastflagchange = 0;
 						}
 						generatecall(arm_opcode_fn(opcode), opcode, pcpsr);
-#ifdef ABORTCHECKING
 						if (arm_opcode_may_abort(opcode)) {
 							generateirqtest();
 						}
-#endif
 						// if ((opcode & 0x0e000000) == 0x0a000000) blockend = 1; /* Always end block on branches */
 						if ((opcode & 0x0c000000) == 0x0c000000) blockend = 1; /* And SWIs and copro stuff */
 						if (!(opcode & 0x0c000000) && (RD == 15)) blockend = 1; /* End if R15 can be modified */

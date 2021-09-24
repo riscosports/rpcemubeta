@@ -81,11 +81,6 @@ extern "C" {
   bugs*/
 #define mousehack	(config.mousehackon)
 
-/*This enables abort checking after every LDR/STR/LDM/STM instruction in the
-  recompiler. Disabling this makes the recompiler check after every block
-  instead - this doesn't appear to break RISC OS, but you never know...*/
-#define ABORTCHECKING
-
 /** The type of networking configured */
 typedef enum {
 	NetworkType_Off,
