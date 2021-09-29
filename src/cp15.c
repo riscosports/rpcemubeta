@@ -180,7 +180,6 @@ static void
 cp15_tlb_flush_all(void)
 {
 	clearmemcache();
-	pccache = 0xffffffff;
 	cp15_tlb_flush();
 	cp15_vaddr_reset();
 	flushes++;
