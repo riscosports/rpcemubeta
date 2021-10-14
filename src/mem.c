@@ -450,9 +450,8 @@ mem_phys_write32(uint32_t addr, uint32_t val)
 	case 0x12000000:
 	case 0x13000000:
 		ram00[(addr & mem_rammask) >> 2] = val;
-		/* TODO fff00000 only allows blocks on 1MB boundaries not 8MB/16MB
-		   this suggests writes to > 1MB inside video mem in dram mode aren't updating dirtybuffer */
-		if ((mem_vrammask == 0) && ((addr & 0xfff00000) == (iomd.vidstart & 0xfff00000))) {
+		/* In 0MB VRAM modes allow up to 4MB of writes to DRAM video data to update the dirty buffer */
+		if ((mem_vrammask == 0) && ((addr & 0xffc00000) == (iomd.vidstart & 0xffc00000))) {
 			dirtybuffer[(addr & mem_rammask) >> 12] = 1;
 		}
 		return;
@@ -564,9 +563,8 @@ mem_phys_write8(uint32_t addr, uint8_t val)
 		addr ^= 3;
 #endif
 		ramb00[addr & mem_rammask] = val;
-		/* TODO fff00000 only allows blocks on 1MB boundaries not 8MB/16MB
-		   this suggests writes to > 1MB inside video mem in dram mode aren't updating dirtybuffer */
-		if ((mem_vrammask == 0) && ((addr & 0xfff00000) == (iomd.vidstart & 0xfff00000))) {
+		/* In 0MB VRAM modes allow up to 4MB of writes to DRAM video data to update the dirty buffer */
+		if ((mem_vrammask == 0) && ((addr & 0xffc00000) == (iomd.vidstart & 0xffc00000))) {
 			dirtybuffer[(addr & mem_rammask) >> 12] = 1;
 		}
 		return;
