@@ -31,6 +31,7 @@ HEADERS =	../superio.h \
 		../vidc20.h \
 		../arm_common.h \
 		../arm.h \
+		../disc_adf.h \
 		main_window.h \
 		configure_dialog.h \
 		about_dialog.h \
@@ -58,6 +59,7 @@ SOURCES =	../superio.c \
 		../rpc-machdep.c \
 		../arm_common.c \
 		../i8042.c \
+		../disc_adf.c \
 		settings.cpp \
 		rpc-qt5.cpp \
 		main_window.cpp \

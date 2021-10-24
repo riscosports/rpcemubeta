@@ -52,6 +52,7 @@
 #include "podules.h"
 #include "fdc.h"
 #include "hostfs.h"
+#include "disc_adf.h"
 
 #ifdef RPCEMU_NETWORKING
 #include "network.h"
@@ -112,7 +113,6 @@ int quited = 0;
 static FILE *arclog; /* Log file handle */
 
 static int cycles;
-static int fdci;
 
 #ifdef _DEBUG
 /**
@@ -215,7 +215,6 @@ resetrpc(void)
 #endif
 
 	cycles = 0;
-	fdci = 0;
 
 	rpclog("RPCEmu: Machine reset complete\n");
 }
@@ -311,6 +310,7 @@ rpcemu_start(void)
 	loadroms();
         cmos_init();
         fdc_init();
+        adf_init();
         fdc_image_load("boot.adf", 0);
         fdc_image_load("notboot.adf", 1);
         initvideo();
@@ -371,12 +371,7 @@ execrpcemu(void)
 			}
 		}
 		if (motoron) {
-			fdci--;
-			if (fdci <= 0) {
-				fdci = 20000;
-				iomd.irqa.status |= IOMD_IRQA_FLOPPY_INDEX;
-				updateirqs();
-			}
+			disc_poll();
 		}
 	}
 

@@ -32,6 +32,7 @@
 #include "iomd.h"
 #include "ide.h"
 #include "arm.h"
+#include "disc_adf.h"
 
 /* FDC commands */
 enum {
@@ -63,7 +64,6 @@ static struct
 	uint8_t st1;
 	uint8_t st2;
 	uint8_t st3;
-	int commandpos;
 	int track;
 	int sector;
 	int side;
@@ -76,6 +76,12 @@ static struct
 	int oldpos;
 	uint8_t results[16];
 	int result_rp, result_wp;
+	int drive;
+	int density;
+	int tc;
+	int data_ready;
+	int written;
+	int in_read;
 } fdc;
 
 /* This enumeration must be kept in sync with the formats[] array */
@@ -109,19 +115,6 @@ static const Format formats[] = {
 	{ "DOS 1440KB",       "img", 2, 80, 18,  512, 1, 0 }
 };
 
-/**
- * Structure to hold information about a specific floppy drive and the disc
- * image inside it
- */
-typedef struct {
-	uint8_t disc[2][80][19][1024]; /**< side, Track, Sector (+ max skew), Bytes, large enough to hold all format variants */
-	const Format *format;
-	int discchanged;
-} Drive;
-
-/** Floppy controller has two disc drives attached */
-static Drive drives[2];
-
 int fdccallback = 0;
 int motoron = 0;
 
@@ -153,26 +146,6 @@ fdc_dma_lower(void)
 	updateirqs();
 }
 
-/**
- * Calculate the size code for a given length of sector
- *
- * @param sectorsize size of one sector on disc (in bytes)
- * @return code used to represent that sectorsize
- */
-static uint8_t
-fdc_size_code_from_sector_size(int sectorsize)
-{
-	switch (sectorsize) {
-	case  128: return 0;
-	case  256: return 1;
-	case  512: return 2;
-	case 1024: return 3;
-	}
-
-	UNIMPLEMENTED("fdc", "Unsupported sectorsize %d", sectorsize);
-	return 0;
-}
-
 void
 fdc_reset(void)
 {
@@ -185,12 +158,6 @@ fdc_reset(void)
 void
 fdc_init(void)
 {
-	int d;
-
-	for (d = 0; d < 2; d++) {
-		// Configure a default format
-		drives[d].format = &formats[DISC_FORMAT_ADFS_DE_800K];
-	}
 }
 
 /**
@@ -204,9 +171,9 @@ void
 fdc_image_load(const char *fn, int drive)
 {
 	FILE *f;
-	int h, t, s, b;
 	const char *extension;
 	long len;
+	const Format *format;
 
 	assert(drive == 0 || drive == 1); // Only support two drives
 	assert(fn != NULL); // Must have filename
@@ -235,93 +202,38 @@ fdc_image_load(const char *fn, int drive)
 
 	if (strcasecmp(extension, ".adf") == 0) {
 		if (len > 1000000) {
-			drives[drive].format = &formats[DISC_FORMAT_ADFS_F_1600K];
+			format = &formats[DISC_FORMAT_ADFS_F_1600K];
 		} else {
-			drives[drive].format = &formats[DISC_FORMAT_ADFS_DE_800K];
+			format = &formats[DISC_FORMAT_ADFS_DE_800K];
 		}
 	} else if (strcasecmp(extension, ".adl") == 0) {
-		drives[drive].format = &formats[DISC_FORMAT_ADFS_L_640K];
+		format = &formats[DISC_FORMAT_ADFS_L_640K];
 	} else if (strcasecmp(extension, ".img") == 0) {
 		if (len > 1250000) {
-			drives[drive].format = &formats[DISC_FORMAT_DOS_1440K];
+			format = &formats[DISC_FORMAT_DOS_1440K];
 		} else if (len > 400000) {
-			drives[drive].format = &formats[DISC_FORMAT_DOS_720K];
+			format = &formats[DISC_FORMAT_DOS_720K];
 		} else {
-			drives[drive].format = &formats[DISC_FORMAT_DOS_360K];
+			format = &formats[DISC_FORMAT_DOS_360K];
 		}
 	} else {
 		error("Unknown disc image file extension '%s', must be .adf or .adl", extension);
 		fclose(f);
 		return;
 	}
-
-	rpclog("fdc_image_load: %s (%ld) loaded as '%s'\n", fn, len, drives[drive].format->name);
-
-	drives[drive].discchanged = 0;
-	rewind(f);
-
-	for (t = 0; t < drives[drive].format->tracks ; t++) {
-		for (h = 0; h < drives[drive].format->sides; h++) {
-			for (s = drives[drive].format->sectorskew; s < drives[drive].format->sectors + drives[drive].format->sectorskew; s++) {
-				for (b = 0; b < drives[drive].format->sectorsize; b++) {
-					drives[drive].disc[h][t][s][b] = fgetc(f);
-				}
-			}
-		}
-	}
-
-	// reset the sector to the first valid one
-	fdc.sector = drives[drive].format->sectorskew;
-
 	fclose(f);
+
+	rpclog("fdc_image_load: %s (%ld) loaded as '%s'\n", fn, len, format->name);
+	adf_load(drive, fn, format->sectors, format->sectorsize, format->sides, format->tracks == 40,
+			format->density ? 1 : 2, format->sectorskew);
 }
 
-/**
- * Save a disc image from one of the two virtual floppy
- * disc drives to host disc.
- *
- * @param fn    Filename of disc image to load (including .adf .adl extension)
- * @param drive Which drive to save image from 0 or 1
- */
 void
 fdc_image_save(const char *fn, int drive)
 {
-	FILE *f;
-	int h, t, s, b;
-
-	assert(drive == 0 || drive == 1); // Only support two drives
-	assert(fn != NULL); // Must have filename
-
-	if (!drives[drive].discchanged) {
-		return;
-	}
-
-	// must be at least a.ext
-	if (strlen(fn) < 5 || fn[strlen(fn) - 4] != '.') {
-		error("Disc image filename must include a file extension (.adf,.adl)");
-		return;
-	}
-
-	f = fopen(fn, "wb");
-	if (f == NULL) {
-//		error("Unable to open disc image '%s'", fn);
-		return;
-	}
-	drives[drive].discchanged = 0;
-
-	for (t = 0; t < drives[drive].format->tracks; t++) {
-		for (h = 0; h < drives[drive].format->sides; h++) {
-			for (s = drives[drive].format->sectorskew; s < drives[drive].format->sectors + drives[drive].format->sectorskew; s++) {
-				for (b = 0; b < drives[drive].format->sectorsize; b++) {
-					putc(drives[drive].disc[h][t][s][b], f);
-				}
-			}
-		}
-	}
-
-	fclose(f);
+	(void)fn;
+	adf_close(drive);
 }
-
 
 void
 fdc_write(uint32_t addr, uint32_t val)
@@ -347,6 +259,9 @@ fdc_write(uint32_t addr, uint32_t val)
 
 			if (fdc.curparam == fdc.params) {
 				fdc.status &= ~0x80;
+				fdc.tc = 0;
+				fdc.data_ready = 0;
+				fdc.in_read = 0;
 				switch (fdc.command) {
 				case FD_CMD_SPECIFY:
 					fdccallback = 100;
@@ -357,9 +272,15 @@ fdc_write(uint32_t addr, uint32_t val)
 					break;
 
 				case FD_CMD_RECALIBRATE:
+					fdccallback = 500;
+					fdc.status |= 1;
+					disc_seek(fdc.parameters[0] & 1, 0);
+					break;
+
 				case FD_CMD_SEEK:
 					fdccallback = 500;
 					fdc.status |= 1;
+					disc_seek(fdc.parameters[0] & 1, fdc.parameters[1]);
 					break;
 
 				case FD_CMD_CONFIGURE:
@@ -367,54 +288,51 @@ fdc_write(uint32_t addr, uint32_t val)
 					break;
 
 				case FD_CMD_WRITE_DATA_MFM:
-					fdc.commandpos = 0;
-					fdccallback    = 1000;
 					fdc.st0        = fdc.parameters[0] & 7;
 					fdc.st1        = 0;
 					fdc.st2        = 0;
 					fdc.track      = fdc.parameters[1];
 					fdc.side       = fdc.parameters[2];
 					fdc.sector     = fdc.parameters[3];
-					drives[fdc.st0 & 1].discchanged = 1;
+					fdc.drive      = fdc.st0 & 1;
+					disc_writesector(fdc.st0 & 1, fdc.sector, fdc.track, fdc.side, fdc.density);
+					fdc_dma_raise();
 					break;
 
 				case FD_CMD_READ_DATA_MFM:
+					fdc.in_read = 1;
 				case FD_CMD_VERIFY_DATA_MFM:
-					fdc.commandpos = 0;
-					fdccallback    = 1000;
 					fdc.st0        = fdc.parameters[0] & 7;
 					fdc.st1        = 0;
 					fdc.st2        = 0;
 					fdc.track      = fdc.parameters[1];
 					fdc.side       = fdc.parameters[2];
 					fdc.sector     = fdc.parameters[3];
+					fdc.drive      = fdc.st0 & 1;
+					disc_readsector(fdc.st0 & 1, fdc.sector, fdc.track, fdc.side, fdc.density);
 					break;
 
 				case FD_CMD_READ_ID_MFM:
-					fdc.commandpos = 0;
-					fdccallback    = 4000;
 					fdc.st0        = fdc.parameters[0] & 7;
 					fdc.st1        = 0;
 					fdc.st2        = 0;
-					if (fdc.rate != drives[fdc.st0 & 1].format->density) {
-						fdc.command = FD_CMD_READ_ID_FM;
-					}
+					fdc.drive      = fdc.st0 & 1;
+					disc_readaddress(fdc.st0 & 1, fdc.track, fdc.side, fdc.density);
 					break;
 
 				case FD_CMD_READ_ID_FM:
-					fdc.commandpos = 0;
 					fdccallback    = 4000;
 					fdc.st0        = fdc.parameters[0] & 7;
 					fdc.st1        = 0;
 					fdc.st2        = 0;
+					fdc.drive      = fdc.st0 & 1;
 					break;
 
 				case FD_CMD_FORMAT_TRACK_MFM:
-					fdc.commandpos = 0;
 					fdc.st0        = fdc.parameters[0] & 7;
 					fdc.st1        = 0;
 					fdc.st2        = 0;
-					fdccallback    = 1000;
+					fdc.drive      = fdc.st0 & 1;
 					break;
 
 				default:
@@ -430,7 +348,6 @@ fdc_write(uint32_t addr, uint32_t val)
 			fatal("FDC already in command\n");
 		}
 		fdc.incommand  = 1;
-		fdc.commandpos = 0;
 		fdc.command    = val;
 
 		switch (fdc.command) {
@@ -508,6 +425,17 @@ fdc_write(uint32_t addr, uint32_t val)
 
 	case 0x3f7: /* Configuration Control Register (CCR) */
 		fdc.rate = val & 3;
+		switch (val & 3) {
+		case 0:
+			fdc.density = 2;
+			break;
+		case 1: case 2:
+			fdc.density = 1;
+			break;
+		case 3:
+			fdc.density = 3;
+			break;
+		}
 		break;
 
 	default:
@@ -559,10 +487,13 @@ fdcsend(uint8_t val)
 }
 
 static void
-fdcsenddata(uint8_t val)
+fdc_end_command(void)
 {
-	fdc.dmadat = val;
-	fdc_dma_raise();
+	fdc.status = 0xD0;
+	fdc.incommand = 0;
+	fdc.params = 0;
+	fdccallback = 0;
+	fdc_irq_raise();
 }
 
 void
@@ -648,19 +579,17 @@ fdc_callback(void)
 		break;
 
 	case FD_CMD_WRITE_DATA_MFM:
-		if (fdc.commandpos == 2048) { // DMA Write
-			drives[fdc.st0 & 1].disc[fdc.side][fdc.track][fdc.sector][fdc.oldpos - 1] = fdc.dmadat;
-			fdc.commandpos = drives[fdc.st0 & 1].format->sectorsize + 1;
-			fdccallback    = 500;
-			fdc.sector++;
-		} else if (fdc.commandpos >= (drives[fdc.st0 & 1].format->sectorsize + 1)) {
+		fdc.sector++;
+		if (fdc.sector > fdc.parameters[5])
+			fdc.tc = 1;
+		if (fdc.tc) {
 			fdcsend(fdc.st0);
 			fdcsend(fdc.st1);
 			fdcsend(fdc.st2);
 			fdcsend(fdc.track);
 			fdcsend((fdc.parameters[0] & 4) ? 1 : 0);
 			fdcsend(fdc.sector);
-			fdcsend(fdc_size_code_from_sector_size(drives[fdc.st0 & 1].format->sectorsize));
+			fdcsend(fdc.parameters[4]);
 			fdc.status = 0xD0;
 			fdc_irq_raise();
 			fdc.incommand = 0;
@@ -668,36 +597,23 @@ fdc_callback(void)
 			fdc.curparam  = 0;
 			fdccallback   = 0;
 		} else {
-			if (fdc.commandpos) {
-				drives[fdc.st0 & 1].disc[fdc.side][fdc.track][fdc.sector][fdc.commandpos - 1] = fdc.dmadat;
-			}
-			fdc.commandpos++;
-			if (fdc.commandpos == drives[fdc.st0 & 1].format->sectorsize + 1) {
-				fdc.sector++;
-				if (fdc.sector <= fdc.parameters[5]) {
-					fdc.commandpos = 0;
-					fdccallback = 100;
-					return;
-				} else {
-					fdccallback = 100;
-					return;
-				}
-			} else {
-				fdc_dma_raise();
-			}
-			fdccallback = 0;
+			disc_writesector(fdc.drive, fdc.sector, fdc.track, fdc.side, fdc.density);
+			fdc_dma_raise();
 		}
 		break;
 
 	case FD_CMD_READ_DATA_MFM:
-		if (fdc.commandpos >= drives[fdc.st0 & 1].format->sectorsize) {
+		fdc.sector++;
+		if (fdc.sector > fdc.parameters[5])
+			fdc.tc = 1;
+		if (fdc.tc) {
 			fdcsend(fdc.st0);
 			fdcsend(fdc.st1);
 			fdcsend(fdc.st2);
 			fdcsend(fdc.track);
 			fdcsend((fdc.parameters[0] & 4) ? 1 : 0);
 			fdcsend(fdc.sector);
-			fdcsend(fdc_size_code_from_sector_size(drives[fdc.st0 & 1].format->sectorsize));
+			fdcsend(fdc.parameters[4]);
 			fdc.status = 0xD0;
 			fdc_irq_raise();
 			fdc.incommand = 0;
@@ -705,47 +621,8 @@ fdc_callback(void)
 			fdc.curparam  = 0;
 			fdccallback   = 0;
 		} else {
-			fdcsenddata(drives[fdc.st0 & 1].disc[fdc.side][fdc.track][fdc.sector][fdc.commandpos]);
-			fdc.commandpos++;
-			if (fdc.commandpos == drives[fdc.st0 & 1].format->sectorsize) {
-				fdc.sector++;
-				if (fdc.sector <= fdc.parameters[5]) {
-					fdc.commandpos = 0;
-				}
-				/*
-				else {
-					// printf("End of read op\n");
-					fdc.sector = 1;
-				}
-				*/
-			}
-			fdccallback = 0;
+			disc_readsector(fdc.drive, fdc.sector, fdc.track, fdc.side, fdc.density);
 		}
-		break;
-
-	case FD_CMD_READ_ID_MFM:
-		if (fdc.sector >= drives[fdc.st0 & 1].format->sectors + drives[fdc.st0 & 1].format->sectorskew) {
-			// Reset back to first valid sector
-			fdc.sector = drives[fdc.st0 & 1].format->sectorskew;
-		}
-		fdcsend(fdc.st0);
-		fdcsend(fdc.st1);
-		fdcsend(fdc.st2);
-		fdcsend(fdc.track);
-		fdcsend((fdc.parameters[0] & 4) ? 1 : 0);
-		fdcsend(fdc.sector);
-		fdcsend(fdc_size_code_from_sector_size(drives[fdc.st0 & 1].format->sectorsize));
-		fdc.status = 0xD0;
-		fdc_irq_raise();
-
-		fdc.incommand = 0;
-		fdc.sector++;
-		if (fdc.sector >= drives[fdc.st0 & 1].format->sectors  + drives[fdc.st0 & 1].format->sectorskew) {
-			// Reset back to first valid sector
-			fdc.sector = drives[fdc.st0 & 1].format->sectorskew;
-		}
-		fdc.params   = 0;
-		fdc.curparam = 0;
 		break;
 
 	case FD_CMD_READ_ID_FM:
@@ -786,7 +663,7 @@ fdc_callback(void)
 		fdcsend(fdc.track);
 		fdcsend((fdc.parameters[0] & 4) ? 1 : 0);
 		fdcsend(fdc.sector);
-		fdcsend(fdc_size_code_from_sector_size(drives[fdc.st0 & 1].format->sectorsize));
+		fdcsend(fdc.parameters[4]);
 		fdc.status = 0xD0;
 		fdc_irq_raise();
 		fdc.incommand = 0;
@@ -796,17 +673,125 @@ fdc_callback(void)
 	}
 }
 
+static void fdc_overrun(void)
+{
+	disc_stop();
+
+	fdcsend(0x40 | (fdc.side ? 4 : 0) | fdc.drive);
+	fdcsend(0x10); /*Overrun*/
+	fdcsend(0);
+	fdcsend(fdc.track);
+	fdcsend(fdc.side);
+	fdcsend(fdc.sector);
+	fdcsend(fdc.parameters[4]);
+	fdc_end_command();
+}
+
+void fdc_data(uint8_t dat)
+{
+	if (fdc.tc || !fdc.in_read)
+		return;
+
+	if (fdc.data_ready) {
+		fdc_overrun();
+	} else {
+		fdc.dmadat = dat;
+		fdc.data_ready = 1;
+		fdc_dma_raise();
+	}
+}
+
+void fdc_finishread(void)
+{
+	fdccallback = 25;
+}
+
+void fdc_notfound(void)
+{
+	fdcsend(0x40 | (fdc.side ? 4 : 0) | fdc.drive);
+	fdcsend(5);
+	fdcsend(0);
+	fdcsend(0);
+	fdcsend(0);
+	fdcsend(0);
+	fdcsend(0);
+	fdc_end_command();
+}
+
+void fdc_datacrcerror(void)
+{
+	fdcsend(0x40 | (fdc.side ? 4 : 0) | fdc.drive);
+	fdcsend(0x20); /*Data error*/
+	fdcsend(0x20); /*Data error in data field*/
+	fdcsend(fdc.track);
+	fdcsend(fdc.side);
+	fdcsend(fdc.sector);
+	fdcsend(fdc.parameters[4]);
+	fdc_end_command();
+}
+
+void fdc_headercrcerror(void)
+{
+	fdcsend(0x40 | (fdc.side ? 4 : 0) | fdc.drive);
+	fdcsend(0x20); /*Data error*/
+	fdcsend(0);
+	fdcsend(fdc.track);
+	fdcsend(fdc.side);
+	fdcsend(fdc.sector);
+	fdcsend(fdc.parameters[4]);
+	fdc_end_command();
+}
+
+void fdc_writeprotect(void)
+{
+	fdcsend(0x40 | (fdc.side ? 4 : 0) | fdc.drive);
+	fdcsend(0x02); /*Not writeable*/
+	fdcsend(0);
+	fdcsend(0);
+	fdcsend(0);
+	fdcsend(0);
+	fdcsend(0);
+	fdc_end_command();
+}
+
+int fdc_getdata(int last)
+{
+	uint8_t temp;
+
+	if (!fdc.written && !fdc.tc)
+		return -1;
+	if (!last && !fdc.tc)
+		fdc_dma_raise();
+	fdc.written = 0;
+	temp = fdc.dmadat;
+	return temp;
+}
+
+void fdc_sectorid(uint8_t track, uint8_t side, uint8_t sector, uint8_t size)
+{
+	fdcsend((fdc.side ? 4 : 0) | fdc.drive);
+	fdcsend(0);
+	fdcsend(0);
+	fdcsend(track);
+	fdcsend(side);
+	fdcsend(sector);
+	fdcsend(size);
+	fdc_end_command();
+}
+
+void fdc_indexpulse(void)
+{
+	iomd.irqa.status |= IOMD_IRQA_FLOPPY_INDEX;
+	updateirqs();
+}
+
 uint8_t
 fdc_dma_read(uint32_t addr)
 {
 	fdc_dma_lower();
-	fdccallback = 100;
-	if (!fdc.commandpos) {
-		fdccallback = 2000;
-	}
+	fdc.data_ready = 0;
 	if (addr == 0x302a000) {
-		fdc.commandpos = drives[fdc.st0 & 1].format->sectorsize;
-		fdccallback    = 2000;
+		fdc.tc = 1;
 		fdc.st0        = 0;
 	}
 	return fdc.dmadat;
@@ -816,15 +801,10 @@ void
 fdc_dma_write(uint32_t addr, uint8_t val)
 {
 	fdc_dma_lower();
-	fdccallback = 200;
-	if (!fdc.commandpos) {
-		fdccallback = 2000;
-	}
 	if (addr == 0x302a000) {
-		fdc.oldpos     = fdc.commandpos;
-		fdc.commandpos = 2048;
-		fdccallback    = 2000;
+		fdc.tc = 1;
 		fdc.st0        = 0;
 	}
+	fdc.written = 1;
 	fdc.dmadat = val;
 }
