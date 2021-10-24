@@ -74,6 +74,8 @@ static struct
 	uint8_t dmadat;
 	int rate;
 	int oldpos;
+	uint8_t results[16];
+	int result_rp, result_wp;
 } fdc;
 
 /* This enumeration must be kept in sync with the formats[] array */
@@ -176,6 +178,8 @@ fdc_reset(void)
 {
 	fdccallback = 0;
 	motoron = 0;
+	fdc.result_rp = 0;
+	fdc.result_wp = 0;
 }
 
 void
@@ -456,6 +460,7 @@ fdc_write(uint32_t addr, uint32_t val)
 		case FD_CMD_DUMPREG: /* Used by Linux to identify FDC type. */
 			fdc.st0       = 0x80;
 			fdcsend(fdc.st0);
+			fdc_irq_raise();
 			fdc.incommand = 0;
 			fdccallback   = 0;
 			fdc.status    = 0x80;
@@ -519,14 +524,21 @@ fdc_read(uint32_t addr)
 		fdc_irq_lower();
 		return fdc.status;
 
-	case 0x3f5: /* Data (FIFO) */
-		fdc.status &= 0x7f;
-		if (!fdc.incommand) {
+	case 0x3f5: { /* Data (FIFO) */
+		uint8_t data = fdc.results[fdc.result_rp & 0xf];
+
+		if (fdc.result_rp != fdc.result_wp) {
+			fdc.result_rp++;
+		}
+
+		if (fdc.result_rp == fdc.result_wp) {
 			fdc.status = 0x80;
 		} else {
-			fdccallback = 100;
+			fdc.status |= 0xc0;
 		}
-		return fdc.data;
+
+		return data;
+	}
 
 	// case 0x3f7: /* Digital Input Register (DIR) */
 		// TODO Disc changed flag
@@ -542,16 +554,8 @@ fdc_read(uint32_t addr)
 static void
 fdcsend(uint8_t val)
 {
-	fdc.data   = val;
-	fdc.status = 0xd0;
-	fdc_irq_raise();
-}
-
-static void
-fdcsend2(uint8_t val)
-{
-	fdc.data   = val;
-	fdc.status = 0xd0;
+	fdc.results[fdc.result_wp & 0xf] = val;
+	fdc.result_wp++;
 }
 
 static void
@@ -595,6 +599,8 @@ fdc_callback(void)
 
 		fdc.incommand = 0;
 		fdcsend(fdc.st3);
+		fdc.status = 0xD0;
+		fdc_irq_raise();
 		fdc.params    = 0;
 		fdc.curparam  = 0;
 		break;
@@ -611,14 +617,11 @@ fdc_callback(void)
 		break;
 
 	case FD_CMD_SENSE_INTERRUPT_STATUS:
-		fdc.commandpos++;
-		if (fdc.commandpos == 1) {
-			fdcsend(fdc.st0);
-			fdccallback = 100;
-		} else {
-			fdc.incommand = 0;
-			fdcsend(fdc.track);
-		}
+		fdcsend(fdc.st0);
+		fdcsend(fdc.track);
+		fdc.status = 0xD0;
+		fdc_irq_raise();
+		fdc.incommand = 0;
 		break;
 
 //	case FD_CMD_DUMPREG: /*Dump registers - act as invalid command*/
@@ -651,22 +654,19 @@ fdc_callback(void)
 			fdccallback    = 500;
 			fdc.sector++;
 		} else if (fdc.commandpos >= (drives[fdc.st0 & 1].format->sectorsize + 1)) {
-			switch (fdc.commandpos - (drives[fdc.st0 & 1].format->sectorsize + 1)) {
-			case 0: fdcsend(fdc.st0); break;
-			case 1: fdcsend2(fdc.st1); break;
-			case 2: fdcsend2(fdc.st2); break;
-			case 3: fdcsend2(fdc.track); break;
-			case 4: fdcsend2((fdc.parameters[0] & 4) ? 1 : 0); break;
-			case 5: fdcsend2(fdc.sector); break;
-			case 6:
-				fdcsend2(fdc_size_code_from_sector_size(drives[fdc.st0 & 1].format->sectorsize));
-				fdc.incommand = 0;
-				fdc.params    = 0;
-				fdc.curparam  = 0;
-				fdccallback   = 0;
-				break;
-			}
-			fdc.commandpos++;
+			fdcsend(fdc.st0);
+			fdcsend(fdc.st1);
+			fdcsend(fdc.st2);
+			fdcsend(fdc.track);
+			fdcsend((fdc.parameters[0] & 4) ? 1 : 0);
+			fdcsend(fdc.sector);
+			fdcsend(fdc_size_code_from_sector_size(drives[fdc.st0 & 1].format->sectorsize));
+			fdc.status = 0xD0;
+			fdc_irq_raise();
+			fdc.incommand = 0;
+			fdc.params    = 0;
+			fdc.curparam  = 0;
+			fdccallback   = 0;
 		} else {
 			if (fdc.commandpos) {
 				drives[fdc.st0 & 1].disc[fdc.side][fdc.track][fdc.sector][fdc.commandpos - 1] = fdc.dmadat;
@@ -691,22 +691,19 @@ fdc_callback(void)
 
 	case FD_CMD_READ_DATA_MFM:
 		if (fdc.commandpos >= drives[fdc.st0 & 1].format->sectorsize) {
-			switch (fdc.commandpos - drives[fdc.st0 & 1].format->sectorsize) {
-			case 0: fdcsend(fdc.st0); break;
-			case 1: fdcsend2(fdc.st1); break;
-			case 2: fdcsend2(fdc.st2); break;
-			case 3: fdcsend2(fdc.track); break;
-			case 4: fdcsend2((fdc.parameters[0] & 4) ? 1 : 0); break;
-			case 5: fdcsend2(fdc.sector); break;
-			case 6:
-				fdcsend2(fdc_size_code_from_sector_size(drives[fdc.st0 & 1].format->sectorsize));
-				fdc.incommand = 0;
-				fdc.params    = 0;
-				fdc.curparam  = 0;
-				fdccallback   = 0;
-				break;
-			}
-			fdc.commandpos++;
+			fdcsend(fdc.st0);
+			fdcsend(fdc.st1);
+			fdcsend(fdc.st2);
+			fdcsend(fdc.track);
+			fdcsend((fdc.parameters[0] & 4) ? 1 : 0);
+			fdcsend(fdc.sector);
+			fdcsend(fdc_size_code_from_sector_size(drives[fdc.st0 & 1].format->sectorsize));
+			fdc.status = 0xD0;
+			fdc_irq_raise();
+			fdc.incommand = 0;
+			fdc.params    = 0;
+			fdc.curparam  = 0;
+			fdccallback   = 0;
 		} else {
 			fdcsenddata(drives[fdc.st0 & 1].disc[fdc.side][fdc.track][fdc.sector][fdc.commandpos]);
 			fdc.commandpos++;
@@ -731,30 +728,24 @@ fdc_callback(void)
 			// Reset back to first valid sector
 			fdc.sector = drives[fdc.st0 & 1].format->sectorskew;
 		}
-		switch (fdc.commandpos) {
-		case 0: fdcsend(fdc.st0); break;
-		case 1: fdcsend2(fdc.st1); break;
-		case 2: fdcsend2(fdc.st2); break;
-		case 3: fdcsend2(fdc.track); break;
-		case 4: fdcsend2((fdc.parameters[0] & 4) ? 1 : 0); break;
-		case 5: fdcsend2(fdc.sector); break;
-		case 6: fdcsend2(fdc_size_code_from_sector_size(drives[fdc.st0 & 1].format->sectorsize)); break;
-		default:
-			printf("Bad ReadID command pos %i\n", fdc.commandpos);
-			exit(-1);
-		}
+		fdcsend(fdc.st0);
+		fdcsend(fdc.st1);
+		fdcsend(fdc.st2);
+		fdcsend(fdc.track);
+		fdcsend((fdc.parameters[0] & 4) ? 1 : 0);
+		fdcsend(fdc.sector);
+		fdcsend(fdc_size_code_from_sector_size(drives[fdc.st0 & 1].format->sectorsize));
+		fdc.status = 0xD0;
+		fdc_irq_raise();
 
-		fdc.commandpos++;
-		if (fdc.commandpos == 7) {
-			fdc.incommand = 0;
-			fdc.sector++;
-			if (fdc.sector >= drives[fdc.st0 & 1].format->sectors  + drives[fdc.st0 & 1].format->sectorskew) {
-				// Reset back to first valid sector
-				fdc.sector = drives[fdc.st0 & 1].format->sectorskew;
-			}
-			fdc.params   = 0;
-			fdc.curparam = 0;
+		fdc.incommand = 0;
+		fdc.sector++;
+		if (fdc.sector >= drives[fdc.st0 & 1].format->sectors  + drives[fdc.st0 & 1].format->sectorskew) {
+			// Reset back to first valid sector
+			fdc.sector = drives[fdc.st0 & 1].format->sectorskew;
 		}
+		fdc.params   = 0;
+		fdc.curparam = 0;
 		break;
 
 	case FD_CMD_READ_ID_FM:
@@ -768,23 +759,18 @@ fdc_callback(void)
 		break;
 
 	case FD_CMD_FORMAT_TRACK_MFM:
-		switch (fdc.commandpos) {
-		case 0: fdcsend(fdc.st0);  break;
-		case 1: fdcsend2(fdc.st1); break;
-		case 2: fdcsend2(fdc.st2); break;
-		case 3: fdcsend2(0); break;
-		case 4: fdcsend2(0); break;
-		case 5: fdcsend2(0); break;
-		case 6:
-			fdcsend2(0);
-			fdc.incommand = 0;
-			fdc.params    = 0;
-			fdc.curparam  = 0;
-			break;
-		default:
-			fatal("Bad FormatTrack command pos %i", fdc.commandpos);
-		}
-		fdc.commandpos++;
+		fdcsend(fdc.st0);
+		fdcsend(fdc.st1);
+		fdcsend(fdc.st2);
+		fdcsend(0);
+		fdcsend(0);
+		fdcsend(0);
+		fdcsend(0);
+		fdc.status = 0xD0;
+		fdc_irq_raise();
+		fdc.incommand = 0;
+		fdc.params    = 0;
+		fdc.curparam  = 0;
 		break;
 
 	case FD_CMD_VERIFY_DATA_MFM:
@@ -794,23 +780,18 @@ fdc_callback(void)
 		} else {
 			fdc.sector = fdc.parameters[5];
 		}
-		switch (fdc.commandpos) {
-		case 0: fdcsend(fdc.st0); break;
-		case 1: fdcsend2(fdc.st1); break;
-		case 2: fdcsend2(fdc.st2); break;
-		case 3: fdcsend2(fdc.track); break;
-		case 4: fdcsend2((fdc.parameters[0] & 4) ? 1 : 0); break;
-		case 5: fdcsend2(fdc.sector); break;
-		case 6:
-			fdcsend2(fdc_size_code_from_sector_size(drives[fdc.st0 & 1].format->sectorsize));
-			fdc.incommand = 0;
-			fdc.params    = 0;
-			fdc.curparam  = 0;
-			break;
-		default:
-			fatal("Bad VerifyData command pos %i", fdc.commandpos);
-		}
-		fdc.commandpos++;
+		fdcsend(fdc.st0);
+		fdcsend(fdc.st1);
+		fdcsend(fdc.st2);
+		fdcsend(fdc.track);
+		fdcsend((fdc.parameters[0] & 4) ? 1 : 0);
+		fdcsend(fdc.sector);
+		fdcsend(fdc_size_code_from_sector_size(drives[fdc.st0 & 1].format->sectorsize));
+		fdc.status = 0xD0;
+		fdc_irq_raise();
+		fdc.incommand = 0;
+		fdc.params    = 0;
+		fdc.curparam  = 0;
 		break;
 	}
 }
