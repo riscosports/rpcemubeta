@@ -2,8 +2,11 @@
 #include <string.h>
 #include <stdint.h>
 #include "rpcemu.h"
+#include "disc.h"
 #include "disc_adf.h"
 #include "fdc.h"
+
+static disc_funcs adf_disc_funcs;
 
 static struct {
 	FILE *f;
@@ -67,18 +70,19 @@ void adf_load(int drive, const char *fn, int sectors, int size, int sides, int d
 	adf[drive].maxsector = (ftell(adf[drive].f)+1 ) / size;
 	adf[drive].skew = skew;
 
-	adf_seek(drive, 0);
+	drive_funcs[drive] = &adf_disc_funcs;
+	drive_funcs[drive]->seek(drive, disc_get_current_track(drive));
 }
 
 
-void adf_close(int drive)
+static void adf_close(int drive)
 {
 	if (adf[drive].f)
 		fclose(adf[drive].f);
 	adf[drive].f = NULL;
 }
 
-void adf_seek(int drive, int track)
+static void adf_seek(int drive, int track)
 {
 	if (!adf[drive].f)
 		return;
@@ -96,7 +100,7 @@ void adf_seek(int drive, int track)
 	}
 }
 
-void adf_writeback(int drive, int track)
+static void adf_writeback(int drive, int track)
 {
 	if (!adf[drive].f)
 		return;
@@ -114,7 +118,7 @@ void adf_writeback(int drive, int track)
 	}
 }
 
-void adf_readsector(int drive, int sector, int track, int side, int density)
+static void adf_readsector(int drive, int sector, int track, int side, int density)
 {
 	int sector_nr = (sector - adf[drive].skew) + adf[drive].sectors * (track * (adf[drive].dblside ? 2 : 1) + (side ? 1 : 0));
 
@@ -135,7 +139,7 @@ void adf_readsector(int drive, int sector, int track, int side, int density)
 	adf_state.readpos = 0;
 }
 
-void adf_writesector(int drive, int sector, int track, int side, int density)
+static void adf_writesector(int drive, int sector, int track, int side, int density)
 {
 	int sector_nr = (sector - adf[drive].skew) + adf[drive].sectors * (track * (adf[drive].dblside ? 2 : 1) + (side ? 1 : 0));
 
@@ -155,7 +159,7 @@ void adf_writesector(int drive, int sector, int track, int side, int density)
 	adf_state.readpos = 0;
 }
 
-void adf_readaddress(int drive, int track, int side, int density)
+static void adf_readaddress(int drive, int track, int side, int density)
 {
 	if (adf[drive].dblstep)
 		track /= 2;
@@ -175,7 +179,7 @@ void adf_readaddress(int drive, int track, int side, int density)
 	adf_state.pause = 100;//500;
 }
 
-void adf_format(int drive, int track, int side, int density)
+static void adf_format(int drive, int track, int side, int density)
 {
 	if (adf[drive].dblstep)
 		track /= 2;
@@ -194,7 +198,7 @@ void adf_format(int drive, int track, int side, int density)
 	adf_state.informat  = 1;
 }
 
-void adf_stop(void)
+static void adf_stop(void)
 {
 //	rpclog("adf_stop\n");
 
@@ -206,7 +210,7 @@ void adf_stop(void)
 	adf_state.informat = 0;
 }
 
-void adf_poll(void)
+static void adf_poll(void)
 {
 	int c;
 
@@ -278,3 +282,14 @@ void adf_poll(void)
 		}
 	}
 }
+
+static disc_funcs adf_disc_funcs = {
+	.seek        = adf_seek,
+	.readsector  = adf_readsector,
+	.writesector = adf_writesector,
+	.readaddress = adf_readaddress,
+	.poll        = adf_poll,
+	.format      = adf_format,
+	.stop        = adf_stop,
+	.close       = adf_close
+};

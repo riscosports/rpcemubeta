@@ -32,6 +32,7 @@
 #include "iomd.h"
 #include "ide.h"
 #include "arm.h"
+#include "disc.h"
 #include "disc_adf.h"
 
 /* FDC commands */
@@ -223,6 +224,11 @@ fdc_image_load(const char *fn, int drive)
 	}
 	fclose(f);
 
+	if (drive_funcs[drive]) {
+		drive_funcs[drive]->close(drive);
+		drive_funcs[drive] = NULL;
+	}
+
 	rpclog("fdc_image_load: %s (%ld) loaded as '%s'\n", fn, len, format->name);
 	adf_load(drive, fn, format->sectors, format->sectorsize, format->sides, format->tracks == 40,
 			format->density ? 1 : 2, format->sectorskew);
@@ -232,7 +238,10 @@ void
 fdc_image_save(const char *fn, int drive)
 {
 	(void)fn;
-	adf_close(drive);
+	if (drive_funcs[drive]) {
+		drive_funcs[drive]->close(drive);
+		drive_funcs[drive] = NULL;
+	}
 }
 
 void
@@ -248,6 +257,10 @@ fdc_write(uint32_t addr, uint32_t val)
 			fdc.status = 0x80;
 		}
 		motoron = val & 0x30;
+		if (val & 0x10)
+			disc_set_drivesel(0);
+		else if (val & 0x20)
+			disc_set_drivesel(1);
 		break;
 
 	case 0x3f4: /* Data Rate Select Register (DSR) */
@@ -675,7 +688,7 @@ fdc_callback(void)
 
 static void fdc_overrun(void)
 {
-	disc_stop();
+	disc_stop(fdc.drive);
 
 	fdcsend(0x40 | (fdc.side ? 4 : 0) | fdc.drive);
 	fdcsend(0x10); /*Overrun*/

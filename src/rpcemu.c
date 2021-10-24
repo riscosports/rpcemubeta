@@ -52,6 +52,7 @@
 #include "podules.h"
 #include "fdc.h"
 #include "hostfs.h"
+#include "disc.h"
 #include "disc_adf.h"
 
 #ifdef RPCEMU_NETWORKING
