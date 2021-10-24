@@ -34,6 +34,7 @@
 #include "arm.h"
 #include "disc.h"
 #include "disc_adf.h"
+#include "disc_hfe.h"
 
 /* FDC commands */
 enum {
@@ -175,6 +176,7 @@ fdc_image_load(const char *fn, int drive)
 	const char *extension;
 	long len;
 	const Format *format;
+	int is_hfe = 0;
 
 	assert(drive == 0 || drive == 1); // Only support two drives
 	assert(fn != NULL); // Must have filename
@@ -217,8 +219,10 @@ fdc_image_load(const char *fn, int drive)
 		} else {
 			format = &formats[DISC_FORMAT_DOS_360K];
 		}
+	}  else if (strcasecmp(extension, ".hfe") == 0) {
+		is_hfe = 1;
 	} else {
-		error("Unknown disc image file extension '%s', must be .adf or .adl", extension);
+		error("Unknown disc image file extension '%s', must be .adf, .adl, .img or .hfe", extension);
 		fclose(f);
 		return;
 	}
@@ -229,8 +233,11 @@ fdc_image_load(const char *fn, int drive)
 		drive_funcs[drive] = NULL;
 	}
 
-	rpclog("fdc_image_load: %s (%ld) loaded as '%s'\n", fn, len, format->name);
-	adf_load(drive, fn, format->sectors, format->sectorsize, format->sides, format->tracks == 40,
+	rpclog("fdc_image_load: %s (%ld) loaded as '%s'\n", fn, len, is_hfe ? "HFE" : format->name);
+	if (is_hfe)
+		hfe_load(drive, fn);
+	else
+		adf_load(drive, fn, format->sectors, format->sectorsize, format->sides, format->tracks == 40,
 			format->density ? 1 : 2, format->sectorskew);
 }
 

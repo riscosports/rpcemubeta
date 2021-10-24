@@ -33,6 +33,8 @@ HEADERS =	../superio.h \
 		../arm.h \
 		../disc.h \
 		../disc_adf.h \
+		../disc_hfe.h \
+		../disc_mfm_common.h \
 		main_window.h \
 		configure_dialog.h \
 		about_dialog.h \
@@ -62,6 +64,8 @@ SOURCES =	../superio.c \
 		../i8042.c \
 		../disc.c \
 		../disc_adf.c \
+		../disc_hfe.c \
+		../disc_mfm_common.c \
 		settings.cpp \
 		rpc-qt5.cpp \
 		main_window.cpp \

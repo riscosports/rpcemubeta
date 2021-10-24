@@ -54,6 +54,8 @@
 #include "hostfs.h"
 #include "disc.h"
 #include "disc_adf.h"
+#include "disc_hfe.h"
+#include "disc_mfm_common.h"
 
 #ifdef RPCEMU_NETWORKING
 #include "network.h"
@@ -312,6 +314,8 @@ rpcemu_start(void)
         cmos_init();
         fdc_init();
         adf_init();
+        hfe_init();
+        mfm_init();
         fdc_image_load("boot.adf", 0);
         fdc_image_load("notboot.adf", 1);
         initvideo();
