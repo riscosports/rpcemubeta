@@ -41,7 +41,7 @@ static uint32_t poduleromsize = 0;
 static uint32_t chunkbase;
 static uint32_t filebase;
 
-static const char description[] = "RPCEmu additional ROM";
+static const char description[] = "RPCEmu Support";
 
 /**
  *
