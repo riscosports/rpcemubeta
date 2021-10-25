@@ -73,7 +73,7 @@ makechunk(uint8_t type, uint32_t filebase, uint32_t size)
  * @return Contents of byte
  */
 static uint8_t
-readpodulerom(podule *p, int easi, uint32_t addr)
+podulerom_read8(podule *p, int easi, uint32_t addr)
 {
 	NOT_USED(p);
 
@@ -95,7 +95,7 @@ readpodulerom(podule *p, int easi, uint32_t addr)
 void
 podulerom_reset(void)
 {
-	addpodule(NULL, NULL, NULL, NULL, NULL, readpodulerom, NULL, NULL, 0);
+	addpodule(NULL, NULL, NULL, NULL, NULL, podulerom_read8, NULL, NULL, 0);
 }
 
 /**
