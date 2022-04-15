@@ -9,6 +9,28 @@
 #include "hostfs_internal.h"
 
 /**
+ * Convert a time_t to the equivalent RISC OS time.
+ *
+ * @param      t    Time as time_t
+ * @param[out] load Pointer to uint32_t, set to high 8 bits of RISC OS time
+ * @param[out] exec Pointer to uint32_t, set to low 32 bits of RISC OS time
+ *
+ * Code adapted from fs/adfs/inode.c from Linux licensed under GPL2.
+ * Copyright (C) 1997-1999 Russell King
+ */
+static void
+hostfs_time_t_to_risc_os_time(time_t t, uint32_t *load, uint32_t *exec)
+{
+	uint32_t low, high;
+
+	low  = (uint32_t) ((t & 255) * 100);
+	high = (uint32_t) ((t / 256) * 100 + (low >> 8) + 0x336e996a);
+
+	*load = (high >> 24);
+	*exec = (low & 0xff) | (high << 8);
+}
+
+/**
  * Convert ADFS time-stamped Load-Exec addresses to the equivalent time_t.
  *
  * @param load RISC OS load address (assumed to be time-stamped)
@@ -40,6 +62,24 @@ hostfs_adfs2host_time(uint32_t load, uint32_t exec)
 }
 
 /**
+ * Extract the modification time from a 'struct stat'.
+ * Convert this time to an equivalent RISC OS time, and store in the
+ * Load-Exec addresses of a 'risc_os_object_info'.
+ *
+ * @param      s           Pointer to a 'struct stat'
+ * @param[out] object_info Pointer to object info in which Load-Exec are filled in
+ */
+static void
+hostfs_struct_stat_to_risc_os_time(const struct stat *s, risc_os_object_info *object_info)
+{
+	uint32_t load, exec;
+
+	hostfs_time_t_to_risc_os_time(s->st_mtime, &load, &exec);
+	object_info->load = load;
+	object_info->exec = exec;
+}
+
+/**
  * Read information about an object.
  *
  * @param host_pathname Full Host path to object
@@ -50,7 +90,6 @@ hostfs_read_object_info_platform(const char *host_pathname,
                                  risc_os_object_info *object_info)
 {
 	struct stat info;
-	uint32_t low, high;
 
 	assert(host_pathname != NULL);
 	assert(object_info != NULL);
@@ -87,12 +126,8 @@ hostfs_read_object_info_platform(const char *host_pathname,
 		return;
 	}
 
-	low  = (uint32_t) ((info.st_mtime & 255) * 100);
-	high = (uint32_t) ((info.st_mtime / 256) * 100 + (low >> 8) + 0x336e996a);
-
 	/* If the file has filetype and timestamp, additional values will need to be filled in later */
-	object_info->load = (high >> 24);
-	object_info->exec = (low & 0xff) | (high << 8);
+	hostfs_struct_stat_to_risc_os_time(&info, object_info);
 
 	object_info->length = info.st_size;
 }
