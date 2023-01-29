@@ -75,7 +75,6 @@ podules_reset(void)
  * @param timercallback
  * @param reset         Function pointer for the podule's reset function, called
  *                      at program startup and emulated machine reset
- * @param broken
  * @return Pointer to entry in the podules array, or NULL on failure
  */
 podule *
@@ -86,8 +85,7 @@ addpodule(void (*writel)(podule *p, int easi, uint32_t addr, uint32_t val),
           uint16_t (*readw)(podule *p, int easi, uint32_t addr),
           uint8_t  (*readb)(podule *p, int easi, uint32_t addr),
           int (*timercallback)(podule *p),
-          void (*reset)(podule *p),
-          int broken)
+          void (*reset)(podule *p))
 {
 	if (freepodule == 8) {
 		return NULL; // All podules in use!
@@ -101,7 +99,6 @@ addpodule(void (*writel)(podule *p, int easi, uint32_t addr, uint32_t val),
 	podules[freepodule].writeb = writeb;
 	podules[freepodule].timercallback = timercallback;
 	podules[freepodule].reset = reset;
-	podules[freepodule].broken = broken;
 
 	return &podules[freepodule++];
 }
@@ -166,11 +163,7 @@ writepodulew(int num, int easi, uint32_t addr, uint32_t val)
 	const int oldfiq = podules[num].fiq;
 
 	if (podules[num].writew != NULL) {
-		if (podules[num].broken) {
-			podules[num].writel(&podules[num], easi, addr, val);
-		} else {
-			podules[num].writew(&podules[num], easi, addr, val >> 16);
-		}
+		podules[num].writew(&podules[num], easi, addr, val >> 16);
 	}
 	if (podules[num].irq != oldirq || podules[num].fiq != oldfiq) {
 		rethinkpoduleints();
@@ -240,11 +233,7 @@ readpodulew(int num, int easi, uint32_t addr)
 	uint32_t temp;
 
 	if (podules[num].readw != NULL) {
-		if (podules[num].broken) {
-			temp = podules[num].readl(&podules[num], easi, addr);
-		} else {
-			temp = podules[num].readw(&podules[num], easi, addr);
-		}
+		temp = podules[num].readw(&podules[num], easi, addr);
 		if (podules[num].irq != oldirq || podules[num].fiq != oldfiq) {
 			rethinkpoduleints();
 		}

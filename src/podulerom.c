@@ -95,7 +95,7 @@ podulerom_read8(podule *p, int easi, uint32_t addr)
 void
 podulerom_reset(void)
 {
-	addpodule(NULL, NULL, NULL, NULL, NULL, podulerom_read8, NULL, NULL, 0);
+	addpodule(NULL, NULL, NULL, NULL, NULL, podulerom_read8, NULL, NULL);
 }
 
 /**

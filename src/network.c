@@ -307,7 +307,7 @@ network_init(void)
 	}
 
 	// Register podule
-	network_poduleinfo = addpodule(NULL, NULL, NULL, NULL, NULL, readpoduleetherrpcem, NULL, NULL, 0);
+	network_poduleinfo = addpodule(NULL, NULL, NULL, NULL, NULL, readpoduleetherrpcem, NULL, NULL);
 	if (network_poduleinfo == NULL) {
 		error("No free podule for networking");
 	}
