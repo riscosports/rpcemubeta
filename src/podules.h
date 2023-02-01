@@ -42,7 +42,11 @@ typedef struct podule {
 	int msectimer;
 } podule;
 
-void rethinkpoduleints(void);
+void podule_fiq_raise(podule *p);
+void podule_fiq_lower(podule *p);
+
+void podule_irq_raise(podule *p);
+void podule_irq_lower(podule *p);
 
 podule *addpodule(void (*writel)(podule *p, int easi, uint32_t addr, uint32_t val),
               void (*writew)(podule *p, int easi, uint32_t addr, uint16_t val),

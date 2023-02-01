@@ -224,9 +224,8 @@ sig_io(int sig)
     if (irqstatus) {
         mem_write8(irqstatus, 1);
         if (network_poduleinfo) {
-            network_poduleinfo->irq = 1;
+            podule_irq_raise(network_poduleinfo);
         }
-        rethinkpoduleints();
     }
 }
 

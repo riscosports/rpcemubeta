@@ -106,7 +106,7 @@ addpodule(void (*writel)(podule *p, int easi, uint32_t addr, uint32_t val),
 /**
  * Raise interrupts if any podules have requested them.
  */
-void
+static void
 rethinkpoduleints(void)
 {
 	int c;
@@ -124,6 +124,54 @@ rethinkpoduleints(void)
 		}
 	}
 	updateirqs();
+}
+
+/**
+ * Raise FIQ for the specified podule.
+ *
+ * @param p Pointer to 'podule' struct for the specified Podule
+ */
+void
+podule_fiq_raise(podule *p)
+{
+	p->fiq = 1;
+	rethinkpoduleints();
+}
+
+/**
+ * Clear FIQ for the specified podule.
+ *
+ * @param p Pointer to 'podule' struct for the specified Podule
+ */
+void
+podule_fiq_lower(podule *p)
+{
+	p->fiq = 0;
+	rethinkpoduleints();
+}
+
+/**
+ * Raise IRQ for the specified podule.
+ *
+ * @param p Pointer to 'podule' struct for the specified Podule
+ */
+void
+podule_irq_raise(podule *p)
+{
+	p->irq = 1;
+	rethinkpoduleints();
+}
+
+/**
+ * Clear IRQ for the specified podule.
+ *
+ * @param p Pointer to 'podule' struct for the specified Podule
+ */
+void
+podule_irq_lower(podule *p)
+{
+	p->irq = 0;
+	rethinkpoduleints();
 }
 
 /**

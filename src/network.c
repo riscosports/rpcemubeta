@@ -375,9 +375,12 @@ network_swi(uint32_t r0, uint32_t r1, uint32_t r2, uint32_t r3, uint32_t r4, uin
 		break;
 	case 3:
 		if (network_poduleinfo) {
-			network_poduleinfo->irq = r2;
+			if (r2 != 0) {
+				podule_irq_raise(network_poduleinfo);
+			} else {
+				podule_irq_lower(network_poduleinfo);
+			}
 		}
-		rethinkpoduleints();
 		*retr0 = 0;
 		break;
 	case 4:
