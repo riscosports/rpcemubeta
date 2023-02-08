@@ -21,12 +21,14 @@
 #ifndef PODULES_H
 #define PODULES_H
 
-void writepodulel(int num, int easi, uint32_t addr, uint32_t val);
-void writepodulew(int num, int easi, uint32_t addr, uint32_t val);
-void writepoduleb(int num, int easi, uint32_t addr, uint8_t val);
-uint32_t  readpodulel(int num, int easi, uint32_t addr);
-uint32_t readpodulew(int num, int easi, uint32_t addr);
-uint8_t  readpoduleb(int num, int easi, uint32_t addr);
+#include <stdint.h>
+
+void podules_write32(int num, int easi, uint32_t addr, uint32_t val);
+void podules_write16(int num, int easi, uint32_t addr, uint32_t val);
+void podules_write8(int num, int easi, uint32_t addr, uint8_t val);
+uint32_t podules_read32(int num, int easi, uint32_t addr);
+uint32_t podules_read16(int num, int easi, uint32_t addr);
+uint8_t  podules_read8(int num, int easi, uint32_t addr);
 
 typedef struct podule {
 	void (*writeb)(struct podule *p, int easi, uint32_t addr, uint8_t val);

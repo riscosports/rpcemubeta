@@ -183,7 +183,7 @@ podule_irq_lower(podule *p)
  * @param val   Value to write
  */
 void
-writepodulel(int num, int easi, uint32_t addr, uint32_t val)
+podules_write32(int num, int easi, uint32_t addr, uint32_t val)
 {
 	const int oldirq = podules[num].irq;
 	const int oldfiq = podules[num].fiq;
@@ -205,7 +205,7 @@ writepodulel(int num, int easi, uint32_t addr, uint32_t val)
  * @param val   Value to write
  */
 void
-writepodulew(int num, int easi, uint32_t addr, uint32_t val)
+podules_write16(int num, int easi, uint32_t addr, uint32_t val)
 {
 	const int oldirq = podules[num].irq;
 	const int oldfiq = podules[num].fiq;
@@ -227,7 +227,7 @@ writepodulew(int num, int easi, uint32_t addr, uint32_t val)
  * @param val   Value to write
  */
 void
-writepoduleb(int num, int easi, uint32_t addr, uint8_t val)
+podules_write8(int num, int easi, uint32_t addr, uint8_t val)
 {
 	const int oldirq = podules[num].irq;
 	const int oldfiq = podules[num].fiq;
@@ -249,7 +249,7 @@ writepoduleb(int num, int easi, uint32_t addr, uint8_t val)
  * @return Value at memory address
  */
 uint32_t
-readpodulel(int num, int easi, uint32_t addr)
+podules_read32(int num, int easi, uint32_t addr)
 {
 	const int oldirq = podules[num].irq;
 	const int oldfiq = podules[num].fiq;
@@ -274,7 +274,7 @@ readpodulel(int num, int easi, uint32_t addr)
  * @return Value at memory address
  */
 uint32_t
-readpodulew(int num, int easi, uint32_t addr)
+podules_read16(int num, int easi, uint32_t addr)
 {
 	const int oldirq = podules[num].irq;
 	const int oldfiq = podules[num].fiq;
@@ -299,7 +299,7 @@ readpodulew(int num, int easi, uint32_t addr)
  * @return Value at memory address
  */
 uint8_t
-readpoduleb(int num, int easi, uint32_t addr)
+podules_read8(int num, int easi, uint32_t addr)
 {
 	const int oldirq = podules[num].irq;
 	const int oldfiq = podules[num].fiq;
