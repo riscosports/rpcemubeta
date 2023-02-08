@@ -131,17 +131,17 @@ network_rom_init(void)
 /**
  * Podule byte read function for Ethernet podule
  *
- * @param p    podule pointer (unused)
- * @param easi Read from EASI space or from regular IO space
- * @param addr Address of byte to read
+ * @param p       podule pointer (unused)
+ * @param io_type Read from IOC, MEMC or EASI space
+ * @param addr    Address of byte to read
  * @return Contents of byte
  */
 static uint8_t
-readpoduleetherrpcem(podule *p, int easi, uint32_t addr)
+readpoduleetherrpcem(podule *p, PoduleIoType io_type, uint32_t addr)
 {
 	NOT_USED(p);
 
-	if (easi && (poduleromsize > 0)) {
+	if (io_type == PODULE_IO_TYPE_EASI && (poduleromsize > 0)) {
 		addr = (addr & 0xffffff) >> 2;
 		if (addr < poduleromsize) {
 			return romdata[addr];

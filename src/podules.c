@@ -78,12 +78,12 @@ podules_reset(void)
  * @return Pointer to entry in the podules array, or NULL on failure
  */
 podule *
-addpodule(void (*writel)(podule *p, int easi, uint32_t addr, uint32_t val),
-          void (*writew)(podule *p, int easi, uint32_t addr, uint16_t val),
-          void (*writeb)(podule *p, int easi, uint32_t addr, uint8_t val),
-          uint32_t (*readl)(podule *p, int easi, uint32_t addr),
-          uint16_t (*readw)(podule *p, int easi, uint32_t addr),
-          uint8_t  (*readb)(podule *p, int easi, uint32_t addr),
+addpodule(void (*writel)(podule *p, PoduleIoType io_type, uint32_t addr, uint32_t val),
+          void (*writew)(podule *p, PoduleIoType io_type, uint32_t addr, uint16_t val),
+          void (*writeb)(podule *p, PoduleIoType io_type, uint32_t addr, uint8_t val),
+          uint32_t (*readl)(podule *p, PoduleIoType io_type, uint32_t addr),
+          uint16_t (*readw)(podule *p, PoduleIoType io_type, uint32_t addr),
+          uint8_t  (*readb)(podule *p, PoduleIoType io_type, uint32_t addr),
           int (*timercallback)(podule *p),
           void (*reset)(podule *p))
 {
@@ -177,19 +177,19 @@ podule_irq_lower(podule *p)
 /**
  * Handle a 32-bit write to the podules memory map
  *
- * @param num   Podule number (0-7)
- * @param easi  Write to EASI space (true) or regular IO space (false)
- * @param addr  Address to write to
- * @param val   Value to write
+ * @param num     Podule number (0-7)
+ * @param io_type Write to IOC, MEMC or EASI space
+ * @param addr    Address to write to
+ * @param val     Value to write
  */
 void
-podules_write32(int num, int easi, uint32_t addr, uint32_t val)
+podules_write32(int num, PoduleIoType io_type, uint32_t addr, uint32_t val)
 {
 	const int oldirq = podules[num].irq;
 	const int oldfiq = podules[num].fiq;
 
 	if (podules[num].writel != NULL) {
-		podules[num].writel(&podules[num], easi, addr, val);
+		podules[num].writel(&podules[num], io_type, addr, val);
 	}
 	if (podules[num].irq != oldirq || podules[num].fiq != oldfiq) {
 		rethinkpoduleints();
@@ -199,19 +199,19 @@ podules_write32(int num, int easi, uint32_t addr, uint32_t val)
 /**
  * Handle a 16-bit write to the podules memory map
  *
- * @param num   Podule number (0-7)
- * @param easi  Write to EASI space (true) or regular IO space (false)
- * @param addr  Address to write to
- * @param val   Value to write
+ * @param num     Podule number (0-7)
+ * @param io_type Write to IOC, MEMC or EASI space
+ * @param addr    Address to write to
+ * @param val     Value to write
  */
 void
-podules_write16(int num, int easi, uint32_t addr, uint32_t val)
+podules_write16(int num, PoduleIoType io_type, uint32_t addr, uint32_t val)
 {
 	const int oldirq = podules[num].irq;
 	const int oldfiq = podules[num].fiq;
 
 	if (podules[num].writew != NULL) {
-		podules[num].writew(&podules[num], easi, addr, val >> 16);
+		podules[num].writew(&podules[num], io_type, addr, val >> 16);
 	}
 	if (podules[num].irq != oldirq || podules[num].fiq != oldfiq) {
 		rethinkpoduleints();
@@ -221,19 +221,19 @@ podules_write16(int num, int easi, uint32_t addr, uint32_t val)
 /**
  * Handle an 8-bit write to the podules memory map
  *
- * @param num   Podule number (0-7)
- * @param easi  Write to EASI space (true) or regular IO space (false)
- * @param addr  Address to write to
- * @param val   Value to write
+ * @param num     Podule number (0-7)
+ * @param io_type Write to IOC, MEMC or EASI space
+ * @param addr    Address to write to
+ * @param val     Value to write
  */
 void
-podules_write8(int num, int easi, uint32_t addr, uint8_t val)
+podules_write8(int num, PoduleIoType io_type, uint32_t addr, uint8_t val)
 {
 	const int oldirq = podules[num].irq;
 	const int oldfiq = podules[num].fiq;
 
 	if (podules[num].writeb != NULL) {
-		podules[num].writeb(&podules[num], easi, addr, val);
+		podules[num].writeb(&podules[num], io_type, addr, val);
 	}
 	if (podules[num].irq != oldirq || podules[num].fiq != oldfiq) {
 		rethinkpoduleints();
@@ -243,20 +243,20 @@ podules_write8(int num, int easi, uint32_t addr, uint8_t val)
 /**
  * Handle a 32-bit read from the podules memory map
  *
- * @param num   Podule number (0-7)
- * @param easi  Read from EASI space (true) or regular IO space (false)
- * @param addr  Address to read from
+ * @param num     Podule number (0-7)
+ * @param io_type Read from IOC, MEMC or EASI space
+ * @param addr    Address to read from
  * @return Value at memory address
  */
 uint32_t
-podules_read32(int num, int easi, uint32_t addr)
+podules_read32(int num, PoduleIoType io_type, uint32_t addr)
 {
 	const int oldirq = podules[num].irq;
 	const int oldfiq = podules[num].fiq;
 	uint32_t temp;
 
 	if (podules[num].readl != NULL) {
-		temp = podules[num].readl(&podules[num], easi, addr);
+		temp = podules[num].readl(&podules[num], io_type, addr);
 		if (podules[num].irq != oldirq || podules[num].fiq != oldfiq) {
 			rethinkpoduleints();
 		}
@@ -268,20 +268,20 @@ podules_read32(int num, int easi, uint32_t addr)
 /**
  * Handle a 16-bit read from the podules memory map
  *
- * @param num   Podule number (0-7)
- * @param easi  Read from EASI space (true) or regular IO space (false)
- * @param addr  Address to read from
+ * @param num     Podule number (0-7)
+ * @param io_type Read from IOC, MEMC or EASI space
+ * @param addr    Address to read from
  * @return Value at memory address
  */
 uint32_t
-podules_read16(int num, int easi, uint32_t addr)
+podules_read16(int num, PoduleIoType io_type, uint32_t addr)
 {
 	const int oldirq = podules[num].irq;
 	const int oldfiq = podules[num].fiq;
 	uint32_t temp;
 
 	if (podules[num].readw != NULL) {
-		temp = podules[num].readw(&podules[num], easi, addr);
+		temp = podules[num].readw(&podules[num], io_type, addr);
 		if (podules[num].irq != oldirq || podules[num].fiq != oldfiq) {
 			rethinkpoduleints();
 		}
@@ -293,20 +293,20 @@ podules_read16(int num, int easi, uint32_t addr)
 /**
  * Handle an 8-bit read from the podules memory map
  *
- * @param num   Podule number (0-7)
- * @param easi  Read from EASI space (true) or regular IO space (false)
- * @param addr  Address to read from
+ * @param num     Podule number (0-7)
+ * @param io_type Read from IOC, MEMC or EASI space
+ * @param addr    Address to read from
  * @return Value at memory address
  */
 uint8_t
-podules_read8(int num, int easi, uint32_t addr)
+podules_read8(int num, PoduleIoType io_type, uint32_t addr)
 {
 	const int oldirq = podules[num].irq;
 	const int oldfiq = podules[num].fiq;
 	uint8_t temp;
 
 	if (podules[num].readb != NULL) {
-		temp = podules[num].readb(&podules[num], easi, addr);
+		temp = podules[num].readb(&podules[num], io_type, addr);
 		if (podules[num].irq != oldirq || podules[num].fiq != oldfiq) {
 			rethinkpoduleints();
 		}
