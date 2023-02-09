@@ -211,7 +211,7 @@ podules_write16(int num, PoduleIoType io_type, uint32_t addr, uint32_t val)
 	const int oldfiq = podules[num].fiq;
 
 	if (podules[num].writew != NULL) {
-		podules[num].writew(&podules[num], io_type, addr, val >> 16);
+		podules[num].writew(&podules[num], io_type, addr, val);
 	}
 	if (podules[num].irq != oldirq || podules[num].fiq != oldfiq) {
 		rethinkpoduleints();
