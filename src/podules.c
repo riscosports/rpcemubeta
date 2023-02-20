@@ -205,7 +205,7 @@ podules_write32(int num, PoduleIoType io_type, uint32_t addr, uint32_t val)
  * @param val     Value to write
  */
 void
-podules_write16(int num, PoduleIoType io_type, uint32_t addr, uint32_t val)
+podules_write16(int num, PoduleIoType io_type, uint32_t addr, uint16_t val)
 {
 	const int oldirq = podules[num].irq;
 	const int oldfiq = podules[num].fiq;
@@ -273,12 +273,12 @@ podules_read32(int num, PoduleIoType io_type, uint32_t addr)
  * @param addr    Address to read from
  * @return Value at memory address
  */
-uint32_t
+uint16_t
 podules_read16(int num, PoduleIoType io_type, uint32_t addr)
 {
 	const int oldirq = podules[num].irq;
 	const int oldfiq = podules[num].fiq;
-	uint32_t temp;
+	uint16_t temp;
 
 	if (podules[num].readw != NULL) {
 		temp = podules[num].readw(&podules[num], io_type, addr);

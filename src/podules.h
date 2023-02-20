@@ -33,10 +33,10 @@ typedef enum {
 } PoduleIoType;
 
 void podules_write32(int num, PoduleIoType io_type, uint32_t addr, uint32_t val);
-void podules_write16(int num, PoduleIoType io_type, uint32_t addr, uint32_t val);
+void podules_write16(int num, PoduleIoType io_type, uint32_t addr, uint16_t val);
 void podules_write8(int num, PoduleIoType io_type, uint32_t addr, uint8_t val);
 uint32_t podules_read32(int num, PoduleIoType io_type, uint32_t addr);
-uint32_t podules_read16(int num, PoduleIoType io_type, uint32_t addr);
+uint16_t podules_read16(int num, PoduleIoType io_type, uint32_t addr);
 uint8_t  podules_read8(int num, PoduleIoType io_type, uint32_t addr);
 
 typedef struct podule {
