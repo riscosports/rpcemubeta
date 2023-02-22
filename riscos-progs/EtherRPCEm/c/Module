@@ -160,7 +160,13 @@ autosense_install(void)
 	}
 }
 
-// startstop = 0 for starting, 1 for stopping
+/**
+ * Issue service call during initialisation and finalisation to notify
+ * protocol modules of new driver.
+ *
+ * @param startstop 0 for starting, 1 for stopping
+ * @param work
+ */
 void
 SendServiceDCIDriverStatus(int startstop, workspace *work)
 {
@@ -173,13 +179,18 @@ SendServiceDCIDriverStatus(int startstop, workspace *work)
 	_kernel_swi(OS_ServiceCall, &r, &r);
 }
 
-// called in callback time for a variety of reasons
+/**
+ * called in callback time for a variety of reasons
+ */
 void
 callback(workspace *work)
 {
 	SendServiceDCIDriverStatus(0, work);
 }
 
+/**
+ * Open Mbuf memory manager session
+ */
 static _kernel_oserror *
 open_mbuf_manager_session(dci4_mbctl *mbctl)
 {
@@ -199,6 +210,9 @@ open_mbuf_manager_session(dci4_mbctl *mbctl)
 	return _kernel_swi(Mbuf_OpenSession, &r, &r);
 }
 
+/**
+ * Close Mbuf memory manager session
+ */
 static _kernel_oserror *
 close_mbuf_manager_session(dci4_mbctl *mbctl)
 {
@@ -208,7 +222,9 @@ close_mbuf_manager_session(dci4_mbctl *mbctl)
 	return _kernel_swi(Mbuf_CloseSession, &r, &r);
 }
 
-// report frame release, unlink it, and free memory
+/**
+ * Report frame release, unlink it, and free memory
+ */
 void
 bounceclaim(claimbuf *cb)
 {
@@ -231,41 +247,8 @@ bounceclaim(claimbuf *cb)
 	free(cb);
 }
 
-// called at mod finalisation to clean up...
-_kernel_oserror *
-finalise(int fatal, int podule, void *private_word)
-{
-	_kernel_swi_regs sregs;
-
-	// ints off to ensure it stays quiet..
-	_kernel_swi(OS_IntOff, &sregs, &sregs);
-
-	networkirqswi(0);
-	_swix(OS_ReleaseDeviceVector, _INR(0,4), 13, CallEveryVeneer, work, &irqstatus, 1);
-
-	// free any mem owned here
-	if (work) {
-		SendServiceDCIDriverStatus(1, work); // flag we're stopping
-		while (work->claims != NULL) { // work list to free claimbufs
-			bounceclaim(work->claims);
-		}
-		if (work->mbctl) {
-			if (rxhdr_mbuf) {
-				work->mbctl->freem(work->mbctl, rxhdr_mbuf);
-			}
-			if (data_mbuf) {
-				work->mbctl->freem(work->mbctl, data_mbuf);
-			}
-
-			close_mbuf_manager_session(work->mbctl);
-			free(work->mbctl);
-			work->mbctl = NULL;
-		}
-		free(work);
-	}
-	return 0;
-}
-
+/**
+ */
 static void
 InitChip(workspace *work)
 {
@@ -297,6 +280,9 @@ InitChip(workspace *work)
 	_kernel_swi(OS_AddCallBack, &sregs, &sregs);
 }
 
+/**
+ * Module initialisation code
+ */
 _kernel_oserror *
 initialise(const char *cmd_tail, int podule_base, void *private_word)
 {
@@ -349,6 +335,45 @@ initialise(const char *cmd_tail, int podule_base, void *private_word)
 	return NULL;
 }
 
+/**
+ * Module finalisation code
+ */
+_kernel_oserror *
+finalise(int fatal, int podule, void *private_word)
+{
+	_kernel_swi_regs sregs;
+
+	// ints off to ensure it stays quiet..
+	_kernel_swi(OS_IntOff, &sregs, &sregs);
+
+	networkirqswi(0);
+	_swix(OS_ReleaseDeviceVector, _INR(0,4), 13, CallEveryVeneer, work, &irqstatus, 1);
+
+	// free any mem owned here
+	if (work) {
+		SendServiceDCIDriverStatus(1, work); // flag we're stopping
+		while (work->claims != NULL) { // work list to free claimbufs
+			bounceclaim(work->claims);
+		}
+		if (work->mbctl) {
+			if (rxhdr_mbuf) {
+				work->mbctl->freem(work->mbctl, rxhdr_mbuf);
+			}
+			if (data_mbuf) {
+				work->mbctl->freem(work->mbctl, data_mbuf);
+			}
+
+			close_mbuf_manager_session(work->mbctl);
+			free(work->mbctl);
+			work->mbctl = NULL;
+		}
+		free(work);
+	}
+	return 0;
+}
+
+/**
+ */
 _kernel_oserror *
 callevery_handler(workspace *work)
 {
@@ -455,7 +480,9 @@ callevery_handler(workspace *work)
 	return NULL;
 }
 
-// module service call handler
+/**
+ * Module service call handler
+ */
 void
 service_call(int service_number, _kernel_swi_regs *r, void *pw)
 {
@@ -503,6 +530,9 @@ service_call(int service_number, _kernel_swi_regs *r, void *pw)
 	}
 }
 
+/**
+ * Module SWI handler
+ */
 _kernel_oserror *
 swi_handler(int swi_no, _kernel_swi_regs *r, void *private_word)
 {
