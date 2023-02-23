@@ -167,7 +167,7 @@ autosense_install(void)
  * @param startstop 0 for starting, 1 for stopping
  * @param work
  */
-void
+static void
 SendServiceDCIDriverStatus(int startstop, workspace *work)
 {
 	_kernel_swi_regs r;
@@ -206,7 +206,6 @@ open_mbuf_manager_session(dci4_mbctl *mbctl)
 	mbctl->spare1 = 0;
 
 	r.r[0] = (int) mbctl;
-
 	return _kernel_swi(Mbuf_OpenSession, &r, &r);
 }
 
@@ -225,17 +224,18 @@ close_mbuf_manager_session(dci4_mbctl *mbctl)
 /**
  * Report frame release, unlink it, and free memory
  */
-void
+static void
 bounceclaim(claimbuf *cb)
 {
-	_kernel_swi_regs rg;
+	_kernel_swi_regs r;
 
-	rg.r[0] = (int) &work->base_dib;
-	rg.r[1] = Service_DCIFrameTypeFree;
-	rg.r[2] = cb->frame | (cb->adtype << 16);;
-	rg.r[3] = cb->addresslevel;
-	rg.r[4] = cb->errorlevel;
-	_kernel_swi(OS_ServiceCall, &rg, &rg); // report its now no longer claimed
+	r.r[0] = (int) &work->base_dib;
+	r.r[1] = Service_DCIFrameTypeFree;
+	r.r[2] = cb->frame | (cb->adtype << 16);;
+	r.r[3] = cb->addresslevel;
+	r.r[4] = cb->errorlevel;
+	_kernel_swi(OS_ServiceCall, &r, &r); // report it's now no longer claimed
+
 	if (cb->last) {
 		((claimbuf *) (cb->last))->next = cb->next;
 	} else {
@@ -252,7 +252,7 @@ bounceclaim(claimbuf *cb)
 static void
 InitChip(workspace *work)
 {
-	_kernel_swi_regs sregs;
+	_kernel_swi_regs r;
 
 	work->base_dib.dib_swibase = EtherRPCEm_00;
 	work->base_dib.dib_name = "rpcem";
@@ -267,17 +267,16 @@ InitChip(workspace *work)
 	work->base_dib.dib_inquire = EYFlagsSupported;
 	work->claims = NULL; // flag no claimbufs
 
-	sregs.r[0] = (int) "Inet$EtherType";
-	sregs.r[1] = (int) work->base_dib.dib_name;
-	sregs.r[2] = (int) strlen((char *) sregs.r[1]);
-	sregs.r[3] = 0;
-	sregs.r[4] = 4;
+	r.r[0] = (int) "Inet$EtherType";
+	r.r[1] = (int) work->base_dib.dib_name;
+	r.r[2] = (int) strlen((char *) r.r[1]);
+	r.r[3] = 0;
+	r.r[4] = 4;
+	_kernel_swi(OS_SetVarVal, &r, &r);
 
-	_kernel_swi(OS_SetVarVal, &sregs, &sregs);
-
-	sregs.r[0] = (int) CallBkVeneer; // where to call
-	sregs.r[1] = (int) work; // work pointer for this
-	_kernel_swi(OS_AddCallBack, &sregs, &sregs);
+	r.r[0] = (int) CallBkVeneer; // where to call
+	r.r[1] = (int) work; // work pointer for this
+	_kernel_swi(OS_AddCallBack, &r, &r);
 }
 
 /**
@@ -294,9 +293,7 @@ initialise(const char *cmd_tail, int podule_base, void *private_word)
 	UNUSED(cmd_tail);
 	UNUSED(podule_base);
 
-	work = 0;
-
-	if (work = calloc(1, sizeof(workspace)), work == NULL) { // ensure all pointers cleared to Null
+	if ((work = calloc(1, sizeof(workspace))) == NULL) {
 		return &ErrorNoBuff;
 	}
 
@@ -305,11 +302,11 @@ initialise(const char *cmd_tail, int podule_base, void *private_word)
 	work->pwp = private_word;
 
 	// claim mbuf manager link
-	if (work->mbctl = calloc(1, sizeof(dci4_mbctl)), work->mbctl == NULL) {
+	if ((work->mbctl = calloc(1, sizeof(dci4_mbctl))) == NULL) {
 		return &ErrorNoBuff;
 	}
 
-	if (err = open_mbuf_manager_session(work->mbctl), err != NULL) {
+	if ((err = open_mbuf_manager_session(work->mbctl)) != NULL) {
 		return err;
 	}
 
@@ -350,7 +347,7 @@ finalise(int fatal, int podule, void *private_word)
 	_swix(OS_ReleaseDeviceVector, _INR(0,4), 13, CallEveryVeneer, work, &irqstatus, 1);
 
 	// free any mem owned here
-	if (work) {
+	if (work != NULL) {
 		SendServiceDCIDriverStatus(1, work); // flag we're stopping
 		while (work->claims != NULL) { // work list to free claimbufs
 			bounceclaim(work->claims);
@@ -365,11 +362,11 @@ finalise(int fatal, int podule, void *private_word)
 
 			close_mbuf_manager_session(work->mbctl);
 			free(work->mbctl);
-			work->mbctl = NULL;
 		}
 		free(work);
+		work = NULL;
 	}
-	return 0;
+	return NULL;
 }
 
 /**
@@ -386,7 +383,7 @@ callevery_handler(workspace *work)
 	}
 	sema = 1;
 
-	do {
+	for (;;) {
 		if (rxhdr_mbuf == NULL) {
 			rxhdr_mbuf = work->mbctl->alloc_s(work->mbctl, sizeof(rx_hdr), NULL);
 		}
@@ -406,14 +403,13 @@ callevery_handler(workspace *work)
 			// Increment receive frames
 			work->st_rx_frames++;
 
-			if (1) {
+			{
 				// do stuff to make a new packet
 				claimbuf *cb;
 				int AddrLevel = AlSpecific;
 				ClaimType Claim = NotClaimed;
 
-				cb = work->claims;
-				while (cb != NULL) {
+				for (cb = work->claims; cb != NULL; cb = cb->next) {
 					switch (cb->adtype) {
 					case AdSpecific:
 						if ((AddrLevel <= AlNormal) &&
@@ -465,7 +461,6 @@ callevery_handler(workspace *work)
 						_swix(OS_IntOff, 0);
 						break;
 					}
-					cb = cb->next; // missed that frame type, so try another
 				}
 			}
 		} else {
@@ -473,11 +468,7 @@ callevery_handler(workspace *work)
 			sema = 0;
 			return NULL;
 		}
-	} while (1);
-
-	sema = 0;
-
-	return NULL;
+	}
 }
 
 /**
@@ -497,7 +488,7 @@ service_call(int service_number, _kernel_swi_regs *r, void *pw)
 	case Service_EnumerateNetworkDrivers: // on entry, r0-> chain of dibs
 		rg.r[0] = RMAClaim;
 		rg.r[3] = sizeof(chaindib);
-		if (erp = _kernel_swi(OS_Module, &rg, &rg), erp == NULL) {
+		if ((erp = _kernel_swi(OS_Module, &rg, &rg)) == NULL) {
 			// got extra memory to add chaindib
 			((chaindib *) rg.r[2])->chd_dib = &work->base_dib;
 			((chaindib *) rg.r[2])->chd_next = (chaindib *) r->r[0];
@@ -512,7 +503,7 @@ service_call(int service_number, _kernel_swi_regs *r, void *pw)
 		switch (r->r[0]) {
 		case 0: // Manager started ... better try to restart our stuff
 			if (!work->mbctl) {
-				if (erp = open_mbuf_manager_session(work->mbctl), erp == NULL) {
+				if ((erp = open_mbuf_manager_session(work->mbctl)) == NULL) {
 					InitChip(work);
 				}
 			}
@@ -534,24 +525,22 @@ service_call(int service_number, _kernel_swi_regs *r, void *pw)
  * Module SWI handler
  */
 _kernel_oserror *
-swi_handler(int swi_no, _kernel_swi_regs *r, void *private_word)
+swi_handler(int swi_offset, _kernel_swi_regs *r, void *private_word)
 {
 	claimbuf *thism, *next;
 	_kernel_oserror *err;
 
 	UNUSED(private_word);
 
-	switch (swi_no) {
+	switch (swi_offset) {
 	// return version num of DCI spec implelmented
 	// on entry:	r0 = flags (all zero)
 	// on exit:	r1 = version (4.03 at present)
 	case SWIDCIVersion:
-		if (r->r[0] == 0) {
-			r->r[1] = DCIVersion;
-			return 0;
-		} else {
+		if (r->r[0] != 0) {
 			return &ErrorIllegalFlags;
 		}
+		r->r[1] = DCIVersion;
 		break;
 
 	// return bitmap of supported features
@@ -559,11 +548,10 @@ swi_handler(int swi_no, _kernel_swi_regs *r, void *private_word)
 	//		r1 = unit number
 	// on exit:	r2 = info word
 	case SWIInquire:
-		if (r->r[0] == 0) {
-			r->r[2] = EYFlagsSupported;
-		} else {
+		if (r->r[0] != 0) {
 			return &ErrorIllegalFlags;
 		}
+		r->r[2] = EYFlagsSupported;
 		break;
 
 	// return physical MTU size of supported network
@@ -571,11 +559,10 @@ swi_handler(int swi_no, _kernel_swi_regs *r, void *private_word)
 	//		r1 = unit number
 	// on exit:	r2 = MTU size
 	case SWIGetNetworkMTU:
-		if (r->r[0] == 0) {
-			r->r[2] = EY_MTU;
-		} else {
+		if (r->r[0] != 0) {
 			return &ErrorIllegalFlags;
 		}
+		r->r[2] = EY_MTU;
 		break;
 
 	// set physical MTU size of supported network
@@ -585,12 +572,10 @@ swi_handler(int swi_no, _kernel_swi_regs *r, void *private_word)
 	// if size change not supported, return illegal op error
 	// on exit, illegal op error!
 	case SWISetNetworkMTU:
-		if (r->r[0] == 0) {
-			return &ErrorInvalidMTU;
-		} else {
+		if (r->r[0] != 0) {
 			return &ErrorIllegalFlags;
 		}
-		break;
+		return &ErrorInvalidMTU;
 
 	// transmit data
 	// on entry:	r0 = flags (see below)
@@ -610,7 +595,7 @@ swi_handler(int swi_no, _kernel_swi_regs *r, void *private_word)
 
 		err = NULL;
 
-		while (mbufchain) {
+		while (mbufchain != NULL) {
 			struct mbuf *next = mbufchain->m_list;
 
 			if (err == NULL) {
@@ -624,10 +609,7 @@ swi_handler(int swi_no, _kernel_swi_regs *r, void *private_word)
 			}
 			mbufchain = next;
 		}
-		if (err) {
-			return err;
-		}
-		break;
+		return err; // Return error if any
 	}
 
 	// on entry:	r0 = flags (see below)
@@ -647,14 +629,13 @@ swi_handler(int swi_no, _kernel_swi_regs *r, void *private_word)
 	//		bit 1:  0 = drivers can pass unsafe mbuf chains back
 	//			1 = ensure_safe required before mbufs passed back
 	case SWIFilter:
-		if ((r->r[0] & 1) == 1) {
+		if (r->r[1] != 0) {
+			// only unit 0 supported at present
+			return &ErrorNoUnit;
+		}
+		if ((r->r[0] & 1) != 0) {
 			// release frame
-			if (r->r[1] != 0) {
-				// only unit 0 supported at present
-				return &ErrorNoUnit;
-			}
-			thism = work->claims;
-			while (thism != NULL) {
+			for (thism = work->claims; thism != NULL; thism = thism->next) {
 				if ((thism->unit == r->r[1]) &&
 				    (thism->frame == (r->r[2] & 0xffff)) &&
 				    (thism->adtype == (r->r[2] >> 16)) &&
@@ -667,14 +648,9 @@ swi_handler(int swi_no, _kernel_swi_regs *r, void *private_word)
 					bounceclaim(thism);
 					break;
 				}
-				thism = thism->next;
 			}
 		} else {
 			// claim frame type
-			if (r->r[1] != 0) {
-				// only unit 0 supported at present
-				return &ErrorNoUnit;
-			}
 			thism = next = work->claims;
 			while (next != NULL) {
 				int adtype, used;
@@ -688,15 +664,12 @@ swi_handler(int swi_no, _kernel_swi_regs *r, void *private_word)
 					switch (adtype) {
 					case AdSpecific:
 						return &ErrorAlreadyClaimed;
-						break;
 					case AdSink:
 						if (thism->addresslevel == AdSpecific) {
 							bounceclaim(thism);
 							goto claimframe;
-						} else {
-							return &ErrorAlreadyClaimed;
 						}
-						break;
+						return &ErrorAlreadyClaimed;
 					case AdMonitor:
 						if (thism->adtype < AdMonitor) { // bounce anything less
 							next = thism->next;
@@ -710,10 +683,8 @@ swi_handler(int swi_no, _kernel_swi_regs *r, void *private_word)
 						break;
 					case AdIeee:
 						return &ErrorAlreadyClaimed;
-						break;
 					default:
 						return &ErrorBadClaim;
-						break;
 					}
 					if(thism->adtype >adtype) //
 					{
@@ -724,7 +695,7 @@ swi_handler(int swi_no, _kernel_swi_regs *r, void *private_word)
 				}
 			}
 			// thism points to first NULL claimbuf ptr
-			if (next = calloc(1, sizeof(claimbuf)), next == NULL) {
+			if ((next = calloc(1, sizeof(claimbuf))) == NULL) {
 				return &ErrorNoBuff;
 			}
 			if (thism != NULL) {
@@ -745,16 +716,14 @@ claimframe:
 			next->claimaddress = r->r[6];
 		}
 		// now check all claims and set multicast or promiscuous as needed
-		next = work->claims;
 		work->flags = 0;
-		while (next) {
+		for (next = work->claims; next != NULL; next = next->next) {
 			if (next->addresslevel == AlMulticast) {
 				work->flags |= IFF_ALLMULTI;
 			}
 			if (next->addresslevel == AlPromiscuous) {
 				work->flags |= IFF_PROMISC;
 			}
-			next = next->next;
 		}
 		break;
 
@@ -809,8 +778,7 @@ claimframe:
 
 	default:
 		return &ErrorIllegalSWI;
-		break;
 	}
 
-	return 0;
+	return NULL;
 }
