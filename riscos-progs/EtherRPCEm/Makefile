@@ -49,6 +49,7 @@ o.Module:	c.Module
 o.Module:	C:h.kernel
 o.Module:	C:h.swis
 o.Module:	h.ModHdr
+o.Module:	h.dcistructs
 o.Module:	h.Defines
 o.Module:	h.Structs
 o.Module:	h.mbuf_c

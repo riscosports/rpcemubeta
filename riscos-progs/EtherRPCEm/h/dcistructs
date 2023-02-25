@@ -1,0 +1,162 @@
+/* Copyright 1997 Acorn Computers Ltd
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+/* -*-C-*-
+ *
+ * dcistructs.h - data structures used in the DCI interface
+ *
+ * Copyright (c) 1995 Acorn Computers Ltd., Cambridge, England
+ *
+ * :RCS Log discontinued:
+ * Revision 1.11  95/10/11  12:17:56  pwain
+ * Removed st_net_error from the stats structure.
+ * This should have been removed a while back
+ * according to Borris.
+ *
+ * Revision 1.10  95/09/18  13:24:06  kwelton
+ * Added definitions for st_link_status (in stats structure) bits.
+ *
+ * Revision 1.9  95/09/07  13:00:16  kwelton
+ * Added two new flags for virtual interfaces.
+ *
+ * Revision 1.8  95/03/21  14:10:46  kwelton
+ * Added copy of Inquire flags to struct dib.  DCI version is now 4.03.
+ *
+ * Revision 1.7  95/03/16  14:19:39  kwelton
+ * Added details of new InternetStatus service call.
+ *
+ * Revision 1.6  95/03/14  14:44:19  kwelton
+ * DCI version is now 4.02
+ *
+ * Revision 1.5  95/03/01  12:12:31  kwelton
+ * A few minor changes, plus the definition of the "standard" stats.
+ * structure.
+ *
+ * Revision 1.4  95/02/03  15:27:47  kwelton
+ * Added a new error number: INETERR_FILTERGONE, used by the Filter SWI
+ * when a given frame type has already been claimed.
+ *
+ * Revision 1.3  95/01/24  16:32:26  kwelton
+ * Fixed the definition of GETDCI4ERRNO, which should now cope with all
+ * errors returned from a SWI.
+ *
+ * Revision 1.2  95/01/12  21:53:53  kwelton
+ * The original scheme of returning UNIX style errors numbers as
+ * an offset within an error block broke any application that was
+ * looking for specific errors which effectively used to be offset
+ * from zero.
+ *
+ * Revision 1.1  95/01/11  10:19:03  kwelton
+ * Initial revision
+ *
+ */
+
+#if !defined(__sys_dcistructs_h)
+#define __sys_dcistructs_h
+
+/*
+ * network slot for Service_EnumerateNetworkDrivers
+ */
+typedef struct slot
+{
+    unsigned int sl_slotid:8,
+                 sl_minor:8,
+                 sl_pcmciaslot:5,
+                 sl_mbz:11;
+#define DIB_SLOT_PODULE(n)    (0 +((n) & 0xF))	/* Podules = 0-7 and NIC = 8 */
+#define DIB_SLOT_PCI(n)       (16+((n) & 0xF))
+#define DIB_SLOT_USB_BUS(n)   (32+((n) & 0xF))	/* sl_minor = device number on that bus */
+#define DIB_SLOT_PARALLEL     128		/* IEE1284, sl_minor = 0's based port */
+#define DIB_SLOT_SERIAL       129		/* EIA232, sl_minor = 0's based port */
+#define DIB_SLOT_ECONET       130
+#define DIB_SLOT_PCMCIA       131		/* sl_pcmciaslot = function on that interface */
+#define DIB_SLOT_SDIO         132		/* sl_pcmciaslot = function on that interface */
+#define DIB_SLOT_SYS_BUS      133		/* sl_minor = bits 16-23 of HAL device locn */
+#define DIB_SLOT_PERI_BUS     134		/* sl_minor = bits 16-23 of HAL device locn */
+} Slot, *SlotRef;
+
+/*
+ * Driver Information Block
+ */
+typedef struct dib
+{
+    unsigned int   dib_swibase;		/* base of driver's SWI chunk */
+    char          *dib_name;		/* pointer to name of driver */
+    unsigned int   dib_unit;		/* unit number */
+    unsigned char *dib_address;		/* interface's h/w address */
+    char          *dib_module;		/* title of driver module */
+    char          *dib_location;	/* description of interface position */
+    Slot           dib_slot;		/* physical location of interface */
+    unsigned int   dib_inquire;		/* copy of flags from Inquire SWI */
+} Dib, *DibRef;
+
+/*
+ * struct to chain Driver Information Blocks
+ */
+typedef struct chaindib
+{
+    struct chaindib *chd_next;
+    struct dib      *chd_dib;
+} ChDib, *ChDibRef;
+
+/*
+ * structure for returning device driver statistics
+ */
+struct stats
+{
+    /*
+     * general information
+     */
+    unsigned char st_interface_type;
+    unsigned char st_link_status;
+    unsigned char st_link_polarity;
+    unsigned char st_blank1;
+    unsigned long st_link_failures;
+    unsigned long st_network_collisions;
+
+    /*
+     * transmit statistics
+     */
+    unsigned long st_collisions;
+    unsigned long st_excess_collisions;
+    unsigned long st_heartbeat_failures;
+    unsigned long st_not_listening;
+#if 0
+    unsigned long st_net_error;
+#endif
+    unsigned long st_tx_frames;
+    unsigned long st_tx_bytes;
+    unsigned long st_tx_general_errors;
+    unsigned char st_last_dest_addr[8];
+
+    /*
+     * receive statistics
+     */
+    unsigned long st_crc_failures;
+    unsigned long st_frame_alignment_errors;
+    unsigned long st_dropped_frames;
+    unsigned long st_runt_frames;
+    unsigned long st_overlong_frames;
+    unsigned long st_jabbers;
+    unsigned long st_late_events;
+    unsigned long st_unwanted_frames;
+    unsigned long st_rx_frames;
+    unsigned long st_rx_bytes;
+    unsigned long st_rx_general_errors;
+    unsigned char st_last_src_addr[8];
+};
+
+#endif /* !defined(__sys_dci4structs_h) */
+
+/* EOF dcistructs.h */

@@ -32,6 +32,7 @@
 #include <swis.h>
 
 #include "ModHdr.h"
+#include "dcistructs.h"
 #include "Defines.h"
 #include "Structs.h"
 #include "Module.h"
@@ -47,7 +48,7 @@ _kernel_oserror *networktxswi(struct mbuf *mbufs, int dest, int src, int framety
 _kernel_oserror *networkrxswi(struct mbuf *mbuf, rx_hdr *hdr, int *valid);
 _kernel_oserror *networkirqswi(volatile int *irqstatus);
 _kernel_oserror *networkhwaddrswi(unsigned char *hwaddr);
-void callrx(dib *dibaddr, struct mbuf *mbuf_chain, int claimaddr, int pwp);
+void callrx(Dib *dibaddr, struct mbuf *mbuf_chain, int claimaddr, int pwp);
 
 // versionof DCI supported
 #define DCIVersion 403
@@ -63,7 +64,7 @@ static _kernel_oserror
 
 workspace *work;
 
-static const eystatsset supported = {
+static const struct stats supported = {
 	// General information
 	UCHAR_MAX,	// st_interface_type
 	UCHAR_MAX,	// st_link_status
@@ -260,10 +261,10 @@ InitChip(workspace *work)
 	work->base_dib.dib_address = (unsigned char *) work->dev_addr;
 	work->base_dib.dib_module = "EtherRPCEm";
 	work->base_dib.dib_location = "Emulated";
-	work->base_dib.dib_slot.slotid = 0;
-	work->base_dib.dib_slot.minor = 0;
-	work->base_dib.dib_slot.pcmciaslot = 0;
-	work->base_dib.dib_slot.mbz = 0;
+	work->base_dib.dib_slot.sl_slotid = 0;
+	work->base_dib.dib_slot.sl_minor = 0;
+	work->base_dib.dib_slot.sl_pcmciaslot = 0;
+	work->base_dib.dib_slot.sl_mbz = 0;
 	work->base_dib.dib_inquire = EYFlagsSupported;
 	work->claims = NULL; // flag no claimbufs
 
@@ -487,11 +488,11 @@ service_call(int service_number, _kernel_swi_regs *r, void *pw)
 
 	case Service_EnumerateNetworkDrivers: // on entry, r0-> chain of dibs
 		rg.r[0] = RMAClaim;
-		rg.r[3] = sizeof(chaindib);
+		rg.r[3] = sizeof(ChDib);
 		if ((erp = _kernel_swi(OS_Module, &rg, &rg)) == NULL) {
 			// got extra memory to add chaindib
-			((chaindib *) rg.r[2])->chd_dib = &work->base_dib;
-			((chaindib *) rg.r[2])->chd_next = (chaindib *) r->r[0];
+			((ChDib *) rg.r[2])->chd_dib = &work->base_dib;
+			((ChDib *) rg.r[2])->chd_next = (ChDib *) r->r[0];
 			r->r[0] = rg.r[2]; // link our chaindib into the chain
 		}
 		break;
@@ -738,10 +739,10 @@ claimframe:
 	case SWIStats:
 		if ((r->r[0] & 1) != 0) {
 			// return actual stats
-			eystatsset *stats = (eystatsset *) r->r[2];
+			struct stats *stats = (struct stats *) r->r[2];
 
 			// Set all statistics to zero (including implemented error counters)
-			memset(stats, 0, sizeof(eystatsset));
+			memset(stats, 0, sizeof(struct stats));
 
 			stats->st_interface_type = 3; // 10BaseT
 			stats->st_link_status = (1 << 0) | // OK
@@ -753,7 +754,7 @@ claimframe:
 			stats->st_rx_frames = work->st_rx_frames;
 		} else {
 			// indicate what's supported
-			memcpy((void *) r->r[2], &supported.st_interface_type, sizeof(eystatsset));
+			memcpy((void *) r->r[2], &supported.st_interface_type, sizeof(struct stats));
 		}
 		break;
 

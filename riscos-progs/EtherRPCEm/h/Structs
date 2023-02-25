@@ -61,7 +61,7 @@ char  spare[2];                  // spare
 typedef struct {
 	void		*pwp;		///< Module's PWP for C routine linkage
 	dci4_mbctl	*mbctl;		///< mbuf manager linkage
-	dib		base_dib;	///< device info block
+	Dib		base_dib;	///< device info block
 	char		dev_addr[20];
 	int		flags;
 	claimbuf	*claims;	///< linked list of all claims.
