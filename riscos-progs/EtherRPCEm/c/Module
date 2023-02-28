@@ -44,6 +44,9 @@
 
 #define  UNUSED(x)              (x = x)
 
+#define INQUIRE_FLAGS	(INQ_MULTICAST | INQ_PROMISCUOUS | INQ_RXERRORS | \
+			 INQ_HWADDRVALID | INQ_SOFTHWADDR | INQ_HASSTATS | INQ_HASESTATS)
+
 _kernel_oserror *networktxswi(struct mbuf *mbufs, int dest, int src, int frametype);
 _kernel_oserror *networkrxswi(struct mbuf *mbuf, rx_hdr *hdr, int *valid);
 _kernel_oserror *networkirqswi(volatile int *irqstatus);
@@ -265,7 +268,7 @@ InitChip(workspace *work)
 	work->base_dib.dib_slot.sl_minor = 0;
 	work->base_dib.dib_slot.sl_pcmciaslot = 0;
 	work->base_dib.dib_slot.sl_mbz = 0;
-	work->base_dib.dib_inquire = EYFlagsSupported;
+	work->base_dib.dib_inquire = INQUIRE_FLAGS;
 	work->claims = NULL; // flag no claimbufs
 
 	r.r[0] = (int) "Inet$EtherType";
@@ -537,7 +540,7 @@ swi_handler(int swi_offset, _kernel_swi_regs *r, void *private_word)
 	// return version num of DCI spec implelmented
 	// on entry:	r0 = flags (all zero)
 	// on exit:	r1 = version (4.03 at present)
-	case SWIDCIVersion:
+	case DCI4Version:
 		if (r->r[0] != 0) {
 			return &ErrorIllegalFlags;
 		}
@@ -548,18 +551,18 @@ swi_handler(int swi_offset, _kernel_swi_regs *r, void *private_word)
 	// on entry:	r0 = flags (all zero)
 	//		r1 = unit number
 	// on exit:	r2 = info word
-	case SWIInquire:
+	case DCI4Inquire:
 		if (r->r[0] != 0) {
 			return &ErrorIllegalFlags;
 		}
-		r->r[2] = EYFlagsSupported;
+		r->r[2] = INQUIRE_FLAGS;
 		break;
 
 	// return physical MTU size of supported network
 	// on entry:	r0 = flags (all zero)
 	//		r1 = unit number
 	// on exit:	r2 = MTU size
-	case SWIGetNetworkMTU:
+	case DCI4GetNetworkMTU:
 		if (r->r[0] != 0) {
 			return &ErrorIllegalFlags;
 		}
@@ -572,7 +575,7 @@ swi_handler(int swi_offset, _kernel_swi_regs *r, void *private_word)
 	//		r2 = new MTU
 	// if size change not supported, return illegal op error
 	// on exit, illegal op error!
-	case SWISetNetworkMTU:
+	case DCI4SetNetworkMTU:
 		if (r->r[0] != 0) {
 			return &ErrorIllegalFlags;
 		}
@@ -591,7 +594,7 @@ swi_handler(int swi_offset, _kernel_swi_regs *r, void *private_word)
 	//			1 = use r5 as srce H/W addr
 	//		bit 1:	0 = driver to assume ownership of mbuf chain
 	//			1 = driver does not own mbuf chain
-	case SWITransmit: {
+	case DCI4Transmit: {
 		struct mbuf *mbufchain = (struct mbuf *) r->r[3];
 
 		err = NULL;
@@ -629,7 +632,7 @@ swi_handler(int swi_offset, _kernel_swi_regs *r, void *private_word)
 	//			1 = release frame type
 	//		bit 1:  0 = drivers can pass unsafe mbuf chains back
 	//			1 = ensure_safe required before mbufs passed back
-	case SWIFilter:
+	case DCI4Filter:
 		if (r->r[1] != 0) {
 			// only unit 0 supported at present
 			return &ErrorNoUnit;
@@ -736,7 +739,7 @@ claimframe:
 	//
 	// Flags:	bit 0:	0 = indicate which stats are gathered
 	//			1 = return actual stats
-	case SWIStats:
+	case DCI4Stats:
 		if ((r->r[0] & 1) != 0) {
 			// return actual stats
 			struct stats *stats = (struct stats *) r->r[2];
@@ -744,12 +747,12 @@ claimframe:
 			// Set all statistics to zero (including implemented error counters)
 			memset(stats, 0, sizeof(struct stats));
 
-			stats->st_interface_type = 3; // 10BaseT
-			stats->st_link_status = (1 << 0) | // OK
-			                        (1 << 1) | // Active
-			                        (3 << 2) | // Promiscuous
-			                        (1 << 4);  // Full duplex
-			stats->st_link_polarity = 1; // Polarity correct
+			stats->st_interface_type = ST_TYPE_10BASET;
+			stats->st_link_status = ST_STATUS_OK |
+			                        ST_STATUS_ACTIVE |
+			                        ST_STATUS_PROMISCUOUS |
+			                        ST_STATUS_FULL_DUPLEX;
+			stats->st_link_polarity = ST_LINK_POLARITY_CORRECT;
 			stats->st_tx_frames = work->st_tx_frames;
 			stats->st_rx_frames = work->st_rx_frames;
 		} else {
@@ -771,7 +774,7 @@ claimframe:
 	//			1 = release an mc addr
 	//		bit 1:	0 = request/release specific mc addr (in r3 & r4)
 	//			1 = request/release all mc addrs
-	case SWIMulticastreq:
+	case DCI4MulticastRequest:
 		if (r->r[0] && ~3) {
 			printf("\n EYmulticast not fully implemented yet\n");
 		}

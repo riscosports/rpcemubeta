@@ -66,6 +66,34 @@
 #define __sys_dcistructs_h
 
 /*
+ * DCI 4 service calls
+ */
+#ifndef Service_EnumerateNetworkDrivers
+#define Service_EnumerateNetworkDrivers	0x9b
+#endif
+#ifndef Service_DCIDriverStatus
+#define Service_DCIDriverStatus		0x9d
+#endif
+#ifndef Service_DCIFrameTypeFree
+#define Service_DCIFrameTypeFree	0x9e
+#endif
+#ifndef Service_DCIProtocolStatus
+#define Service_DCIProtocolStatus	0x9f
+#endif
+
+/*
+ * offsets into driver's SWI chunk
+ */
+#define DCI4Version		0
+#define DCI4Inquire		1
+#define DCI4GetNetworkMTU	2
+#define DCI4SetNetworkMTU	3
+#define DCI4Transmit		4
+#define DCI4Filter		5
+#define DCI4Stats		6
+#define DCI4MulticastRequest	7
+
+/*
  * network slot for Service_EnumerateNetworkDrivers
  */
 typedef struct slot
@@ -109,6 +137,77 @@ typedef struct chaindib
     struct chaindib *chd_next;
     struct dib      *chd_dib;
 } ChDib, *ChDibRef;
+
+/*
+ * returned flag bits for Inquire SWI
+ */
+#define INQ_MULTICAST	(1 << 0)	/* multicast reception supported */
+#define INQ_PROMISCUOUS	(1 << 1)	/* promiscuous reception supported */
+#define INQ_CANREFLECT	(1 << 2)	/* i/f receives its own packets */
+#define INQ_STATIONNO	(1 << 3)	/* station number is required */
+#define INQ_RXERRORS	(1 << 4)	/* i/f can receive erroneous packets */
+#define INQ_HWADDRVALID	(1 << 5)	/* i/f has a hardware address */
+#define INQ_SOFTHWADDR	(1 << 6)	/* i/f can alter hardware address */
+#define INQ_POINTOPOINT (1 << 7)	/* i/f is a point to point link */
+#define INQ_HASSTATS	(1 << 8)	/* i/f supplies standard statistics */
+#define INQ_HASESTATS	(1 << 9)	/* i/f supplies extended statistics */
+#define INQ_VIRTUAL	(1 << 10)	/* this is a virtual i/f */
+#define INQ_SWVIRTUAL	(1 << 11)	/* this is a software virtual i/f */
+#define INQ_FILTERMCAST	(1 << 12)	/* i/f filters multicasts */
+#define INQ_FASTIPSUM	(1 << 13)	/* i/f can IP checksum in hardware */
+#define INQ_1STRESERVED	(1 << 14)	/* 1st reserved flag bit */
+
+/*
+ * definitions for stats interface types
+ */
+#define ST_TYPE_10BASE5			1
+#define ST_TYPE_10BASE2			2
+#define ST_TYPE_10BASET			3
+#define ST_TYPE_10BASE5N2		4
+#define ST_TYPE_10BASE2NT		5
+#define ST_TYPE_RSQUELCH10BASET		6
+#define ST_TYPE_ACORNECONET		7
+#define ST_TYPE_SERIAL			8
+#define ST_TYPE_PARALLEL		9
+#define ST_TYPE_10BASE5N2NT		10
+#define ST_TYPE_10BASEFX		11
+#define ST_TYPE_100BASETX		12
+#define ST_TYPE_100BASEVG		13
+#define ST_TYPE_100BASET4		14
+#define ST_TYPE_100BASEFX		15
+#define ST_TYPE_ATM25_6			16
+#define ST_TYPE_ATM155			17
+#define ST_TYPE_ATMPLUSRELAY		18
+#define ST_TYPE_ATMFLANE		19
+#define ST_TYPE_1000BASESX		20 /* 1000BaseSX Multi-mode Fibre */
+#define ST_TYPE_1000BASET		21 /* 1000BaseT 4 pair cat 5 */
+#define ST_TYPE_1000BASELX		22 /* 1000BaseLX Fibre */
+#define ST_TYPE_1000BASECX		23 /* 1000BaseCX Short-Haul Copper */
+#define ST_TYPE_80211_2G4		24 /* 802.11b/g/n/ax */
+#define ST_TYPE_80211_3G7		25 /* 802.11y */
+#define ST_TYPE_80211_4G9		26 /* 802.11j */
+#define ST_TYPE_80211_5G		27 /* 802.11a/j/n/ac/ax */
+#define ST_TYPE_80211_5G9		28 /* 802.11p */
+#define ST_TYPE_80211_6G		29 /* 802.11ax */
+
+/*
+ * stats. link status bits
+ */
+#define ST_STATUS_OK			(1 << 0)
+#define ST_STATUS_ACTIVE		(1 << 1)
+#define ST_STATUS_RXMASK		(3 << 2)
+#define ST_STATUS_DIRECT		(0 << 2)
+#define ST_STATUS_BROADCAST		(1 << 2)
+#define ST_STATUS_MULTICAST		(2 << 2)
+#define ST_STATUS_PROMISCUOUS		(3 << 2)
+#define ST_STATUS_HALF_DUPLEX		(0 << 4)
+#define ST_STATUS_FULL_DUPLEX		(1 << 4)
+
+/*
+ * stats. link polarity bits
+ */
+#define ST_LINK_POLARITY_INCORRECT	(0 << 0)
+#define ST_LINK_POLARITY_CORRECT	(1 << 0)
 
 /*
  * structure for returning device driver statistics
