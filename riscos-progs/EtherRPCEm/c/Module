@@ -59,7 +59,6 @@ void callrx(Dib *dibaddr, struct mbuf *mbuf_chain, int claimaddr, int pwp);
 static _kernel_oserror
     ErrorIllegalFlags   = { 0x58cc0, "Illegal flags" },
     ErrorInvalidMTU     = { 0x58cc1, "Invalid MTU requested" },
-    ErrorIllegalSWI     = { 0x58cc2, "Not an EtherL SWI" },
     ErrorNoUnit         = { 0x58cc3, "Unit not configured" },
     ErrorBadClaim       = { 0x58cc4, "Illegal frame claim" },
     ErrorAlreadyClaimed = { 0x58cc5, "frame already claimed" },
@@ -781,7 +780,7 @@ claimframe:
 		break;
 
 	default:
-		return &ErrorIllegalSWI;
+		return error_BAD_SWI;
 	}
 
 	return NULL;
