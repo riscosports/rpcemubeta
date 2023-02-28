@@ -83,21 +83,6 @@ callrx
 
         GET     h.Equates
         IMPORT  |_Lib$Reloc$Off$DP|
-        IMPORT  |callback|
-        EXPORT  |CallBkVeneer|
-
-ggggx    DCB     "CallBkVeneer",0
-        ALIGN
-ggggy    DCD     &ff000000+ggggy-ggggx
-; set up correct c veneer to call c routine for callback handling
-; on entry, IRQ mode, IRQs off, r12 = pointer to workspace structure
-CallBkVeneer
-        ToSVCEAll  2,3
-        EnterCVeneer
-        mov     a1, a2              ; a1 = base device pointer
-        bl      |callback|
-        ExitCVeneer
-        FromSVCEAllRet 2,3
 
         EXPORT  |CallEveryVeneer|
         IMPORT  |callevery_handler|

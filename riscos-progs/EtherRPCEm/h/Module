@@ -21,8 +21,6 @@
 // prototypes for all routines
 
 // in c.ELModule
-void callback(workspace *work);
-void CallBkVeneer(void);
 void CallEveryVeneer(void);
 
 

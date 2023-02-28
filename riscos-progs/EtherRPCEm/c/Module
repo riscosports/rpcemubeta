@@ -185,10 +185,15 @@ SendServiceDCIDriverStatus(int startstop, workspace *work)
 /**
  * called in callback time for a variety of reasons
  */
-void
-callback(workspace *work)
+_kernel_oserror *
+initialise_callback_handler(_kernel_swi_regs *r, void *pw)
 {
+	UNUSED(r);
+	UNUSED(pw);
+
 	SendServiceDCIDriverStatus(0, work);
+
+	return NULL;
 }
 
 /**
@@ -253,7 +258,7 @@ bounceclaim(claimbuf *cb)
 /**
  */
 static void
-InitChip(workspace *work)
+InitChip(void *pw)
 {
 	_kernel_swi_regs r;
 
@@ -277,8 +282,8 @@ InitChip(workspace *work)
 	r.r[4] = 4;
 	_kernel_swi(OS_SetVarVal, &r, &r);
 
-	r.r[0] = (int) CallBkVeneer; // where to call
-	r.r[1] = (int) work; // work pointer for this
+	r.r[0] = (int) initialise_callback; // where to call
+	r.r[1] = (int) pw;
 	_kernel_swi(OS_AddCallBack, &r, &r);
 }
 
@@ -286,7 +291,7 @@ InitChip(workspace *work)
  * Module initialisation code
  */
 _kernel_oserror *
-initialise(const char *cmd_tail, int podule_base, void *private_word)
+initialise(const char *cmd_tail, int podule_base, void *pw)
 {
 	_kernel_oserror *err;
 	int ribuff[2] = { 0, 0 };
@@ -302,7 +307,7 @@ initialise(const char *cmd_tail, int podule_base, void *private_word)
 
 	networkhwaddrswi((unsigned char *) work->dev_addr);
 
-	work->pwp = private_word;
+	work->pwp = pw;
 
 	// claim mbuf manager link
 	if ((work->mbctl = calloc(1, sizeof(dci4_mbctl))) == NULL) {
@@ -313,7 +318,7 @@ initialise(const char *cmd_tail, int podule_base, void *private_word)
 		return err;
 	}
 
-	InitChip(work);
+	InitChip(pw);
 
 	err = _swix(Podule_ReadInfo, _INR(0,3), 0x18000, ribuff, sizeof(ribuff), 0);
 	if (err) {
