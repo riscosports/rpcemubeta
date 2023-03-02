@@ -385,6 +385,13 @@ callevery_handler(workspace *work)
 	rx_hdr *rxhdr;
 
 	static volatile int sema = 0;
+	_kernel_swi_regs r;
+
+	// Clear interrupt
+	irqstatus = 0;
+	r.r[0] = 3;
+	r.r[2] = 0;
+	_kernel_swi(0x56ac4, &r, &r);
 
 	if (sema) {
 		return NULL;

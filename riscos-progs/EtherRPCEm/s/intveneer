@@ -86,7 +86,6 @@ callrx
 
         EXPORT  |CallEveryVeneer|
         IMPORT  |callevery_handler|
-        IMPORT  |irqstatus|
 
 
 gggga    DCB     "CallEveryVeneer",0
@@ -95,18 +94,6 @@ ggggb    DCD     &ff000000+ggggb-gggga
 CallEveryVeneer
         ToSVCEAll  2,3
         EnterCVeneer
-        stmfd   sp!, {a1-a2}
-
-        ldr     a1, =|irqstatus|
-        mov     a2, #0
-        str     a2, [a1]
-
-        MOV     a3, #0
-        LDR     a2, =errmess
-        MOV     a1, #3
-        SWI     &56ac4
-
-        ldmfd   sp!, {a1-a2}
         mov     a1, a2              ; a1 = base device pointer
         bl      |callevery_handler|
         ExitCVeneer
