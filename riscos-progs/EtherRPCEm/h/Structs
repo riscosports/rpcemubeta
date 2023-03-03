@@ -62,7 +62,7 @@ typedef struct {
 	void		*pwp;		///< Module's PWP for C routine linkage
 	dci4_mbctl	*mbctl;		///< mbuf manager linkage
 	Dib		base_dib;	///< device info block
-	char		dev_addr[20];
+	unsigned char	dev_addr[6];	///< Ethernet hardware address
 	int		flags;
 	claimbuf	*claims;	///< linked list of all claims.
 

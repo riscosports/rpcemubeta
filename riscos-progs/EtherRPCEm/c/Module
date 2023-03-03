@@ -263,7 +263,7 @@ InitChip(void *pw)
 	work->base_dib.dib_swibase = EtherRPCEm_00;
 	work->base_dib.dib_name = "rpcem";
 	work->base_dib.dib_unit = 0;
-	work->base_dib.dib_address = (unsigned char *) work->dev_addr;
+	work->base_dib.dib_address = work->dev_addr;
 	work->base_dib.dib_module = "EtherRPCEm";
 	work->base_dib.dib_location = "Emulated";
 	work->base_dib.dib_slot.sl_slotid = 0;
@@ -303,7 +303,7 @@ initialise(const char *cmd_tail, int podule_base, void *pw)
 		return &ErrorNoBuff;
 	}
 
-	networkhwaddrswi((unsigned char *) work->dev_addr);
+	networkhwaddrswi(work->dev_addr);
 
 	work->pwp = pw;
 
