@@ -81,22 +81,4 @@ callrx
 	MOV	r12, r3
 	MOV	pc, r2
 
-        GET     h.Equates
-        IMPORT  |_Lib$Reloc$Off$DP|
-
-        EXPORT  |CallEveryVeneer|
-        IMPORT  |callevery_handler|
-
-
-gggga    DCB     "CallEveryVeneer",0
-        ALIGN
-ggggb    DCD     &ff000000+ggggb-gggga
-CallEveryVeneer
-        ToSVCEAll  2,3
-        EnterCVeneer
-        mov     a1, a2              ; a1 = base device pointer
-        bl      |callevery_handler|
-        ExitCVeneer
-        FromSVCEAllRet 2,3
-
-        END
+	END

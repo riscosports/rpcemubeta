@@ -35,8 +35,6 @@
 #include "dcistructs.h"
 #include "Defines.h"
 #include "Structs.h"
-#include "Module.h"
-
 #include "DCI.h"
 
 /// Directly include a binary version of the AutoSense file (as a C array)
@@ -328,7 +326,7 @@ initialise(const char *cmd_tail, int podule_base, void *pw)
 	PodMaskAddr = (unsigned char *) ribuff[0]; // IOC irq reg
 	PodMask = (unsigned char) ribuff[1]; // IOC irq mask for pod
 
-	err = _swix(OS_ClaimDeviceVector, _INR(0,4), 13, CallEveryVeneer, work, &irqstatus, 1);
+	err = _swix(OS_ClaimDeviceVector, _INR(0,4), 13, device_irq, pw, &irqstatus, 1);
 	if (err) {
 		return err;
 	}
@@ -344,7 +342,7 @@ initialise(const char *cmd_tail, int podule_base, void *pw)
  * Module finalisation code
  */
 _kernel_oserror *
-finalise(int fatal, int podule, void *private_word)
+finalise(int fatal, int podule, void *pw)
 {
 	_kernel_swi_regs sregs;
 
@@ -352,7 +350,7 @@ finalise(int fatal, int podule, void *private_word)
 	_kernel_swi(OS_IntOff, &sregs, &sregs);
 
 	networkirqswi(0);
-	_swix(OS_ReleaseDeviceVector, _INR(0,4), 13, CallEveryVeneer, work, &irqstatus, 1);
+	_swix(OS_ReleaseDeviceVector, _INR(0,4), 13, device_irq, pw, &irqstatus, 1);
 
 	// free any mem owned here
 	if (work != NULL) {
@@ -380,18 +378,18 @@ finalise(int fatal, int podule, void *private_word)
 /**
  */
 _kernel_oserror *
-callevery_handler(workspace *work)
+device_irq_handler(_kernel_swi_regs *r, void *pw)
 {
 	rx_hdr *rxhdr;
 
 	static volatile int sema = 0;
-	_kernel_swi_regs r;
+	_kernel_swi_regs rg;
 
 	// Clear interrupt
 	irqstatus = 0;
-	r.r[0] = 3;
-	r.r[2] = 0;
-	_kernel_swi(0x56ac4, &r, &r);
+	rg.r[0] = 3;
+	rg.r[2] = 0;
+	_kernel_swi(0x56ac4, &rg, &rg);
 
 	if (sema) {
 		return NULL;

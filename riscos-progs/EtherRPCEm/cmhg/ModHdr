@@ -33,4 +33,4 @@ swi-decoding-table: EtherRPCEm, DCIVersion, Inquire, GetNetworkMTU, SetNetworkMT
 
 swi-handler-code: swi_handler
 
-generic-veneers: initialise_callback
+generic-veneers: initialise_callback, device_irq
