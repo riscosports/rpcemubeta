@@ -188,7 +188,7 @@ initialise_callback_handler(_kernel_swi_regs *r, void *pw)
 	UNUSED(r);
 	UNUSED(pw);
 
-	SendServiceDCIDriverStatus(0);
+	SendServiceDCIDriverStatus(DCIDRIVER_STARTING);
 
 	return NULL;
 }
@@ -349,7 +349,7 @@ finalise(int fatal, int podule, void *pw)
 	networkirqswi(0);
 	_swix(OS_ReleaseDeviceVector, _INR(0,4), 13, device_irq, pw, &irqstatus, 1);
 
-	SendServiceDCIDriverStatus(1); // flag we're stopping
+	SendServiceDCIDriverStatus(DCIDRIVER_DYING); // flag we're stopping
 
 	// free any mem owned here
 	while (work.claims != NULL) { // work list to free claimbufs

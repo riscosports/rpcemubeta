@@ -139,6 +139,14 @@ typedef struct chaindib
 } ChDib, *ChDibRef;
 
 /*
+ * reasons to driver and protocol status service calls
+ */
+#define DCIDRIVER_STARTING	0
+#define DCIDRIVER_DYING		1
+#define DCIPROTOCOL_STARTING	0
+#define DCIPROTOCOL_DYING	1
+
+/*
  * returned flag bits for Inquire SWI
  */
 #define INQ_MULTICAST	(1 << 0)	/* multicast reception supported */
