@@ -62,7 +62,7 @@ static _kernel_oserror
     ErrorAlreadyClaimed = { 0x58cc5, "frame already claimed" },
     ErrorNoBuff         = { 0x58cc6, "No buffer space" };
 
-workspace *work;
+static workspace work;
 
 static const struct stats supported = {
 	// General information
@@ -166,14 +166,13 @@ autosense_install(void)
  * protocol modules of new driver.
  *
  * @param startstop 0 for starting, 1 for stopping
- * @param work
  */
 static void
-SendServiceDCIDriverStatus(int startstop, workspace *work)
+SendServiceDCIDriverStatus(int startstop)
 {
 	_kernel_swi_regs r;
 
-	r.r[0] = (int) &work->base_dib;
+	r.r[0] = (int) &work.base_dib;
 	r.r[1] = Service_DCIDriverStatus;
 	r.r[2] = startstop;
 	r.r[3] = DCIVersion;
@@ -189,7 +188,7 @@ initialise_callback_handler(_kernel_swi_regs *r, void *pw)
 	UNUSED(r);
 	UNUSED(pw);
 
-	SendServiceDCIDriverStatus(0, work);
+	SendServiceDCIDriverStatus(0);
 
 	return NULL;
 }
@@ -235,7 +234,7 @@ bounceclaim(claimbuf *cb)
 {
 	_kernel_swi_regs r;
 
-	r.r[0] = (int) &work->base_dib;
+	r.r[0] = (int) &work.base_dib;
 	r.r[1] = Service_DCIFrameTypeFree;
 	r.r[2] = cb->frame | (cb->adtype << 16);;
 	r.r[3] = cb->addresslevel;
@@ -245,7 +244,7 @@ bounceclaim(claimbuf *cb)
 	if (cb->last) {
 		((claimbuf *) (cb->last))->next = cb->next;
 	} else {
-		work->claims = cb->next;
+		work.claims = cb->next;
 	}
 	if (cb->next) {
 		((claimbuf *) (cb->next))->last = cb->last; // unlink from chain
@@ -260,21 +259,21 @@ InitChip(void *pw)
 {
 	_kernel_swi_regs r;
 
-	work->base_dib.dib_swibase = EtherRPCEm_00;
-	work->base_dib.dib_name = "rpcem";
-	work->base_dib.dib_unit = 0;
-	work->base_dib.dib_address = work->dev_addr;
-	work->base_dib.dib_module = "EtherRPCEm";
-	work->base_dib.dib_location = "Emulated";
-	work->base_dib.dib_slot.sl_slotid = 0;
-	work->base_dib.dib_slot.sl_minor = 0;
-	work->base_dib.dib_slot.sl_pcmciaslot = 0;
-	work->base_dib.dib_slot.sl_mbz = 0;
-	work->base_dib.dib_inquire = INQUIRE_FLAGS;
-	work->claims = NULL; // flag no claimbufs
+	work.base_dib.dib_swibase = EtherRPCEm_00;
+	work.base_dib.dib_name = "rpcem";
+	work.base_dib.dib_unit = 0;
+	work.base_dib.dib_address = work.dev_addr;
+	work.base_dib.dib_module = "EtherRPCEm";
+	work.base_dib.dib_location = "Emulated";
+	work.base_dib.dib_slot.sl_slotid = 0;
+	work.base_dib.dib_slot.sl_minor = 0;
+	work.base_dib.dib_slot.sl_pcmciaslot = 0;
+	work.base_dib.dib_slot.sl_mbz = 0;
+	work.base_dib.dib_inquire = INQUIRE_FLAGS;
+	work.claims = NULL; // flag no claimbufs
 
 	r.r[0] = (int) "Inet$EtherType";
-	r.r[1] = (int) work->base_dib.dib_name;
+	r.r[1] = (int) work.base_dib.dib_name;
 	r.r[2] = (int) strlen((char *) r.r[1]);
 	r.r[3] = 0;
 	r.r[4] = 4;
@@ -299,20 +298,18 @@ initialise(const char *cmd_tail, int podule_base, void *pw)
 	UNUSED(cmd_tail);
 	UNUSED(podule_base);
 
-	if ((work = calloc(1, sizeof(workspace))) == NULL) {
-		return &ErrorNoBuff;
-	}
+	memset(&work, 0, sizeof(work));
 
-	networkhwaddrswi(work->dev_addr);
+	networkhwaddrswi(work.dev_addr);
 
-	work->pwp = pw;
+	work.pwp = pw;
 
 	// claim mbuf manager link
-	if ((work->mbctl = calloc(1, sizeof(dci4_mbctl))) == NULL) {
+	if ((work.mbctl = calloc(1, sizeof(dci4_mbctl))) == NULL) {
 		return &ErrorNoBuff;
 	}
 
-	if ((err = open_mbuf_manager_session(work->mbctl)) != NULL) {
+	if ((err = open_mbuf_manager_session(work.mbctl)) != NULL) {
 		return err;
 	}
 
@@ -352,26 +349,24 @@ finalise(int fatal, int podule, void *pw)
 	networkirqswi(0);
 	_swix(OS_ReleaseDeviceVector, _INR(0,4), 13, device_irq, pw, &irqstatus, 1);
 
-	// free any mem owned here
-	if (work != NULL) {
-		SendServiceDCIDriverStatus(1, work); // flag we're stopping
-		while (work->claims != NULL) { // work list to free claimbufs
-			bounceclaim(work->claims);
-		}
-		if (work->mbctl) {
-			if (rxhdr_mbuf) {
-				work->mbctl->freem(work->mbctl, rxhdr_mbuf);
-			}
-			if (data_mbuf) {
-				work->mbctl->freem(work->mbctl, data_mbuf);
-			}
+	SendServiceDCIDriverStatus(1); // flag we're stopping
 
-			close_mbuf_manager_session(work->mbctl);
-			free(work->mbctl);
-		}
-		free(work);
-		work = NULL;
+	// free any mem owned here
+	while (work.claims != NULL) { // work list to free claimbufs
+		bounceclaim(work.claims);
 	}
+	if (work.mbctl != NULL) {
+		if (rxhdr_mbuf != NULL) {
+			work.mbctl->freem(work.mbctl, rxhdr_mbuf);
+		}
+		if (data_mbuf != NULL) {
+			work.mbctl->freem(work.mbctl, data_mbuf);
+		}
+
+		close_mbuf_manager_session(work.mbctl);
+		free(work.mbctl);
+	}
+
 	return NULL;
 }
 
@@ -398,10 +393,10 @@ device_irq_handler(_kernel_swi_regs *r, void *pw)
 
 	for (;;) {
 		if (rxhdr_mbuf == NULL) {
-			rxhdr_mbuf = work->mbctl->alloc_s(work->mbctl, sizeof(rx_hdr), NULL);
+			rxhdr_mbuf = work.mbctl->alloc_s(work.mbctl, sizeof(rx_hdr), NULL);
 		}
 		if (data_mbuf == NULL) {
-			data_mbuf = work->mbctl->alloc_s(work->mbctl, 1500, NULL);
+			data_mbuf = work.mbctl->alloc_s(work.mbctl, 1500, NULL);
 		}
 		if (rxhdr_mbuf && data_mbuf) {
 			int valid;
@@ -414,7 +409,7 @@ device_irq_handler(_kernel_swi_regs *r, void *pw)
 				return NULL;
 			}
 			// Increment receive frames
-			work->st_rx_frames++;
+			work.st_rx_frames++;
 
 			{
 				// do stuff to make a new packet
@@ -422,7 +417,7 @@ device_irq_handler(_kernel_swi_regs *r, void *pw)
 				int AddrLevel = AlSpecific;
 				ClaimType Claim = NotClaimed;
 
-				for (cb = work->claims; cb != NULL; cb = cb->next) {
+				for (cb = work.claims; cb != NULL; cb = cb->next) {
 					switch (cb->adtype) {
 					case AdSpecific:
 						if ((AddrLevel <= AlNormal) &&
@@ -467,7 +462,7 @@ device_irq_handler(_kernel_swi_regs *r, void *pw)
 						rxhdr_mbuf->m_type = MT_HEADER;
 
 						_swix(OS_IntOn, 0);
-						callrx(&work->base_dib, rxhdr_mbuf, cb->claimaddress, cb->pwp);
+						callrx(&work.base_dib, rxhdr_mbuf, cb->claimaddress, cb->pwp);
 						// The protocol stack is now responsible for freeing the mbufs
 						rxhdr_mbuf = NULL;
 						data_mbuf = NULL;
@@ -503,7 +498,7 @@ service_call(int service_number, _kernel_swi_regs *r, void *pw)
 		rg.r[3] = sizeof(ChDib);
 		if ((erp = _kernel_swi(OS_Module, &rg, &rg)) == NULL) {
 			// got extra memory to add chaindib
-			((ChDib *) rg.r[2])->chd_dib = &work->base_dib;
+			((ChDib *) rg.r[2])->chd_dib = &work.base_dib;
 			((ChDib *) rg.r[2])->chd_next = (ChDib *) r->r[0];
 			r->r[0] = rg.r[2]; // link our chaindib into the chain
 		}
@@ -515,14 +510,14 @@ service_call(int service_number, _kernel_swi_regs *r, void *pw)
 	case Service_MbufManagerStatus:
 		switch (r->r[0]) {
 		case 0: // Manager started ... better try to restart our stuff
-			if (!work->mbctl) {
-				if ((erp = open_mbuf_manager_session(work->mbctl)) == NULL) {
-					InitChip(work);
+			if (work.mbctl == NULL) {
+				if ((erp = open_mbuf_manager_session(work.mbctl)) == NULL) {
+					InitChip(work.pwp);
 				}
 			}
 			break;
 		case 1: // Manager stopping .. cannot if sessions are active
-			if (work->mbctl) {
+			if (work.mbctl != NULL) {
 				// claim .. we're active
 				r->r[1] = 0;
 			}
@@ -614,11 +609,11 @@ swi_handler(int swi_offset, _kernel_swi_regs *r, void *private_word)
 			if (err == NULL) {
 				err = networktxswi(mbufchain, r->r[4], (r->r[0] & 1) ? r->r[5] : 0, r->r[2]);
 				// Increment transmit frames
-				work->st_tx_frames++;
+				work.st_tx_frames++;
 			}
 
 			if ((r->r[0] & 2) == 0) {
-				work->mbctl->freem(work->mbctl, mbufchain);
+				work.mbctl->freem(work.mbctl, mbufchain);
 			}
 			mbufchain = next;
 		}
@@ -648,7 +643,7 @@ swi_handler(int swi_offset, _kernel_swi_regs *r, void *private_word)
 		}
 		if ((r->r[0] & 1) != 0) {
 			// release frame
-			for (thism = work->claims; thism != NULL; thism = thism->next) {
+			for (thism = work.claims; thism != NULL; thism = thism->next) {
 				if ((thism->unit == r->r[1]) &&
 				    (thism->frame == (r->r[2] & 0xffff)) &&
 				    (thism->adtype == (r->r[2] >> 16)) &&
@@ -664,7 +659,7 @@ swi_handler(int swi_offset, _kernel_swi_regs *r, void *private_word)
 			}
 		} else {
 			// claim frame type
-			thism = next = work->claims;
+			thism = next = work.claims;
 			while (next != NULL) {
 				int adtype, used;
 
@@ -715,7 +710,7 @@ swi_handler(int swi_offset, _kernel_swi_regs *r, void *private_word)
 				thism->next = next;
 				next->last = thism;
 			} else {
-				work->claims = next;
+				work.claims = next;
 				next->last = NULL;
 			}
 claimframe:
@@ -729,13 +724,13 @@ claimframe:
 			next->claimaddress = r->r[6];
 		}
 		// now check all claims and set multicast or promiscuous as needed
-		work->flags = 0;
-		for (next = work->claims; next != NULL; next = next->next) {
+		work.flags = 0;
+		for (next = work.claims; next != NULL; next = next->next) {
 			if (next->addresslevel == AlMulticast) {
-				work->flags |= IFF_ALLMULTI;
+				work.flags |= IFF_ALLMULTI;
 			}
 			if (next->addresslevel == AlPromiscuous) {
-				work->flags |= IFF_PROMISC;
+				work.flags |= IFF_PROMISC;
 			}
 		}
 		break;
@@ -762,8 +757,8 @@ claimframe:
 			                        ST_STATUS_PROMISCUOUS |
 			                        ST_STATUS_FULL_DUPLEX;
 			stats->st_link_polarity = ST_LINK_POLARITY_CORRECT;
-			stats->st_tx_frames = work->st_tx_frames;
-			stats->st_rx_frames = work->st_rx_frames;
+			stats->st_tx_frames = work.st_tx_frames;
+			stats->st_rx_frames = work.st_rx_frames;
 		} else {
 			// indicate what's supported
 			memcpy((void *) r->r[2], &supported.st_interface_type, sizeof(struct stats));
