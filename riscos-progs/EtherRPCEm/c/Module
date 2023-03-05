@@ -375,8 +375,6 @@ finalise(int fatal, int podule, void *pw)
 _kernel_oserror *
 device_irq_handler(_kernel_swi_regs *r, void *pw)
 {
-	rx_hdr *rxhdr;
-
 	static volatile int sema = 0;
 	_kernel_swi_regs rg;
 
@@ -392,89 +390,92 @@ device_irq_handler(_kernel_swi_regs *r, void *pw)
 	sema = 1;
 
 	for (;;) {
+		rx_hdr *rxhdr;
+		int valid;
+
 		if (rxhdr_mbuf == NULL) {
 			rxhdr_mbuf = work.mbctl->alloc_s(work.mbctl, sizeof(rx_hdr), NULL);
 		}
 		if (data_mbuf == NULL) {
 			data_mbuf = work.mbctl->alloc_s(work.mbctl, 1500, NULL);
 		}
-		if (rxhdr_mbuf && data_mbuf) {
-			int valid;
 
-			rxhdr = (rx_hdr *) (((char *) rxhdr_mbuf) + rxhdr_mbuf->m_off);
-			rxhdr_mbuf->m_len = sizeof(rx_hdr);
-			if (networkrxswi(data_mbuf, rxhdr, &valid) || !valid) {
-				// No data
-				sema = 0;
-				return NULL;
-			}
-			// Increment receive frames
-			work.st_rx_frames++;
-
-			{
-				// do stuff to make a new packet
-				claimbuf *cb;
-				int AddrLevel = AlSpecific;
-				ClaimType Claim = NotClaimed;
-
-				for (cb = work.claims; cb != NULL; cb = cb->next) {
-					switch (cb->adtype) {
-					case AdSpecific:
-						if ((AddrLevel <= AlNormal) &&
-						    (rxhdr->rx_frame_type == cb->frame) &&
-						    (AddrLevel <= cb->addresslevel))
-						{
-							Claim = ClaimSpecific;
-						}
-						break;
-					case AdMonitor:
-						if ((rxhdr->rx_frame_type > 1500) &&
-						    (AddrLevel <= cb->addresslevel))
-						{
-							Claim = ClaimMonitor;
-						}
-						break;
-					case AdIeee:
-						if (rxhdr->rx_frame_type < 1501) {
-							Claim = ClaimIEEE;
-						}
-						break;
-					case AdSink:
-						if (rxhdr->rx_frame_type > 1500) {
-							Claim = ClaimSink;
-						}
-						break;
-					default:
-						break;
-					}
-
-					if (Claim != NotClaimed) {
-						// someone wants it, so check further
-						rxhdr_mbuf->m_next = data_mbuf; // link them together
-						rxhdr_mbuf->m_list = 0; // this is needed
-						//data_mbuf->m_next = NULL;      // link them together
-						data_mbuf->m_list = 0; // this is needed
-						// at this point we dont need to check for safe mbuf
-						// as we've used the alloc routine that only allocs
-						// mbufs that actually are safe
-
-						// now build the rxhdr structure
-						rxhdr_mbuf->m_type = MT_HEADER;
-
-						_swix(OS_IntOn, 0);
-						callrx(&work.base_dib, rxhdr_mbuf, cb->claimaddress, cb->pwp);
-						// The protocol stack is now responsible for freeing the mbufs
-						rxhdr_mbuf = NULL;
-						data_mbuf = NULL;
-						_swix(OS_IntOff, 0);
-						break;
-					}
-				}
-			}
-		} else {
+		if (rxhdr_mbuf == NULL || data_mbuf == NULL) {
 			// mbuf exhaustion
 			sema = 0;
 			return NULL;
+		}
+
+		rxhdr = (rx_hdr *) (((char *) rxhdr_mbuf) + rxhdr_mbuf->m_off);
+		rxhdr_mbuf->m_len = sizeof(rx_hdr);
+		if (networkrxswi(data_mbuf, rxhdr, &valid) || !valid) {
+			// No data
+			sema = 0;
+			return NULL;
+		}
+
+		// Increment receive frames
+		work.st_rx_frames++;
+
+		{
+			// do stuff to make a new packet
+			claimbuf *cb;
+			int AddrLevel = AlSpecific;
+			ClaimType Claim = NotClaimed;
+
+			for (cb = work.claims; cb != NULL; cb = cb->next) {
+				switch (cb->adtype) {
+				case AdSpecific:
+					if ((AddrLevel <= AlNormal) &&
+					    (rxhdr->rx_frame_type == cb->frame) &&
+					    (AddrLevel <= cb->addresslevel))
+					{
+						Claim = ClaimSpecific;
+					}
+					break;
+				case AdMonitor:
+					if ((rxhdr->rx_frame_type > 1500) &&
+					    (AddrLevel <= cb->addresslevel))
+					{
+						Claim = ClaimMonitor;
+					}
+					break;
+				case AdIeee:
+					if (rxhdr->rx_frame_type < 1501) {
+						Claim = ClaimIEEE;
+					}
+					break;
+				case AdSink:
+					if (rxhdr->rx_frame_type > 1500) {
+						Claim = ClaimSink;
+					}
+					break;
+				default:
+					break;
+				}
+
+				if (Claim != NotClaimed) {
+					// someone wants it, so check further
+					rxhdr_mbuf->m_next = data_mbuf; // link them together
+					rxhdr_mbuf->m_list = 0; // this is needed
+					//data_mbuf->m_next = NULL;      // link them together
+					data_mbuf->m_list = 0; // this is needed
+					// at this point we dont need to check for safe mbuf
+					// as we've used the alloc routine that only allocs
+					// mbufs that actually are safe
+
+					// now build the rxhdr structure
+					rxhdr_mbuf->m_type = MT_HEADER;
+
+					_swix(OS_IntOn, 0);
+					callrx(&work.base_dib, rxhdr_mbuf, cb->claimaddress, cb->pwp);
+					// The protocol stack is now responsible for freeing the mbufs
+					rxhdr_mbuf = NULL;
+					data_mbuf = NULL;
+					_swix(OS_IntOff, 0);
+					break;
+				}
+			}
 		}
 	}
 }
