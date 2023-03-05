@@ -328,7 +328,9 @@ initialise(const char *cmd_tail, int podule_base, void *pw)
 		return err;
 	}
 
+	_kernel_irqs_off();
 	*PodMaskAddr |= PodMask; // set the pod irq
+	_kernel_irqs_on();
 
 	networkirqswi(&irqstatus);
 
@@ -341,10 +343,8 @@ initialise(const char *cmd_tail, int podule_base, void *pw)
 _kernel_oserror *
 finalise(int fatal, int podule, void *pw)
 {
-	_kernel_swi_regs sregs;
-
 	// ints off to ensure it stays quiet..
-	_kernel_swi(OS_IntOff, &sregs, &sregs);
+	_kernel_irqs_off();
 
 	networkirqswi(0);
 	_swix(OS_ReleaseDeviceVector, _INR(0,4), 13, device_irq, pw, &irqstatus, 1);
@@ -467,12 +467,14 @@ device_irq_handler(_kernel_swi_regs *r, void *pw)
 					// now build the rxhdr structure
 					rxhdr_mbuf->m_type = MT_HEADER;
 
-					_swix(OS_IntOn, 0);
+					// Call the Protocol Module
+					_kernel_irqs_on();
 					callrx(&work.base_dib, rxhdr_mbuf, cb->claimaddress, cb->pwp);
+					_kernel_irqs_off();
+
 					// The protocol stack is now responsible for freeing the mbufs
 					rxhdr_mbuf = NULL;
 					data_mbuf = NULL;
-					_swix(OS_IntOff, 0);
 					break;
 				}
 			}
