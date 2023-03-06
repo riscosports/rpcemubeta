@@ -228,27 +228,32 @@ close_mbuf_manager_session(dci4_mbctl *mbctl)
 
 /**
  * Report frame release, unlink it, and free memory
+ *
+ * @param cb Pointer to ClaimBuf to release
  */
 static void
-bounceclaim(claimbuf *cb)
+bounceclaim(ClaimBuf *cb)
 {
 	_kernel_swi_regs r;
 
+	// Report it's now no longer claimed
 	r.r[0] = (int) &work.base_dib;
 	r.r[1] = Service_DCIFrameTypeFree;
 	r.r[2] = cb->frame | (cb->adtype << 16);;
 	r.r[3] = cb->addresslevel;
 	r.r[4] = cb->errorlevel;
-	_kernel_swi(OS_ServiceCall, &r, &r); // report it's now no longer claimed
+	_kernel_swi(OS_ServiceCall, &r, &r);
 
-	if (cb->last) {
-		((claimbuf *) (cb->last))->next = cb->next;
+	// Unlink from list
+	if (cb->prev != NULL) {
+		cb->prev->next = cb->next;
 	} else {
 		work.claims = cb->next;
 	}
-	if (cb->next) {
-		((claimbuf *) (cb->next))->last = cb->last; // unlink from chain
+	if (cb->next != NULL) {
+		cb->next->prev = cb->prev;
 	}
+
 	free(cb);
 }
 
@@ -419,7 +424,7 @@ device_irq_handler(_kernel_swi_regs *r, void *pw)
 
 		{
 			// do stuff to make a new packet
-			claimbuf *cb;
+			const ClaimBuf *cb;
 			int AddrLevel = AlSpecific;
 			ClaimType Claim = NotClaimed;
 
@@ -538,7 +543,7 @@ service_call(int service_number, _kernel_swi_regs *r, void *pw)
 _kernel_oserror *
 swi_handler(int swi_offset, _kernel_swi_regs *r, void *private_word)
 {
-	claimbuf *thism, *next;
+	ClaimBuf *thism, *next;
 	_kernel_oserror *err;
 
 	UNUSED(private_word);
@@ -706,15 +711,15 @@ swi_handler(int swi_offset, _kernel_swi_regs *r, void *private_word)
 				}
 			}
 			// thism points to first NULL claimbuf ptr
-			if ((next = calloc(1, sizeof(claimbuf))) == NULL) {
+			if ((next = calloc(1, sizeof(ClaimBuf))) == NULL) {
 				return &ErrorNoBuff;
 			}
 			if (thism != NULL) {
 				thism->next = next;
-				next->last = thism;
+				next->prev = thism;
 			} else {
 				work.claims = next;
-				next->last = NULL;
+				next->prev = NULL;
 			}
 claimframe:
 			next->flags = (char) r->r[0] & 1;
