@@ -43,8 +43,6 @@ typedef enum {NotClaimed,ClaimIEEE,ClaimSpecific,ClaimBC,ClaimMC,ClaimMonitor,Cl
 /// Claimed frame type
 typedef struct ClaimBuf ClaimBuf;
 struct ClaimBuf {
-	int   claimaddress;              // Receiver's address (for assembler access)
-	int   pwp;                       // Receiver's PWP     (for assembler access)
 	unsigned int   frame:16,         // frame type/number claimed
 		       adtype:16;        // claim address type
 	int   addresslevel;              // addresslevel of claim
@@ -53,6 +51,11 @@ struct ClaimBuf {
 	char  unit;                      // unit this refers to
 	char  spare[2];                  // spare
 
+	// For calling the Protocol module
+	int		handler;	///< Address of Protocol module's received frame handler
+	void		*pwp;		///< Protocol module's private workspace pointer
+
+	// List pointers
 	ClaimBuf	*next;		///< pointer to next in list, or NULL if end
 	ClaimBuf	*prev;		///< pointer to previous in list, or NULL if start
 };

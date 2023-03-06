@@ -49,7 +49,7 @@ _kernel_oserror *networktxswi(struct mbuf *mbufs, int dest, int src, int framety
 _kernel_oserror *networkrxswi(struct mbuf *mbuf, rx_hdr *hdr, int *valid);
 _kernel_oserror *networkirqswi(volatile int *irqstatus);
 _kernel_oserror *networkhwaddrswi(unsigned char *hwaddr);
-void callrx(Dib *dibaddr, struct mbuf *mbuf_chain, int claimaddr, int pwp);
+void callrx(Dib *dibaddr, struct mbuf *mbuf_chain, int handler, void *pwp);
 
 // versionof DCI supported
 #define DCIVersion 403
@@ -474,7 +474,7 @@ device_irq_handler(_kernel_swi_regs *r, void *pw)
 
 					// Call the Protocol Module
 					_kernel_irqs_on();
-					callrx(&work.base_dib, rxhdr_mbuf, cb->claimaddress, cb->pwp);
+					callrx(&work.base_dib, rxhdr_mbuf, cb->handler, cb->pwp);
 					_kernel_irqs_off();
 
 					// The protocol stack is now responsible for freeing the mbufs
@@ -657,8 +657,8 @@ swi_handler(int swi_offset, _kernel_swi_regs *r, void *private_word)
 				    (thism->adtype == (r->r[2] >> 16)) &&
 				    (thism->addresslevel == r->r[3]) &&
 				    (thism->errorlevel == r->r[4]) &&
-				    (thism->pwp == r->r[5]) &&
-				    (thism->claimaddress == r->r[6]))
+				    (thism->pwp == (void *) r->r[5]) &&
+				    (thism->handler == r->r[6]))
 				{
 					// we've found the claim, unlink it
 					bounceclaim(thism);
@@ -728,8 +728,8 @@ claimframe:
 			next->adtype = r->r[2] >> 16;
 			next->addresslevel = r->r[3];
 			next->errorlevel = r->r[4];
-			next->pwp = r->r[5];
-			next->claimaddress = r->r[6];
+			next->pwp = (void *) r->r[5];
+			next->handler = r->r[6];
 		}
 		// now check all claims and set multicast or promiscuous as needed
 		work.flags = 0;
