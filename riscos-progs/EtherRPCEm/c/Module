@@ -239,7 +239,7 @@ bounceclaim(ClaimBuf *cb)
 	// Report it's now no longer claimed
 	r.r[0] = (int) &work.base_dib;
 	r.r[1] = Service_DCIFrameTypeFree;
-	r.r[2] = cb->frame | (cb->adtype << 16);;
+	r.r[2] = cb->frame_type | (cb->frame_level << 16);;
 	r.r[3] = cb->addresslevel;
 	r.r[4] = cb->errorlevel;
 	_kernel_swi(OS_ServiceCall, &r, &r);
@@ -429,10 +429,10 @@ device_irq_handler(_kernel_swi_regs *r, void *pw)
 			ClaimType Claim = NotClaimed;
 
 			for (cb = work.claims; cb != NULL; cb = cb->next) {
-				switch (cb->adtype) {
+				switch (cb->frame_level) {
 				case AdSpecific:
 					if ((AddrLevel <= AlNormal) &&
-					    (rxhdr->rx_frame_type == cb->frame) &&
+					    (rxhdr->rx_frame_type == cb->frame_type) &&
 					    (AddrLevel <= cb->addresslevel))
 					{
 						Claim = ClaimSpecific;
@@ -655,8 +655,8 @@ swi_handler(int swi_offset, _kernel_swi_regs *r, void *private_word)
 			// release frame
 			for (thism = work.claims; thism != NULL; thism = thism->next) {
 				if ((thism->unit == r->r[1]) &&
-				    (thism->frame == GET_FRAMETYPE(r->r[2])) &&
-				    (thism->adtype == GET_FRAMELEVEL(r->r[2])) &&
+				    (thism->frame_type == GET_FRAMETYPE(r->r[2])) &&
+				    (thism->frame_level == GET_FRAMELEVEL(r->r[2])) &&
 				    (thism->addresslevel == r->r[3]) &&
 				    (thism->errorlevel == r->r[4]) &&
 				    (thism->pwp == (void *) r->r[5]) &&
@@ -669,17 +669,18 @@ swi_handler(int swi_offset, _kernel_swi_regs *r, void *private_word)
 			}
 		} else {
 			// claim frame type
+			const int frame_level = GET_FRAMELEVEL(r->r[2]);
+
 			thism = next = work.claims;
 			while (next != NULL) {
-				int adtype, used;
+				int used;
 
-				adtype = GET_FRAMELEVEL(r->r[2]);
 				thism = next;
 				used = 0;
-				if ((thism->frame == GET_FRAMETYPE(r->r[2])) // already a claimer..
-				    || (adtype == AdMonitor)) // or we're greedy
+				if ((thism->frame_type == GET_FRAMETYPE(r->r[2])) // already a claimer..
+				    || (frame_level == AdMonitor)) // or we're greedy
 				{
-					switch (adtype) {
+					switch (frame_level) {
 					case AdSpecific:
 						return &ErrorAlreadyClaimed;
 					case AdSink:
@@ -689,13 +690,13 @@ swi_handler(int swi_offset, _kernel_swi_regs *r, void *private_word)
 						}
 						return &ErrorAlreadyClaimed;
 					case AdMonitor:
-						if (thism->adtype < AdMonitor) { // bounce anything less
+						if (thism->frame_level < AdMonitor) { // bounce anything less
 							next = thism->next;
 							bounceclaim(thism);
 							used = 1;
 							break;
 						}
-						if (thism->adtype != AdIeee) {
+						if (thism->frame_level != AdIeee) {
 							return &ErrorAlreadyClaimed;
 						}
 						break;
@@ -703,9 +704,6 @@ swi_handler(int swi_offset, _kernel_swi_regs *r, void *private_word)
 						return &ErrorAlreadyClaimed;
 					default:
 						return &ErrorBadClaim;
-					}
-					if(thism->adtype >adtype) //
-					{
 					}
 				}
 				if (!used) {
@@ -726,8 +724,8 @@ swi_handler(int swi_offset, _kernel_swi_regs *r, void *private_word)
 claimframe:
 			next->flags = (char) r->r[0] & 1;
 			next->unit = r->r[1];
-			next->frame = GET_FRAMETYPE(r->r[2]);
-			next->adtype = GET_FRAMELEVEL(r->r[2]);
+			next->frame_type = GET_FRAMETYPE(r->r[2]);
+			next->frame_level = GET_FRAMELEVEL(r->r[2]);
 			next->addresslevel = r->r[3];
 			next->errorlevel = r->r[4];
 			next->pwp = (void *) r->r[5];

@@ -43,8 +43,9 @@ typedef enum {NotClaimed,ClaimIEEE,ClaimSpecific,ClaimBC,ClaimMC,ClaimMonitor,Cl
 /// Claimed frame type
 typedef struct ClaimBuf ClaimBuf;
 struct ClaimBuf {
-	unsigned int   frame:16,         // frame type/number claimed
-		       adtype:16;        // claim address type
+	// Filter
+	int		frame_type;	///< frame type
+	int		frame_level;	///< frame class/level 1-4
 	int   addresslevel;              // addresslevel of claim
 	int   errorlevel;                // error level
 	char  flags;                     // nz if ensure_safe needed on mbuf
