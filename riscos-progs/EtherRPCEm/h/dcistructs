@@ -166,6 +166,14 @@ typedef struct chaindib
 #define INQ_1STRESERVED	(1 << 14)	/* 1st reserved flag bit */
 
 /*
+ * macros for manipulating subfields within frame type
+ */
+#define GET_FRAMETYPE(x)	((x) & 0xffff)
+#define SET_FRAMETYPE(x, y)	((x) = ((x) & 0xffff0000) | ((y) & 0xffff))
+#define GET_FRAMELEVEL(x)	(((unsigned int)(x)) >> 16)
+#define SET_FRAMELEVEL(x, y)	((x) = ((x) & 0x0000ffff) | ((y) << 16))
+
+/*
  * definitions for stats interface types
  */
 #define ST_TYPE_10BASE5			1

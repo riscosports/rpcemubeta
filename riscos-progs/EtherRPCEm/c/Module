@@ -630,9 +630,11 @@ swi_handler(int swi_offset, _kernel_swi_regs *r, void *private_word)
 
 	// on entry:	r0 = flags (see below)
 	//		r1 = unit number
-	//		r2 = frame type		bottom 16 bits, frame type, top 16.. addr class
-	//			1.. specific        2.. sink
-	//			3.. monitor         4.. ieee
+	//		r2 = frame type/class
+	//			bottom 16 bits: frame type (if 'frame level' is specific)
+	//			top 16 bits: 'frame level':
+	//				1.. specific        2.. sink
+	//				3.. monitor         4.. ieee
 	//		r3 = address level (for write)
 	//		r4 = error level (for write)
 	//		r5 = handlers private word pointer
@@ -653,8 +655,8 @@ swi_handler(int swi_offset, _kernel_swi_regs *r, void *private_word)
 			// release frame
 			for (thism = work.claims; thism != NULL; thism = thism->next) {
 				if ((thism->unit == r->r[1]) &&
-				    (thism->frame == (r->r[2] & 0xffff)) &&
-				    (thism->adtype == (r->r[2] >> 16)) &&
+				    (thism->frame == GET_FRAMETYPE(r->r[2])) &&
+				    (thism->adtype == GET_FRAMELEVEL(r->r[2])) &&
 				    (thism->addresslevel == r->r[3]) &&
 				    (thism->errorlevel == r->r[4]) &&
 				    (thism->pwp == (void *) r->r[5]) &&
@@ -671,10 +673,10 @@ swi_handler(int swi_offset, _kernel_swi_regs *r, void *private_word)
 			while (next != NULL) {
 				int adtype, used;
 
-				adtype = r->r[2] >> 16;
+				adtype = GET_FRAMELEVEL(r->r[2]);
 				thism = next;
 				used = 0;
-				if ((thism->frame == r->r[2] & 0xffff) // already a claimer..
+				if ((thism->frame == GET_FRAMETYPE(r->r[2])) // already a claimer..
 				    || (adtype == AdMonitor)) // or we're greedy
 				{
 					switch (adtype) {
@@ -724,8 +726,8 @@ swi_handler(int swi_offset, _kernel_swi_regs *r, void *private_word)
 claimframe:
 			next->flags = (char) r->r[0] & 1;
 			next->unit = r->r[1];
-			next->frame = r->r[2] & 0xffff;
-			next->adtype = r->r[2] >> 16;
+			next->frame = GET_FRAMETYPE(r->r[2]);
+			next->adtype = GET_FRAMELEVEL(r->r[2]);
 			next->addresslevel = r->r[3];
 			next->errorlevel = r->r[4];
 			next->pwp = (void *) r->r[5];
