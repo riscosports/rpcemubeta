@@ -44,13 +44,12 @@ typedef enum {NotClaimed,ClaimIEEE,ClaimSpecific,ClaimBC,ClaimMC,ClaimMonitor,Cl
 typedef struct ClaimBuf ClaimBuf;
 struct ClaimBuf {
 	// Filter
+	int		flags;		///< non-zero if ensure_safe needed on mbuf
+	int		unit;		///< unit this refers to
 	int		frame_type;	///< frame type
 	int		frame_level;	///< frame class/level 1-4
-	int   addresslevel;              // addresslevel of claim
-	int   errorlevel;                // error level
-	char  flags;                     // nz if ensure_safe needed on mbuf
-	char  unit;                      // unit this refers to
-	char  spare[2];                  // spare
+	int		address_level;	///< address filtering level 0-3
+	int		error_level;	///< error level
 
 	// For calling the Protocol module
 	int		handler;	///< Address of Protocol module's received frame handler

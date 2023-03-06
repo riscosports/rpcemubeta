@@ -240,8 +240,8 @@ bounceclaim(ClaimBuf *cb)
 	r.r[0] = (int) &work.base_dib;
 	r.r[1] = Service_DCIFrameTypeFree;
 	r.r[2] = cb->frame_type | (cb->frame_level << 16);;
-	r.r[3] = cb->addresslevel;
-	r.r[4] = cb->errorlevel;
+	r.r[3] = cb->address_level;
+	r.r[4] = cb->error_level;
 	_kernel_swi(OS_ServiceCall, &r, &r);
 
 	// Unlink from list
@@ -433,14 +433,14 @@ device_irq_handler(_kernel_swi_regs *r, void *pw)
 				case AdSpecific:
 					if ((AddrLevel <= AlNormal) &&
 					    (rxhdr->rx_frame_type == cb->frame_type) &&
-					    (AddrLevel <= cb->addresslevel))
+					    (AddrLevel <= cb->address_level))
 					{
 						Claim = ClaimSpecific;
 					}
 					break;
 				case AdMonitor:
 					if ((rxhdr->rx_frame_type > 1500) &&
-					    (AddrLevel <= cb->addresslevel))
+					    (AddrLevel <= cb->address_level))
 					{
 						Claim = ClaimMonitor;
 					}
@@ -657,8 +657,8 @@ swi_handler(int swi_offset, _kernel_swi_regs *r, void *private_word)
 				if ((thism->unit == r->r[1]) &&
 				    (thism->frame_type == GET_FRAMETYPE(r->r[2])) &&
 				    (thism->frame_level == GET_FRAMELEVEL(r->r[2])) &&
-				    (thism->addresslevel == r->r[3]) &&
-				    (thism->errorlevel == r->r[4]) &&
+				    (thism->address_level == r->r[3]) &&
+				    (thism->error_level == r->r[4]) &&
 				    (thism->pwp == (void *) r->r[5]) &&
 				    (thism->handler == r->r[6]))
 				{
@@ -684,7 +684,7 @@ swi_handler(int swi_offset, _kernel_swi_regs *r, void *private_word)
 					case AdSpecific:
 						return &ErrorAlreadyClaimed;
 					case AdSink:
-						if (thism->addresslevel == AdSpecific) {
+						if (thism->address_level == AdSpecific) {
 							bounceclaim(thism);
 							goto claimframe;
 						}
@@ -722,22 +722,22 @@ swi_handler(int swi_offset, _kernel_swi_regs *r, void *private_word)
 				next->prev = NULL;
 			}
 claimframe:
-			next->flags = (char) r->r[0] & 1;
+			next->flags = r->r[0] & 1;
 			next->unit = r->r[1];
 			next->frame_type = GET_FRAMETYPE(r->r[2]);
 			next->frame_level = GET_FRAMELEVEL(r->r[2]);
-			next->addresslevel = r->r[3];
-			next->errorlevel = r->r[4];
+			next->address_level = r->r[3];
+			next->error_level = r->r[4];
 			next->pwp = (void *) r->r[5];
 			next->handler = r->r[6];
 		}
 		// now check all claims and set multicast or promiscuous as needed
 		work.flags = 0;
 		for (next = work.claims; next != NULL; next = next->next) {
-			if (next->addresslevel == AlMulticast) {
+			if (next->address_level == AlMulticast) {
 				work.flags |= IFF_ALLMULTI;
 			}
-			if (next->addresslevel == AlPromiscuous) {
+			if (next->address_level == AlPromiscuous) {
 				work.flags |= IFF_PROMISC;
 			}
 		}
