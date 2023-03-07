@@ -166,6 +166,22 @@ typedef struct chaindib
 #define INQ_1STRESERVED	(1 << 14)	/* 1st reserved flag bit */
 
 /*
+ * levels for Filter SWI
+ */
+#define FRMLVL_E2SPECIFIC	1
+#define FRMLVL_E2SINK		2
+#define FRMLVL_E2MONITOR	3
+#define FRMLVL_IEEE		4
+
+#define ADDRLVL_SPECIFIC	0
+#define ADDRLVL_NORMAL		1
+#define ADDRLVL_MULTICAST	2
+#define ADDRLVL_PROMISCUOUS	3
+
+#define ERRLVL_NO_ERRORS	0
+#define ERRLVL_ERRORS		1
+
+/*
  * macros for manipulating subfields within frame type
  */
 #define GET_FRAMETYPE(x)	((x) & 0xffff)
