@@ -348,6 +348,8 @@ initialise(const char *cmd_tail, int podule_base, void *pw)
 _kernel_oserror *
 finalise(int fatal, int podule, void *pw)
 {
+	ClaimBuf *c, *next;
+
 	// ints off to ensure it stays quiet..
 	_kernel_irqs_off();
 
@@ -356,10 +358,13 @@ finalise(int fatal, int podule, void *pw)
 
 	SendServiceDCIDriverStatus(DCIDRIVER_DYING); // flag we're stopping
 
-	// free any mem owned here
-	while (work.claims != NULL) { // work list to free claimbufs
-		bounceclaim(work.claims);
+	// Free memory of Claims
+	for (c = work.claims; c != NULL; c = next) {
+		next = c->next;
+		free(c);
 	}
+
+	// End Mbuf Manager session
 	if (work.mbctl != NULL) {
 		if (rxhdr_mbuf != NULL) {
 			work.mbctl->freem(work.mbctl, rxhdr_mbuf);
