@@ -548,7 +548,7 @@ service_call(int service_number, _kernel_swi_regs *r, void *pw)
 _kernel_oserror *
 swi_handler(int swi_offset, _kernel_swi_regs *r, void *private_word)
 {
-	ClaimBuf *c, *nc, *thism, *next;
+	ClaimBuf *c, *nc;
 	_kernel_oserror *err;
 
 	UNUSED(private_word);
@@ -658,17 +658,17 @@ swi_handler(int swi_offset, _kernel_swi_regs *r, void *private_word)
 		}
 		if ((r->r[0] & 1) != 0) {
 			// release frame
-			for (thism = work.claims; thism != NULL; thism = thism->next) {
-				if ((thism->unit == r->r[1]) &&
-				    (thism->frame_type == GET_FRAMETYPE(r->r[2])) &&
-				    (thism->frame_level == GET_FRAMELEVEL(r->r[2])) &&
-				    (thism->address_level == r->r[3]) &&
-				    (thism->error_level == r->r[4]) &&
-				    (thism->pwp == (void *) r->r[5]) &&
-				    (thism->handler == r->r[6]))
+			for (c = work.claims; c != NULL; c = c->next) {
+				if ((c->unit == r->r[1]) &&
+				    (c->frame_type == GET_FRAMETYPE(r->r[2])) &&
+				    (c->frame_level == GET_FRAMELEVEL(r->r[2])) &&
+				    (c->address_level == r->r[3]) &&
+				    (c->error_level == r->r[4]) &&
+				    (c->pwp == (void *) r->r[5]) &&
+				    (c->handler == r->r[6]))
 				{
 					// we've found the claim, unlink it
-					bounceclaim(thism);
+					bounceclaim(c);
 					break;
 				}
 			}
@@ -742,11 +742,11 @@ swi_handler(int swi_offset, _kernel_swi_regs *r, void *private_word)
 		}
 		// now check all claims and set multicast or promiscuous as needed
 		work.flags = 0;
-		for (next = work.claims; next != NULL; next = next->next) {
-			if (next->address_level == AlMulticast) {
+		for (c = work.claims; c != NULL; c = c->next) {
+			if (c->address_level == AlMulticast) {
 				work.flags |= IFF_ALLMULTI;
 			}
-			if (next->address_level == AlPromiscuous) {
+			if (c->address_level == AlPromiscuous) {
 				work.flags |= IFF_PROMISC;
 			}
 		}
