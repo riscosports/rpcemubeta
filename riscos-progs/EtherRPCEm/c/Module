@@ -381,6 +381,44 @@ finalise(int fatal, int podule, void *pw)
 }
 
 /**
+ * Look for whether a Protocol Module has claimed this particular frame type
+ *
+ * @param frame_type Frame type of received frame (or length if IEEE)
+ * @return Pointer to Claim information, or NULL if not claimed by a Protocol Module
+ */
+static inline const ClaimBuf *
+find_protocol(int frame_type)
+{
+	const ClaimBuf *c;
+
+	if (frame_type <= 1500) {
+		// Interpret as IEEE length field - is IEEE claimed?
+		for (c = work.claims; c != NULL; c = c->next) {
+			if (c->frame_level == FRMLVL_IEEE) {
+				return c;
+			}
+		}
+
+	} else {
+		// Any Protocol Module wants this frame type, or claimed all frame types?
+		for (c = work.claims; c != NULL; c = c->next) {
+			if ((c->frame_type == frame_type) || (c->frame_level == FRMLVL_E2MONITOR)) {
+				return c;
+			}
+		}
+
+		// If no-one wants this frame type, any Protocol Module want unclaimed types?
+		for (c = work.claims; c != NULL; c = c->next) {
+			if (c->frame_level == FRMLVL_E2SINK) {
+				return c;
+			}
+		}
+	}
+
+	return NULL;
+}
+
+/**
  */
 _kernel_oserror *
 device_irq_handler(_kernel_swi_regs *r, void *pw)
@@ -402,6 +440,7 @@ device_irq_handler(_kernel_swi_regs *r, void *pw)
 	for (;;) {
 		rx_hdr *rxhdr;
 		int valid;
+		const ClaimBuf *c;
 
 		if (rxhdr_mbuf == NULL) {
 			rxhdr_mbuf = work.mbctl->alloc_s(work.mbctl, sizeof(rx_hdr), NULL);
@@ -427,68 +466,31 @@ device_irq_handler(_kernel_swi_regs *r, void *pw)
 		// Increment receive frames
 		work.st_rx_frames++;
 
-		{
-			// do stuff to make a new packet
-			const ClaimBuf *cb;
-			int AddrLevel = AlSpecific;
-			ClaimType Claim = NotClaimed;
-
-			for (cb = work.claims; cb != NULL; cb = cb->next) {
-				switch (cb->frame_level) {
-				case AdSpecific:
-					if ((AddrLevel <= AlNormal) &&
-					    (rxhdr->rx_frame_type == cb->frame_type) &&
-					    (AddrLevel <= cb->address_level))
-					{
-						Claim = ClaimSpecific;
-					}
-					break;
-				case AdMonitor:
-					if ((rxhdr->rx_frame_type > 1500) &&
-					    (AddrLevel <= cb->address_level))
-					{
-						Claim = ClaimMonitor;
-					}
-					break;
-				case AdIeee:
-					if (rxhdr->rx_frame_type < 1501) {
-						Claim = ClaimIEEE;
-					}
-					break;
-				case AdSink:
-					if (rxhdr->rx_frame_type > 1500) {
-						Claim = ClaimSink;
-					}
-					break;
-				default:
-					break;
-				}
-
-				if (Claim != NotClaimed) {
-					// someone wants it, so check further
-					rxhdr_mbuf->m_next = data_mbuf; // link them together
-					rxhdr_mbuf->m_list = 0; // this is needed
-					//data_mbuf->m_next = NULL;      // link them together
-					data_mbuf->m_list = 0; // this is needed
-					// at this point we dont need to check for safe mbuf
-					// as we've used the alloc routine that only allocs
-					// mbufs that actually are safe
-
-					// now build the rxhdr structure
-					rxhdr_mbuf->m_type = MT_HEADER;
-
-					// Call the Protocol Module
-					_kernel_irqs_on();
-					callrx(&work.base_dib, rxhdr_mbuf, cb->handler, cb->pwp);
-					_kernel_irqs_off();
-
-					// The protocol stack is now responsible for freeing the mbufs
-					rxhdr_mbuf = NULL;
-					data_mbuf = NULL;
-					break;
-				}
-			}
+		// Does any Protocol Module want this frame type?
+		if ((c = find_protocol(rxhdr->rx_frame_type)) == NULL) {
+			// No Protocol Module wants this frame
+			continue;
 		}
+
+		rxhdr_mbuf->m_next = data_mbuf; // link them together
+		rxhdr_mbuf->m_list = 0; // this is needed
+		//data_mbuf->m_next = NULL;      // link them together
+		data_mbuf->m_list = 0; // this is needed
+		// at this point we dont need to check for safe mbuf
+		// as we've used the alloc routine that only allocs
+		// mbufs that actually are safe
+
+		// now build the rxhdr structure
+		rxhdr_mbuf->m_type = MT_HEADER;
+
+		// Call the Protocol Module
+		_kernel_irqs_on();
+		callrx(&work.base_dib, rxhdr_mbuf, c->handler, c->pwp);
+		_kernel_irqs_off();
+
+		// The Protocol Module is now responsible for freeing the mbufs
+		rxhdr_mbuf = NULL;
+		data_mbuf = NULL;
 	}
 }
 
