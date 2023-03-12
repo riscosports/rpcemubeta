@@ -745,10 +745,10 @@ swi_handler(int swi_offset, _kernel_swi_regs *r, void *private_word)
 		// now check all claims and set multicast or promiscuous as needed
 		work.flags = 0;
 		for (c = work.claims; c != NULL; c = c->next) {
-			if (c->address_level == AlMulticast) {
+			if (c->address_level == ADDRLVL_MULTICAST) {
 				work.flags |= IFF_ALLMULTI;
 			}
-			if (c->address_level == AlPromiscuous) {
+			if (c->address_level == ADDRLVL_PROMISCUOUS) {
 				work.flags |= IFF_PROMISC;
 			}
 		}

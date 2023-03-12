@@ -21,25 +21,6 @@
 #include "mbuf_c.h"
 #include "DCI.h"
 
-
-
-
-// frame claims have 2 types of filter.. frametype field of mac (adtype)
-//  and frame dest address filtering (addresslevel)
-
-// adtype values
-#define AdSpecific      1        // only frames equal to frame given
-#define AdSink          2        // all unclaimed non IEEE frames
-#define AdMonitor       3        // ALL non IEEE frames
-#define AdIeee          4        // IEEE frames (frame # <=1500)
-// addresslevel filtering types
-#define AlSpecific      0        // only frames with our h/w address
-#define AlNormal        1        // ours and broadcast frames
-#define AlMulticast     2        // multicast frames too
-#define AlPromiscuous   3        // dont address match
-// useful working value
-typedef enum {NotClaimed,ClaimIEEE,ClaimSpecific,ClaimBC,ClaimMC,ClaimMonitor,ClaimSink } ClaimType;
-
 /// Claimed frame type
 typedef struct ClaimBuf ClaimBuf;
 struct ClaimBuf {
