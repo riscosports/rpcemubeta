@@ -1,0 +1,11 @@
+#ifndef ERRORS_H
+#define ERRORS_H
+
+#include <kernel.h>
+
+// Suggested DCI error messages (offset within the DCI error block)
+
+extern _kernel_oserror ERR_EINVAL;
+extern _kernel_oserror ERR_ENOTTY;
+
+#endif
