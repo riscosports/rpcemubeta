@@ -55,12 +55,6 @@ void callrx(Dib *dibaddr, struct mbuf *mbuf_chain, int handler, void *pwp);
 // versionof DCI supported
 #define DCIVersion 403
 
-static _kernel_oserror
-    ErrorNoUnit         = { 0x58cc3, "Unit not configured" },
-    ErrorBadClaim       = { 0x58cc4, "Illegal frame claim" },
-    ErrorAlreadyClaimed = { 0x58cc5, "frame already claimed" },
-    ErrorNoBuff         = { 0x58cc6, "No buffer space" };
-
 static workspace work;
 
 static const struct stats supported = {
@@ -310,7 +304,7 @@ initialise(const char *cmd_tail, int podule_base, void *pw)
 
 	// claim mbuf manager link
 	if ((work.mbctl = calloc(1, sizeof(dci4_mbctl))) == NULL) {
-		return &ErrorNoBuff;
+		return &ERR_ENOBUFS;
 	}
 
 	if ((err = open_mbuf_manager_session(work.mbctl)) != NULL) {
@@ -655,7 +649,7 @@ swi_handler(int swi_offset, _kernel_swi_regs *r, void *private_word)
 	case DCI4Filter:
 		if (r->r[1] != 0) {
 			// only unit 0 supported at present
-			return &ErrorNoUnit;
+			return &ERR_ENXIO;
 		}
 		if ((r->r[0] & 1) != 0) {
 			// release frame
@@ -680,7 +674,7 @@ swi_handler(int swi_offset, _kernel_swi_regs *r, void *private_word)
 
 			// frame_type must be zero if frame_level is not Specific
 			if (frame_level != FRMLVL_E2SPECIFIC && frame_type != 0) {
-				return &ErrorBadClaim;
+				return &ERR_EINVAL;
 			}
 
 			switch (frame_level) {
@@ -688,7 +682,7 @@ swi_handler(int swi_offset, _kernel_swi_regs *r, void *private_word)
 				// Make sure this Frame Type hasn't been claimed already
 				for (c = work.claims; c != NULL; c = c->next) {
 					if (c->frame_type == frame_type) {
-						return &ErrorAlreadyClaimed;
+						return &ERR_AlreadyClaimed;
 					}
 				}
 				break;
@@ -696,7 +690,7 @@ swi_handler(int swi_offset, _kernel_swi_regs *r, void *private_word)
 				// Make sure Sink hasn't been claimed already
 				for (c = work.claims; c != NULL; c = c->next) {
 					if (c->frame_level == FRMLVL_E2SINK) {
-						return &ErrorAlreadyClaimed;
+						return &ERR_AlreadyClaimed;
 					}
 				}
 				break;
@@ -704,7 +698,7 @@ swi_handler(int swi_offset, _kernel_swi_regs *r, void *private_word)
 				// Make sure there are no Ethernet 2.0 claims already
 				for (c = work.claims; c != NULL; c = c->next) {
 					if (c->frame_level != FRMLVL_IEEE) {
-						return &ErrorAlreadyClaimed;
+						return &ERR_AlreadyClaimed;
 					}
 				}
 				break;
@@ -712,17 +706,17 @@ swi_handler(int swi_offset, _kernel_swi_regs *r, void *private_word)
 				// Make sure there is no IEEE claim already
 				for (c = work.claims; c != NULL; c = c->next) {
 					if (c->frame_level == FRMLVL_IEEE) {
-						return &ErrorAlreadyClaimed;
+						return &ERR_AlreadyClaimed;
 					}
 				}
 				break;
 			default:
-				return &ErrorBadClaim;
+				return &ERR_EINVAL;
 			}
 
 			// Allocate and initialise new Claim
 			if ((nc = calloc(1, sizeof(ClaimBuf))) == NULL) {
-				return &ErrorNoBuff;
+				return &ERR_ENOBUFS;
 			}
 			nc->flags = r->r[0] & 1;
 			nc->unit = r->r[1];

@@ -43,6 +43,7 @@ h.ModHdr: cmhg.ModHdr
 
 # Dynamic dependencies:
 o.intveneer: s.intveneer
+o.errors: s.errors
 o.Module:	c.Module
 o.Module:	C:h.kernel
 o.Module:	C:h.swis
