@@ -22,6 +22,7 @@
 //  Modifications for RPCEmu (C) 2007 Alex Waugh
 
 #include <limits.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -49,7 +50,7 @@
 _kernel_oserror *networktxswi(struct mbuf *mbufs, int dest, int src, int frametype);
 _kernel_oserror *networkrxswi(struct mbuf *mbuf, rx_hdr *hdr, int *valid);
 _kernel_oserror *networkirqswi(volatile int *irqstatus);
-_kernel_oserror *networkhwaddrswi(unsigned char *hwaddr);
+void network_swi_hwaddr(uint8_t *hwaddr);
 void callrx(Dib *dibaddr, struct mbuf *mbuf_chain, int handler, void *pwp);
 
 // versionof DCI supported
@@ -298,7 +299,7 @@ initialise(const char *cmd_tail, int podule_base, void *pw)
 
 	memset(&work, 0, sizeof(work));
 
-	networkhwaddrswi(work.dev_addr);
+	network_swi_hwaddr(work.dev_addr);
 
 	work.pwp = pw;
 
