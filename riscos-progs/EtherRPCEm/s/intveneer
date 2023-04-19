@@ -54,16 +54,14 @@ networkrxswi
 	STRNE	a2, [v1]
 	LDMFD	sp!, {v1, pc}
 
-	EXPORT	|networkirqswi|
-networkirqswi
-	STMFD	sp!,{lr}
-	MOV	a3, a1
-	LDR	a2, =errmess
-	MOV	a1, #2
-	SWI	&56ac4
-	TST	a1, #0
-	LDRNE	a1, =errbuf
-	LDMFD	sp!, {pc}
+
+	EXPORT	|network_swi_irq|
+network_swi_irq
+	mov	a3, a1
+	mov	a2, #0
+	mov	a1, #2
+	swi	0x56ac4
+	mov	pc, lr
 
 
 	EXPORT	|network_swi_hwaddr|
