@@ -281,6 +281,8 @@ network_nat_tx(uint32_t errbuf, uint32_t mbufs, uint32_t dest, uint32_t src, uin
 	*buf++ = (uint8_t) frametype;
 
 	packet_length = HEADERLEN;
+
+	// Copy the mbuf chain as the payload
 	while (mbufs != 0) {
 		memcpytohost(&txb, mbufs, sizeof(struct mbuf));
 		packet_length += txb.m_len;
@@ -304,12 +306,12 @@ network_nat_tx(uint32_t errbuf, uint32_t mbufs, uint32_t dest, uint32_t src, uin
 /**
  * Receive data from the network
  *
- * @param errbuf
- * @param mbuf
- * @param rxhdr
- * @param data_avail
+ * @param errbuf     Address of buffer to return error string
+ * @param mbuf       Address of mbuf to hold received payload
+ * @param rxhdr      Address of mbuf to hold received header
+ * @param data_avail Address of flag to return indication of data available
  *
- * @return
+ * @return errbuf on error, else zero
  */
 uint32_t
 network_nat_rx(uint32_t errbuf, uint32_t mbuf, uint32_t rxhdr, uint32_t *data_avail)
