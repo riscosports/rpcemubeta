@@ -264,7 +264,7 @@ uint32_t
 network_nat_tx(uint32_t errbuf, uint32_t mbufs, uint32_t dest, uint32_t src, uint32_t frametype)
 {
 	uint8_t *buf = nat.buffer;
-	struct mbuf txb;
+	struct ro_mbuf_part txb;
 	uint32_t packet_length;
 
 	memcpytohost(buf, dest, 6);
@@ -284,7 +284,7 @@ network_nat_tx(uint32_t errbuf, uint32_t mbufs, uint32_t dest, uint32_t src, uin
 
 	// Copy the mbuf chain as the payload
 	while (mbufs != 0) {
-		memcpytohost(&txb, mbufs, sizeof(struct mbuf));
+		memcpytohost(&txb, mbufs, sizeof(txb));
 		packet_length += txb.m_len;
 		if (packet_length > sizeof(nat.buffer)) {
 			strcpyfromhost(errbuf, "RPCEmu: Packet too large to send");
@@ -316,7 +316,7 @@ network_nat_tx(uint32_t errbuf, uint32_t mbufs, uint32_t dest, uint32_t src, uin
 uint32_t
 network_nat_rx(uint32_t errbuf, uint32_t mbuf, uint32_t rxhdr, uint32_t *data_avail)
 {
-	struct mbuf rxb;
+	struct ro_mbuf_part rxb;
 	struct rx_hdr hdr;
 	size_t packet_length;
 
