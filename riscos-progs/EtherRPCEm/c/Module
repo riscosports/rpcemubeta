@@ -37,7 +37,6 @@
 #include "Defines.h"
 #include "errors.h"
 #include "Structs.h"
-#include "DCI.h"
 
 /// Directly include a binary version of the AutoSense file (as a C array)
 #include "AutoSense.c"
@@ -48,7 +47,7 @@
 			 INQ_HWADDRVALID | INQ_SOFTHWADDR | INQ_HASSTATS | INQ_HASESTATS)
 
 _kernel_oserror *networktxswi(struct mbuf *mbufs, int dest, int src, int frametype);
-_kernel_oserror *networkrxswi(struct mbuf *mbuf, rx_hdr *hdr, int *valid);
+_kernel_oserror *networkrxswi(struct mbuf *mbuf, RxHdr *hdr, int *valid);
 void network_swi_irq(volatile int *irqstatus);
 void network_swi_hwaddr(uint8_t *hwaddr);
 void callrx(Dib *dibaddr, struct mbuf *mbuf_chain, int handler, void *pwp);
@@ -432,12 +431,12 @@ device_irq_handler(_kernel_swi_regs *r, void *pw)
 	sema = 1;
 
 	for (;;) {
-		rx_hdr *rxhdr;
+		RxHdr *rxhdr;
 		int valid;
 		const ClaimBuf *c;
 
 		if (rxhdr_mbuf == NULL) {
-			rxhdr_mbuf = work.mbctl->alloc_s(work.mbctl, sizeof(rx_hdr), NULL);
+			rxhdr_mbuf = work.mbctl->alloc_s(work.mbctl, sizeof(RxHdr), NULL);
 		}
 		if (data_mbuf == NULL) {
 			data_mbuf = work.mbctl->alloc_s(work.mbctl, 1500, NULL);
@@ -449,8 +448,8 @@ device_irq_handler(_kernel_swi_regs *r, void *pw)
 			return NULL;
 		}
 
-		rxhdr = (rx_hdr *) (((char *) rxhdr_mbuf) + rxhdr_mbuf->m_off);
-		rxhdr_mbuf->m_len = sizeof(rx_hdr);
+		rxhdr = (RxHdr *) (((char *) rxhdr_mbuf) + rxhdr_mbuf->m_off);
+		rxhdr_mbuf->m_len = sizeof(RxHdr);
 		if (networkrxswi(data_mbuf, rxhdr, &valid) || !valid) {
 			// No data
 			sema = 0;

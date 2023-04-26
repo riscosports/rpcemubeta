@@ -25,6 +25,7 @@ EtherRPCEm: $(OBJS)
 clean:
 	remove c.AutoSense
 	remove h.ModHdr
+	remove o.errors
 	remove o.intveneer
 	remove o.ModHdr
 	remove o.Module
@@ -32,13 +33,15 @@ clean:
 c.AutoSense: AutoSense.EtherRPCEm
 	bin2c -t "const unsigned char" -n autosense_file $? $@
 
+o.Module: c.AutoSense
+
 # A dependency with dummy action, because the cmhg file produces two
 # outputs (h.ModHdr and o.ModHdr)
 h.ModHdr: cmhg.ModHdr
 	|echo
 
-@.o.ModHdr:   @.cmhg.ModHdr
-        cmhg $(cmhgflags)  @.cmhg.ModHdr -o @.o.ModHdr
+o.ModHdr: cmhg.ModHdr
+	cmhg $(CMHGflags) cmhg.ModHdr -o o.ModHdr
 
 
 # Dynamic dependencies:
@@ -53,7 +56,6 @@ o.Module:	h.Defines
 o.Module:	h.errors
 o.Module:	C:h.kernel
 o.Module:	h.Structs
+o.Module:	h.dcistructs
 o.Module:	h.mbuf_c
-o.Module:	h.DCI
-o.Module:	h.DCI
 o.Module:	c.AutoSense

@@ -18,8 +18,8 @@
 //  The code in this file is (C) 2003 J Ballance as far as
 //  the above GPL permits
 
+#include "dcistructs.h"
 #include "mbuf_c.h"
-#include "DCI.h"
 
 /// Claimed frame type
 typedef struct ClaimBuf ClaimBuf;
