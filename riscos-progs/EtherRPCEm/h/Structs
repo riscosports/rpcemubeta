@@ -54,6 +54,7 @@ typedef struct {
 
 	// Working copy of network statistics
 	unsigned long	st_tx_frames;
+	unsigned long	st_unwanted_frames;
 	unsigned long	st_rx_frames;
 } workspace;
 

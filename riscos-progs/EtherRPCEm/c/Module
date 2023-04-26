@@ -84,7 +84,7 @@ static const struct stats supported = {
 	0,		// st_overlong_frames
 	0,		// st_jabbers
 	0,		// st_late_events
-	0,		// st_unwanted_frames
+	ULONG_MAX,	// st_unwanted_frames
 	ULONG_MAX,	// st_rx_frames
 	0,		// st_rx_bytes
 	ULONG_MAX,	// st_rx_general_errors
@@ -462,6 +462,7 @@ device_irq_handler(_kernel_swi_regs *r, void *pw)
 		// Does any Protocol Module want this frame type?
 		if ((c = find_protocol(rxhdr->rx_frame_type)) == NULL) {
 			// No Protocol Module wants this frame
+			work.st_unwanted_frames++;
 			continue;
 		}
 
@@ -770,6 +771,7 @@ swi_handler(int swi_offset, _kernel_swi_regs *r, void *private_word)
 			                        ST_STATUS_FULL_DUPLEX;
 			stats->st_link_polarity = ST_LINK_POLARITY_CORRECT;
 			stats->st_tx_frames = work.st_tx_frames;
+			stats->st_unwanted_frames = work.st_unwanted_frames;
 			stats->st_rx_frames = work.st_rx_frames;
 		} else {
 			// indicate what's supported
@@ -825,6 +827,8 @@ command_handler(const char *arg_string, int argc, int cmd_no, void *pw)
 
 		printf("Packets sent        : %lu\n", work.st_tx_frames);
 		printf("Packets received    : %lu\n", work.st_rx_frames);
+
+		printf("Undelivered packets : %lu\n", work.st_unwanted_frames);
 
 		printf("Filter clients:\n");
 		for (c = work.claims; c != NULL; c = c->next) {
