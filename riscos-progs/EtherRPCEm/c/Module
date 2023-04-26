@@ -44,7 +44,7 @@
 #define  UNUSED(x)              (x = x)
 
 #define INQUIRE_FLAGS	(INQ_MULTICAST | INQ_PROMISCUOUS | INQ_RXERRORS | \
-			 INQ_HWADDRVALID | INQ_SOFTHWADDR | INQ_HASSTATS | INQ_HASESTATS)
+			 INQ_HWADDRVALID | INQ_SOFTHWADDR | INQ_HASSTATS)
 
 _kernel_oserror *networktxswi(struct mbuf *mbufs, int dest, int src, int frametype);
 _kernel_oserror *networkrxswi(struct mbuf *mbuf, RxHdr *hdr, int *valid);
