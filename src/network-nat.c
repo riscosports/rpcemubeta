@@ -323,7 +323,8 @@ network_nat_rx(uint32_t errbuf, uint32_t mbuf, uint32_t rxhdr, uint32_t *data_av
 	*data_avail = 0;
 
 	if (nat.buffer_len == 0) {
-		return errbuf;
+		// No data
+		return 0;
 	}
 
 	memset(&hdr, 0, sizeof(hdr));
@@ -345,8 +346,7 @@ network_nat_rx(uint32_t errbuf, uint32_t mbuf, uint32_t rxhdr, uint32_t *data_av
 		memcpytohost(&rxb, mbuf, sizeof(rxb));
 
 		if (packet_length > rxb.m_inilen) {
-			fprintf(stderr, "\tmbuff too small for received packet\n");
-			strcpyfromhost(errbuf, "RPCEmu: Mbuf too small for received packet");
+			// Mbuf too small for received packet
 			return errbuf;
 		}
 

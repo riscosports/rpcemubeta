@@ -300,7 +300,7 @@ network_plt_rx(uint32_t errbuf, uint32_t mbuf, uint32_t rxhdr, uint32_t *data_av
 	*data_avail = 0;
 
 	if (tunfd == -1) {
-		strcpyfromhost(errbuf, "RPCEmu: Networking not available");
+		// Networking not available
 		return errbuf;
 	}
 
@@ -309,9 +309,10 @@ network_plt_rx(uint32_t errbuf, uint32_t mbuf, uint32_t rxhdr, uint32_t *data_av
 	packet_length = read(tunfd, buffer, sizeof(buffer));
 	if (packet_length == -1) {
 		if (errno == EAGAIN) {
+			// No data
 			return 0;
 		}
-		strcpyfromhost(errbuf, strerror(errno));
+		// Other receive error
 		return errbuf;
 	}
 
@@ -330,7 +331,7 @@ network_plt_rx(uint32_t errbuf, uint32_t mbuf, uint32_t rxhdr, uint32_t *data_av
 		memcpytohost(&rxb, mbuf, sizeof(rxb));
 
 		if ((size_t) packet_length > rxb.m_inilen) {
-			strcpyfromhost(errbuf, "RPCEmu: Mbuf too small for received packet");
+			// Mbuf too small for received packet
 			return errbuf;
 		}
 
