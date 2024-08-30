@@ -207,3 +207,5 @@ CONFIG(debug, debug|release) {
 }
 
 LIBS +=
+
+RESOURCES +=	resources.qrc
