@@ -103,7 +103,7 @@ network_rom_init(void)
 		fatal("Out of Memory");
 	}
 
-	romdata[0] = 0; // Acorn comformant card, not requesting FIQ, not requesting interupt, EcID = 0 = EcID is extended (8 bytes)
+	romdata[0] = 0; // Acorn comformant card, EcID = 0 = EcID is extended (8 bytes)
 	romdata[1] = 3; // Interrupt status has been relocated, chunk directories present, byte access
 	romdata[2] = 0; // Mandatory
 	romdata[3] = 3; // Product type, low,  Ethernet
@@ -149,6 +149,28 @@ readpoduleetherrpcem(podule *p, PoduleIoType io_type, uint32_t addr)
 		return 0x00;
 	}
 	return 0xff;
+}
+
+/**
+ * Raise an interrupt request from the network podule.
+ */
+void
+network_irq_raise(void)
+{
+	if (network_poduleinfo != NULL) {
+		podule_irq_raise(network_poduleinfo);
+	}
+}
+
+/**
+ * Clear an interrupt request from the network podule.
+ */
+void
+network_irq_lower(void)
+{
+	if (network_poduleinfo != NULL) {
+		podule_irq_lower(network_poduleinfo);
+	}
 }
 
 /**
@@ -351,14 +373,14 @@ network_swi(uint32_t r0, uint32_t r1, uint32_t r2, uint32_t r3, uint32_t r4, uin
 	rpclog("Network SWI r0 = %d, r2 = %08x\n", r0, r2);
 #endif
 	switch (r0) {
-	case 0:
+	case 0: // Transmit
 		if (config.network_type == NetworkType_NAT) {
 			*retr0 = network_nat_tx(r1, r2, r3, r4, r5);
 		} else {
 			*retr0 = network_plt_tx(r1, r2, r3, r4, r5);
 		}
 		break;
-	case 1:
+	case 1: // Receive
 		if (config.network_type == NetworkType_NAT) {
 			*retr0 = network_nat_rx(r1, r2, r3, retr1);
 		} else {
@@ -374,16 +396,14 @@ network_swi(uint32_t r0, uint32_t r1, uint32_t r2, uint32_t r3, uint32_t r4, uin
 		*retr0 = 0;
 		break;
 	case 3:
-		if (network_poduleinfo) {
-			if (r2 != 0) {
-				podule_irq_raise(network_poduleinfo);
-			} else {
-				podule_irq_lower(network_poduleinfo);
-			}
+		if (r2 != 0) {
+			network_irq_raise();
+		} else {
+			network_irq_lower();
 		}
 		*retr0 = 0;
 		break;
-	case 4:
+	case 4: // Hardware address
 		memcpyfromhost(r2, network_hwaddr, sizeof(network_hwaddr));
 		*retr0 = 0;
 		break;

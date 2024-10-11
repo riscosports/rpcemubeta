@@ -41,6 +41,9 @@ void network_init(void);
 void network_reset(void);
 
 /* Functions shared between each platform, in network.c */
+void network_irq_raise(void);
+void network_irq_lower(void);
+
 void memcpytohost(void *dest, uint32_t src, uint32_t len);
 void memcpyfromhost(uint32_t dest, const void *source, uint32_t len);
 void strcpyfromhost(uint32_t dest, const char *source);

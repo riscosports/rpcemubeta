@@ -113,7 +113,7 @@ slirp_output(void *opaque, const uint8_t *pkt, int pkt_len)
 	nat.buffer_len = pkt_len;
 
 	mem_write8(nat.irq_status, 1);
-	podule_irq_raise(network_poduleinfo);
+	network_irq_raise();
 }
 
 /**
@@ -218,6 +218,7 @@ void
 network_nat_reset(void)
 {
 	nat.irq_status = 0;
+	network_irq_lower();
 	nat.buffer_len = 0;
 }
 

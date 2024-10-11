@@ -353,9 +353,7 @@ sig_io(int sig)
 	NOT_USED(sig);
 
 	mem_write8(irqstatus, 1);
-	if (network_poduleinfo != NULL) {
-		podule_irq_raise(network_poduleinfo);
-	}
+	network_irq_raise();
 }
 
 /**
