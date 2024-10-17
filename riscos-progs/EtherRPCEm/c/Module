@@ -91,9 +91,6 @@ static const struct stats supported = {
 	{ 0, 0, 0, 0, 0, 0, 0, 0 },	// st_last_src_addr
 };
 
-// Status word set to 1 by the emulated hardware when an IRQ generated
-volatile int irqstatus = 0;
-
 // mbufs waiting to be used, to save frequent allocation and deallocation
 static struct mbuf *rxhdr_mbuf = NULL;
 static struct mbuf *data_mbuf = NULL;
@@ -289,12 +286,11 @@ _kernel_oserror *
 initialise(const char *cmd_tail, int podule_base, void *pw)
 {
 	_kernel_oserror *err;
-	int ribuff[2] = { 0, 0 };
-	unsigned char *PodMaskAddr;
-	unsigned char PodMask;
+	int ribuff[2];
+	uint8_t *PodMaskAddr;
+	uint8_t PodMask;
 
 	UNUSED(cmd_tail);
-	UNUSED(podule_base);
 
 	memset(&work, 0, sizeof(work));
 
@@ -313,24 +309,26 @@ initialise(const char *cmd_tail, int podule_base, void *pw)
 
 	InitChip(pw);
 
-	err = _swix(Podule_ReadInfo, _INR(0,3), 0x18000, ribuff, sizeof(ribuff), 0);
+	err = _swix(OS_ClaimDeviceVector, _INR(0,4), 13, device_irq, pw, podule_base, 1);
 	if (err) {
 		return err;
 	}
 
-	PodMaskAddr = (unsigned char *) ribuff[0]; // IOC irq reg
-	PodMask = (unsigned char) ribuff[1]; // IOC irq mask for pod
-
-	err = _swix(OS_ClaimDeviceVector, _INR(0,4), 13, device_irq, pw, &irqstatus, 1);
+	// Enable Podule IRQs
+	err = _swix(Podule_ReadInfo, _INR(0,3), (1 << 16) | (1 << 15), ribuff, sizeof(ribuff), podule_base);
 	if (err) {
 		return err;
 	}
+
+	PodMaskAddr = (uint8_t *) ribuff[0]; // Pointer to location to enable Podule IRQs
+	PodMask = (uint8_t) ribuff[1]; // Bit mask to enable Podule IRQs
 
 	_kernel_irqs_off();
-	*PodMaskAddr |= PodMask; // set the pod irq
+	*PodMaskAddr |= PodMask; // Enable podule IRQs
 	_kernel_irqs_on();
 
-	network_swi_irq(&irqstatus);
+	// The value passed here no longer matters, provided it's non-zero
+	network_swi_irq((int *) 1);
 
 	return NULL;
 }
@@ -347,7 +345,7 @@ finalise(int fatal, int podule, void *pw)
 	_kernel_irqs_off();
 
 	network_swi_irq(0);
-	_swix(OS_ReleaseDeviceVector, _INR(0,4), 13, device_irq, pw, &irqstatus, 1);
+	_swix(OS_ReleaseDeviceVector, _INR(0,4), 13, device_irq, pw, podule, 1);
 
 	SendServiceDCIDriverStatus(DCIDRIVER_DYING); // flag we're stopping
 
@@ -420,7 +418,6 @@ device_irq_handler(_kernel_swi_regs *r, void *pw)
 	_kernel_swi_regs rg;
 
 	// Clear interrupt
-	irqstatus = 0;
 	rg.r[0] = 3;
 	rg.r[2] = 0;
 	_kernel_swi(0x56ac4, &rg, &rg);

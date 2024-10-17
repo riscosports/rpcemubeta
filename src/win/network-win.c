@@ -179,7 +179,6 @@ sig_io(int sig)
 	NOT_USED(sig);
 
 	if (irqstatus != 0) {
-		mem_write8(irqstatus, 1);
 		network_irq_raise();
 	}
 }

@@ -112,6 +112,8 @@ network_rom_init(void)
 	romdata[6] = 0; // Manufacturer, high, Acorn UK
 	romdata[7] = 0; // Reserved
 
+	romdata[12] = 1; // IRQ Status Bit Mask
+
 	memcpy(romdata + filebase, description, sizeof(description));
 	makechunk(0xf5, filebase, sizeof(description)); // 0xf5 = Device Data, Description
 	filebase += (sizeof(description) + 3) & ~3u;
@@ -141,12 +143,19 @@ readpoduleetherrpcem(podule *p, PoduleIoType io_type, uint32_t addr)
 {
 	NOT_USED(p);
 
-	if (io_type == PODULE_IO_TYPE_EASI && (poduleromsize > 0)) {
+	if (io_type == PODULE_IO_TYPE_EASI) {
 		addr = (addr & 0xffffff) >> 2;
 		if (addr < poduleromsize) {
 			return romdata[addr];
 		}
 		return 0x00;
+	} else if (io_type == PODULE_IO_TYPE_IOC) {
+		if ((addr & 0x3ffc) == 0) {
+			// Interrupt status
+			return 0xfa | (p->irq ? 1 : 0);
+		} else {
+			return 0xff;
+		}
 	}
 	return 0xff;
 }
