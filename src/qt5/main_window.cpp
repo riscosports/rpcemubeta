@@ -116,6 +116,14 @@ MainDisplay::mouseReleaseEvent(QMouseEvent *event)
 }
 
 void
+MainDisplay::wheelEvent(QWheelEvent *event)
+{
+	const int dy = event->angleDelta().y();
+
+	emit this->emulator.mouse_wheel_signal(dy);
+}
+
+void
 MainDisplay::paintEvent(QPaintEvent *event)
 {
 	QPainter painter(this);

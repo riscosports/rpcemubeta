@@ -47,6 +47,10 @@
 #include "network.h"
 #include "network-nat.h"
 
+extern "C" {
+extern void podulerom_mouse_wheel_change(int dy);
+}
+
 #if defined(Q_OS_WIN32)
 #include "cdrom-ioctl.h"
 
@@ -500,6 +504,7 @@ Emulator::Emulator()
 	connect(this, &Emulator::mouse_move_relative_signal, this, &Emulator::mouse_move_relative);
 	connect(this, &Emulator::mouse_press_signal, this, &Emulator::mouse_press);
 	connect(this, &Emulator::mouse_release_signal, this, &Emulator::mouse_release);
+	connect(this, &Emulator::mouse_wheel_signal, this, &Emulator::mouse_wheel);
 
 	// Signals from user GUI interactions to control parts of the emulator
 	connect(this, &Emulator::reset_signal, this, &Emulator::reset);
@@ -710,6 +715,17 @@ void
 Emulator::mouse_release(int buttons)
 {
 	mouse_mouse_release(buttons);
+}
+
+/**
+ * Mouse wheel changed
+ *
+ * @param dy Change in mouse wheel position
+ */
+void
+Emulator::mouse_wheel(int dy)
+{
+	podulerom_mouse_wheel_change(dy);
 }
 
 /**
