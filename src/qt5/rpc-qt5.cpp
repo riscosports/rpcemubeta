@@ -418,6 +418,15 @@ rpcemu_idle_process_events(void)
 	emulator->idle_process_events();
 }
 
+/**
+ * Helper function to allow reading of the nanosecond timer
+ */
+uint64_t
+rpcemu_nsec_timer_ticks(void)
+{
+	return (uint64_t) emulator->get_elapsed_timer();
+}
+
 } // extern "C"
 
 /**
@@ -529,6 +538,8 @@ Emulator::Emulator()
 	connect(this, &Emulator::nat_rule_add_signal, this, &Emulator::nat_rule_add);
 	connect(this, &Emulator::nat_rule_edit_signal, this, &Emulator::nat_rule_edit);
 	connect(this, &Emulator::nat_rule_remove_signal, this, &Emulator::nat_rule_remove);
+
+	elapsed_timer.start();
 }
 
 /**
@@ -542,8 +553,6 @@ Emulator::mainemuloop()
 
 	iomd_timer_next = (qint64) iomd_timer_interval; // Time after which the IOMD timer should trigger
 	video_timer_next = (qint64) video_timer_interval;
-
-	elapsed_timer.start();
 
 	unsigned network_nat_rate = 0;
 
@@ -567,7 +576,7 @@ Emulator::mainemuloop()
 		// If we have passed the time the IOMD timer event should occur, trigger it
 		if (elapsed >= iomd_timer_next) {
 			iomd_timer_count.fetchAndAddRelease(1);
-			gentimerirq();
+			gentimerirq(elapsed);
 			iomd_timer_next += (qint64) iomd_timer_interval;
 		}
 
@@ -616,7 +625,7 @@ Emulator::idle_process_events()
 	// If we have passed the time the IOMD timer event should occur, trigger it
 	if (elapsed >= iomd_timer_next) {
 		iomd_timer_count.fetchAndAddRelease(1);
-		gentimerirq();
+		gentimerirq(elapsed);
 		iomd_timer_next += (qint64) iomd_timer_interval;
 	}
 

@@ -43,6 +43,8 @@ public:
 
 	void idle_process_events();
 
+	int64_t get_elapsed_timer() const { return elapsed_timer.nsecsElapsed(); }
+
 signals:
 	void finished();
 
