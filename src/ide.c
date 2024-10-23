@@ -340,10 +340,13 @@ ide_next_sector(void)
 static void
 ide_image_set_spt_hpc_skip512(FILE *fh, int d)
 {
+	int log2_sec_size;
+
 	ide.skip512[d] = 0;
 
 	// Check Wrong Offset first
-	fseeko64(fh, 0xfc1, SEEK_SET);
+	fseeko64(fh, 0xfc0, SEEK_SET);
+	log2_sec_size = getc(ide.hdfile[d]);
 	ide.spt[d] = getc(ide.hdfile[d]);
 	ide.hpc[d] = getc(ide.hdfile[d]);
 
@@ -351,7 +354,8 @@ ide_image_set_spt_hpc_skip512(FILE *fh, int d)
 	    || (ide.hpc[d] == 0 || ide.hpc[d] == EOF))
 	{
 		// Check the correct offset
-		fseeko64(ide.hdfile[d], 0xdc1, SEEK_SET);
+		fseeko64(ide.hdfile[d], 0xdc0, SEEK_SET);
+		log2_sec_size = getc(ide.hdfile[d]);
 		ide.spt[d] = getc(ide.hdfile[d]);
 		ide.hpc[d] = getc(ide.hdfile[d]);
 		if ((ide.spt[d] == 0 || ide.spt[d] == EOF)
@@ -365,7 +369,8 @@ ide_image_set_spt_hpc_skip512(FILE *fh, int d)
 	} else {
 		ide.skip512[d] = 1;
 	}
-	rpclog("IDE: drive %d: spt %d, hpc %d\n", d, ide.spt[d], ide.hpc[d]);
+	rpclog("IDE: drive %d: log2_sec_size %d, spt %d, hpc %d\n",
+	    d, log2_sec_size, ide.spt[d], ide.hpc[d]);
 }
 
 /**
