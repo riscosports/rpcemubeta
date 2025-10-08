@@ -106,7 +106,7 @@ config_load(Config * config)
 
 	snprintf(filename, sizeof(filename), "%srpc.cfg", rpcemu_get_datadir());
 
-	QSettings settings("rpc.cfg", QSettings::IniFormat);
+	QSettings settings(filename, QSettings::IniFormat);
 
 	/* Copy the contents of the configfile to the log */
 	QStringList keys = settings.childKeys();
@@ -265,7 +265,7 @@ config_save(Config *config)
 
 	snprintf(filename, sizeof(filename), "%srpc.cfg", rpcemu_get_datadir());
 
-	QSettings settings("rpc.cfg", QSettings::IniFormat);
+	QSettings settings(filename, QSettings::IniFormat);
 	settings.clear();
 
 	char s[256];
