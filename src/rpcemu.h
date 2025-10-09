@@ -90,7 +90,7 @@ typedef enum {
 } NetworkType;
 
 /** Selection of models that the emulator can emulate,
-  must be kept in sync with models[] array in rpcemu.c
+  must be kept in sync with models[] array in rpcemu-models.c
   the size of model_selection gui.c must be Model_MAX */
 typedef enum {
 	Model_RPCARM610,
@@ -147,6 +147,7 @@ typedef struct {
 	uint32_t        i2c_devices;    /**< Bitfield of devices on the I2C bus */
 } Model_Details;
 
+/* In rpcemu-models.c */
 extern const Model_Details models[]; /**< array of details of models the emulator can emulate */
 
 /** Structure to hold hardware details of the current model being emulated
