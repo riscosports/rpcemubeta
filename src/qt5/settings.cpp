@@ -29,6 +29,8 @@ config_nat_rules_load(QSettings &settings)
 {
 	const int size = settings.beginReadArray("nat_port_forward_rules");
 
+	memset(port_forward_rules, 0, sizeof(PortForwardRule) * MAX_PORT_FORWARDS);
+
 	for (int i = 0; i < size; i++) {
 		PortForwardRule rule;
 

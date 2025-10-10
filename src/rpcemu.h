@@ -29,6 +29,7 @@
 #include <string.h>
 
 #include "iomd.h"
+#include "rpcemu-nat-rules.h"
 #include "superio.h"
 
 #ifdef __cplusplus
@@ -161,26 +162,6 @@ typedef struct {
 } Machine;
 
 extern Machine machine; /**< The details of the current model being emulated */
-
-typedef enum {
-	PORT_FORWARD_NONE = 0,		///< No valid rule stored
-	PORT_FORWARD_TCP  = 1,		///< A TCP rule
-	PORT_FORWARD_UDP  = 2,		///< A UDP rule
-	// All other values reserved
-} PortForwardType;
-
-typedef struct {
-	PortForwardType	type;		///< Which type of rule to use, or NONE for no rule
-	uint16_t	emu_port;	///< Port to connect to on the emulated machine
-	uint16_t	host_port;	///< Port to connect to on the host machine
-} PortForwardRule;
-
-#define MAX_PORT_FORWARDS 32
-
-extern PortForwardRule port_forward_rules[MAX_PORT_FORWARDS]; ///< Port forward rules accross the NAT
-
-extern void rpcemu_nat_forward_add(PortForwardRule rule);
-extern void rpcemu_nat_forward_remove(PortForwardRule rule);
 
 extern uint32_t inscount;
 

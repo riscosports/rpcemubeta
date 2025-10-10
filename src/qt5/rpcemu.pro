@@ -36,6 +36,7 @@ HEADERS =	../superio.h \
 		../disc_hfe.h \
 		../disc_mfm_common.h \
 		../rpcemu.h \
+		../rpcemu-nat-rules.h \
 		main_window.h \
 		configure_dialog.h \
 		about_dialog.h \
@@ -56,6 +57,7 @@ SOURCES =	../superio.c \
 		../romload.c \
 		../rpcemu.c \
 		../rpcemu-models.c \
+		../rpcemu-nat-rules.c \
 		../sound.c \
 		../vidc20.c \
 		../podules.c \
