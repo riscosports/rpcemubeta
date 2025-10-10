@@ -275,10 +275,14 @@ rpcemu_log_information(void)
 void
 rpcemu_prestart(void)
 {
+	Model model;
+
 	/* On startup log additional information about the build and environment */
 	rpcemu_log_information();
 
-	config_load(&config);
+	config_load(&config, &model);
+
+	rpcemu_model_changed(model);
 }
 
 /**
@@ -464,7 +468,7 @@ endrpcemu(void)
         free(ram01);
         free(rom);
         savecmos();
-        config_save(&config);
+        config_save(&config, machine.model);
 
 #ifdef RPCEMU_NETWORKING
 	network_reset();
@@ -631,7 +635,7 @@ rpcemu_config_apply_new_settings(Config *new_config, Model new_model)
 	memcpy(&config, new_config, sizeof(Config));
 
 	// Save the settings to the rpc.cfg file
-	config_save(&config);
+	config_save(&config, machine.model);
 
 	if(sound_changed) {
 		if(config.soundenabled) {

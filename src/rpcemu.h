@@ -270,8 +270,8 @@ extern void resetfpa(void);
 extern void fpaopcode(uint32_t opcode);
 
 /* settings.cpp */
-extern void config_load(Config *config);
-extern void config_save(Config *config);
+extern void config_load(Config *config, Model *model);
+extern void config_save(const Config *config, Model model);
 
 #ifdef __cplusplus
 } /* extern "C" */

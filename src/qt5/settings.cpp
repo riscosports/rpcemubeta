@@ -94,14 +94,14 @@ config_nat_rules_save(QSettings &settings)
  *
  * Called on program startup.
  *
- * @param config
+ * @param config filled in with config details
+ * @param model filled in with chosen machine model
  */
 void
-config_load(Config * config)
+config_load(Config *config, Model *model)
 {
 	char filename[512];
 	const char *p;
-	Model model;
 	int i;
 	QString sText;
 	QByteArray ba;
@@ -148,25 +148,23 @@ config_load(Config * config)
 	sText = settings.value("model", "").toString();
 	ba = sText.toUtf8();
 	p = ba.data();
-	model = Model_RPCARM710;
+	*model = Model_RPCARM710;
 	if (p != NULL) {
 		for (i = 0; i < Model_MAX; i++) {
 			if (strcasecmp(p, models[i].name_config) == 0) {
-				model = (Model) i;
+				*model = (Model) i;
 				break;
 			}
 		}
 	}
 
-	rpcemu_model_changed(model);
-
 	/* A7000 and A7000+ have no VRAM */
-	if (model == Model_A7000 || model == Model_A7000plus) {
+	if (*model == Model_A7000 || *model == Model_A7000plus) {
 		config->vram_size = 0;
 	}
 
 	/* If Phoebe, override some settings */
-	if (model == Model_Phoebe) {
+	if (*model == Model_Phoebe) {
 		config->mem_size = 256;
 		config->vram_size = 4;
 	}
@@ -257,10 +255,13 @@ config_load(Config * config)
  * Store the user's most recently chosen configuration to disc, for use next
  * time the program starts.
  *
- * Called on program exit.
+ * Called on program exit and whenever the config is altered
+ *
+ * @param config pointer to config struct with current machines settings
+ * @param model currently selected model of machine
  */
 void
-config_save(Config *config)
+config_save(const Config *config, Model model)
 {
 	char filename[512];
 	QString sText;
@@ -275,7 +276,7 @@ config_save(Config *config)
 	sprintf(s, "%u", config->mem_size);
 	settings.setValue("mem_size", s);
 
-	sprintf(s, "%s", models[machine.model].name_config);
+	sprintf(s, "%s", models[model].name_config);
 	settings.setValue("model", s);
 
 	if (config->vram_size != 0) {

@@ -304,7 +304,7 @@ network_config_changed(NetworkType network_type, const char *bridgename,
 	}
 
 	// Save the settings to the rpc.cfg file
-	config_save(&config);
+	config_save(&config, machine.model);
 
 	return restart_required;
 }

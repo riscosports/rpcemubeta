@@ -812,7 +812,7 @@ Emulator::cpu_idle()
 	config.cpu_idle ^= 1;
 
 	// Save the settings to the rpc.cfg file
-	config_save(&config);
+	config_save(&config, machine.model);
 
 	resetrpc();
 }
@@ -827,7 +827,7 @@ Emulator::cdrom_disabled()
 		config.cdromenabled = 0;
 
 		// Save the settings to the rpc.cfg file
-		config_save(&config);
+		config_save(&config, machine.model);
 
 		resetrpc();
 	}
@@ -843,7 +843,7 @@ Emulator::cdrom_empty()
 		config.cdromenabled = 1;
 
 		// Save the settings to the rpc.cfg file
-		config_save(&config);
+		config_save(&config, machine.model);
 
 		resetrpc();
 	}
@@ -867,7 +867,7 @@ Emulator::cdrom_load_iso(QString discname)
 		config.cdromenabled = 1;
 
 		// Save the settings to the rpc.cfg file
-		config_save(&config);
+		config_save(&config, machine.model);
 
 		resetrpc();
 	}
@@ -895,7 +895,7 @@ Emulator::cdrom_ioctl()
 		config.cdromenabled = 1;
 
 		// Save the settings to the rpc.cfg file
-		config_save(&config);
+		config_save(&config, machine.model);
 
 		resetrpc();
 	}
@@ -918,7 +918,7 @@ Emulator::cdrom_win_ioctl(char drive_letter)
 		config.cdromenabled = 1;
 
 		// Save the settings to the rpc.cfg file
-		config_save(&config);
+		config_save(&config, machine.model);
 
 		resetrpc();
 	}
@@ -937,7 +937,7 @@ Emulator::mouse_hack()
 	config.mousehackon ^= 1;
 
 	// Save the settings to the rpc.cfg file
-	config_save(&config);
+	config_save(&config, machine.model);
 }
 
 /**
@@ -949,7 +949,7 @@ Emulator::mouse_twobutton()
 	config.mousetwobutton ^= 1;
 
 	// Save the settings to the rpc.cfg file
-	config_save(&config);
+	config_save(&config, machine.model);
 }
 
 /**
@@ -1000,7 +1000,7 @@ Emulator::show_fullscreen_message_off()
 	config.show_fullscreen_message = 0;
 
 	// Save the settings to the rpc.cfg file
-	config_save(&config);
+	config_save(&config, machine.model);
 }
 
 /**
@@ -1018,7 +1018,7 @@ Emulator::nat_rule_add(PortForwardRule rule)
 	rpcemu_nat_forward_add(rule);
 
 	// Save the settings to the rpc.cfg file
-	config_save(&config);
+	config_save(&config, machine.model);
 }
 
 /**
@@ -1038,7 +1038,7 @@ Emulator::nat_rule_edit(PortForwardRule old_rule, PortForwardRule new_rule)
 	rpcemu_nat_forward_add(new_rule);
 
 	// Save the settings to the rpc.cfg file
-	config_save(&config);
+	config_save(&config, machine.model);
 }
 
 /**
@@ -1056,7 +1056,7 @@ Emulator::nat_rule_remove(PortForwardRule rule)
 	rpcemu_nat_forward_remove(rule);
 
 	// Save the settings to the rpc.cfg file
-	config_save(&config);
+	config_save(&config, machine.model);
 }
 
 #ifdef __cplusplus
