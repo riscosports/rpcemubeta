@@ -168,6 +168,7 @@ extern uint32_t inscount;
 /* These functions can optionally be overridden by a platform. If not
    needed to be overridden, there is a generic version in rpc-machdep.c */
 extern const char *rpcemu_get_datadir(void);
+extern void rpcemu_set_datadir(const char *datadir);
 extern const char *rpcemu_get_log_path(void);
 
 /* rpc-[linux|win].c */

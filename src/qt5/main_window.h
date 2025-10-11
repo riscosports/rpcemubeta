@@ -98,7 +98,7 @@ class MainWindow : public QMainWindow
 	Q_OBJECT
 
 public:
-	MainWindow(Emulator &emulator);
+	MainWindow(Emulator &emulator, bool launcher_mode);
 	virtual ~MainWindow();
 
 	/* Handle displaying error messages */
@@ -179,6 +179,8 @@ private:
 
 	void load_disc(int drive);
 	void create_disc(int drive);
+
+	const bool is_launcher_mode;
 
 	bool full_screen;
 	bool reenable_mousehack; ///< Did we disable mousehack entering fullscreen and have to reenable it on leaving fullscreen?

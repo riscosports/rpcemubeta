@@ -436,14 +436,36 @@ rpcemu_nsec_timer_ticks(void)
  * @param argv command line arguments
  */ 
 int main (int argc, char ** argv) 
-{ 
-//	if (argc != 1) {
-//		fprintf(stderr, "No command line options supported.\n");
-//		return 1;
-//	}
+{
+	bool launcher_mode = false;
 
 	// Initialise QT app
 	QApplication app(argc, argv);
+
+	// QTs commandline options will now have been removed from the list
+	// Handle RPCEmu specific ones
+	// Currently the only supported variants are
+	// rpcemu-version
+	// rpcemu-version --datadir <directory>
+	if (argc == 3) {
+		if (strcmp(argv[1], "--datadir") == 0) {
+			const char *datadir = argv[2];
+			QDir pathDir(datadir);
+			if (!pathDir.exists()) {
+				fprintf(stderr, "datadir '%s' doesn't exist\n", datadir);
+				exit(EXIT_FAILURE);
+			}
+
+			rpcemu_set_datadir(datadir);
+			launcher_mode = true;
+		} else {
+			fprintf(stderr, "Unknown arguments passed to RPCEmu\n");
+			exit(EXIT_FAILURE);
+		}
+	} else if (argc != 1) {
+			fprintf(stderr, "Unknown arguments passed to RPCEmu\n");
+			exit(EXIT_FAILURE);
+	}
 
 	// Add a program icon
 	QApplication::setWindowIcon(QIcon(":/rpcemu_icon.png"));
@@ -472,7 +494,7 @@ int main (int argc, char ** argv)
 	QThread::connect(emu_thread, &QThread::finished, emu_thread, &QThread::deleteLater);
 
 	// Create Main Window
-	MainWindow main_window(*emulator);
+	MainWindow main_window(*emulator, launcher_mode);
 	pMainWin = &main_window;
 
 	// Show Main Window

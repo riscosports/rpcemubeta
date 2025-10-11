@@ -319,8 +319,9 @@ MainDisplay::save_screenshot(QString filename)
 	return this->image->save(filename, "png");
 }
 
-MainWindow::MainWindow(Emulator &emulator)
-    : full_screen(false),
+MainWindow::MainWindow(Emulator &emulator, bool launcher_mode)
+    : is_launcher_mode(launcher_mode),
+      full_screen(false),
       reenable_mousehack(false),
       emulator(emulator),
       mips_timer(this),
@@ -1338,21 +1339,28 @@ MainWindow::create_menus()
 
 	// Settings menu
 	settings_menu = menuBar()->addMenu(tr("Settings"));
-	settings_menu->addAction(configure_action);
+	if (!is_launcher_mode) {
+		// These options only appear if the Launcher was not used
+		settings_menu->addAction(configure_action);
 #ifdef RPCEMU_NETWORKING
-	settings_menu->addAction(networking_action);
-	settings_menu->addAction(nat_list_action);
-	if (this->config_copy.network_type != NetworkType_NAT) {
-		nat_list_action->setEnabled(false);
-	}
+		settings_menu->addAction(networking_action);
+		settings_menu->addAction(nat_list_action);
+		if (this->config_copy.network_type != NetworkType_NAT) {
+			nat_list_action->setEnabled(false);
+		}
 #endif /* RPCEMU_NETWORKING */
-	settings_menu->addSeparator();
+		settings_menu->addSeparator();
+	}
+
 	settings_menu->addAction(sound_action);
 	settings_menu->addSeparator();
 	settings_menu->addAction(fullscreen_action);
 	settings_menu->addSeparator();
-	settings_menu->addAction(cpu_idle_action);
-	settings_menu->addSeparator();
+	if (!is_launcher_mode) {
+		// This option only appears if the Launcher was not used
+		settings_menu->addAction(cpu_idle_action);
+		settings_menu->addSeparator();
+	}
 	mouse_menu = settings_menu->addMenu(tr("Mouse"));
 
 	// Mouse submenu

@@ -42,6 +42,20 @@ rpcemu_get_datadir(void)
 }
 
 /**
+ * Set the datadirectory to the specified path
+ * used to handle multiple machines in different locations
+ */
+void
+rpcemu_set_datadir(const char *newdir)
+{
+	// Add on a trailing slash in case the path is missing it
+	if (snprintf(datadir, sizeof(datadir), "%s/", newdir) >= (int) sizeof(datadir)) {
+		rpclog("rpcemu_set_datadir(): Path too long");
+		exit(EXIT_FAILURE);
+	}
+}
+
+/**
  * Return the full path to the RPCEmu log file.
  *
  * @return Pointer to static zero-terminated string of full path to log file
