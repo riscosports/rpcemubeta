@@ -69,8 +69,6 @@ private:
 	QVBoxLayout *vram_vbox;
 	QGroupBox *vram_group_box;
 
-	QCheckBox *sound_checkbox;
-
 	QSlider *refresh_slider;
 	QLabel *refresh_label;
 	QHBoxLayout *refresh_hbox;

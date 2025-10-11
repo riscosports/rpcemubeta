@@ -530,6 +530,7 @@ Emulator::Emulator()
 #if defined(Q_OS_WIN32)
 	connect(this, &Emulator::cdrom_win_ioctl_signal, this, &Emulator::cdrom_win_ioctl);
 #endif // win32
+	connect(this, &Emulator::sound_enabled_signal, this, &Emulator::sound_enabled);
 	connect(this, &Emulator::mouse_hack_signal, this, &Emulator::mouse_hack);
 	connect(this, &Emulator::mouse_twobutton_signal, this, &Emulator::mouse_twobutton);
 	connect(this, &Emulator::config_updated_signal, this, &Emulator::config_updated);
@@ -947,6 +948,18 @@ void
 Emulator::mouse_twobutton()
 {
 	config.mousetwobutton ^= 1;
+
+	// Save the settings to the rpc.cfg file
+	config_save(&config, machine.model);
+}
+
+/**
+ * GUI is toggling sound on/off
+ */
+void
+Emulator::sound_enabled()
+{
+	config.soundenabled ^= 1;
 
 	// Save the settings to the rpc.cfg file
 	config_save(&config, machine.model);

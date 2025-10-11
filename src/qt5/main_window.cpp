@@ -353,6 +353,9 @@ MainWindow::MainWindow(Emulator &emulator)
 
 	// Update the gui with the initial config setting
 	// TODO what about fullscreen? (probably handled in GUI only
+	if (config_copy.soundenabled) {
+		sound_action->setChecked(true);
+	}
 	if(config_copy.cpu_idle) {
 		cpu_idle_action->setChecked(true);
 	}
@@ -1145,6 +1148,12 @@ MainWindow::menu_mouse_twobutton()
 	config_copy.mousetwobutton ^= 1;
 }
 
+void
+MainWindow::menu_sound()
+{
+	emit this->emulator.sound_enabled_signal();
+	config_copy.soundenabled ^= 1;
+}
 
 void
 MainWindow::menu_online_manual()
@@ -1252,6 +1261,9 @@ MainWindow::create_actions()
 	nat_list_action = new QAction(tr("NAT Port Forwarding Rules..."), this);
 	connect(nat_list_action, &QAction::triggered, this, &MainWindow::menu_nat_list);
 #endif /* RPCEMU_NETWORKING */
+	sound_action = new QAction(tr("Sound Enabled"), this);
+	sound_action->setCheckable(true);
+	connect(sound_action, &QAction::triggered, this, &MainWindow::menu_sound);
 	fullscreen_action = new QAction(tr("Full-screen Mode"), this);
 	fullscreen_action->setCheckable(true);
 	connect(fullscreen_action, &QAction::triggered, this, &MainWindow::menu_fullscreen);
@@ -1334,6 +1346,8 @@ MainWindow::create_menus()
 		nat_list_action->setEnabled(false);
 	}
 #endif /* RPCEMU_NETWORKING */
+	settings_menu->addSeparator();
+	settings_menu->addAction(sound_action);
 	settings_menu->addSeparator();
 	settings_menu->addAction(fullscreen_action);
 	settings_menu->addSeparator();

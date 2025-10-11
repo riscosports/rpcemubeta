@@ -71,6 +71,7 @@ signals:
 	void cdrom_load_iso_signal(const QString &discname);
 	void cdrom_ioctl_signal();
 	void cdrom_win_ioctl_signal(char drive_letter);
+	void sound_enabled_signal();
 	void mouse_hack_signal();
 	void mouse_twobutton_signal();
 	void config_updated_signal(Config *new_config, Model new_model);
@@ -110,6 +111,7 @@ public slots:
 #if defined(Q_OS_WIN32)
 	void cdrom_win_ioctl(char drive_letter);
 #endif /* win32 */
+	void sound_enabled();
 	void mouse_hack();
 	void mouse_twobutton();
 	void config_updated(Config *new_config, Model new_model);

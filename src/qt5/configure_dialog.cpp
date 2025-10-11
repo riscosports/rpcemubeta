@@ -100,9 +100,6 @@ ConfigureDialog::ConfigureDialog(Emulator &emulator, Config *config_copy, Model 
 	vram_group_box = new QGroupBox("VRAM");
 	vram_group_box->setLayout(vram_vbox);
 
-	// Create sound checkbox
-	sound_checkbox = new QCheckBox("Sound");
-
 	// Create refresh
 	refresh_slider = new QSlider(Qt::Horizontal);
 	refresh_slider->setRange(20, 100);
@@ -124,8 +121,7 @@ ConfigureDialog::ConfigureDialog(Emulator &emulator, Config *config_copy, Model 
 	grid = new QGridLayout(this);
 	grid->addWidget(hardware_group_box, 0, 0);
 	grid->addWidget(mem_group_box, 0, 1);
-	grid->addWidget(vram_group_box, 1, 0);
-	grid->addWidget(sound_checkbox, 1, 1);
+	grid->addWidget(vram_group_box, 1, 0, 1, 2);    // span 2 columns
 	grid->addWidget(refresh_group_box, 2, 0, 1, 2); // span 2 columns
 	grid->addWidget(buttons_box, 3, 0, 1, 2);       // span 2 columns
 
@@ -192,13 +188,6 @@ ConfigureDialog::dialog_accepted()
 	// VRAM
 	if (vram_0->isChecked()) new_config.vram_size = 0;
 	if (vram_2->isChecked()) new_config.vram_size = 8;
-
-	// Sound
-	if(sound_checkbox->isChecked()) {
-		new_config.soundenabled = 1;
-	} else {
-		new_config.soundenabled = 0;
-	}
 
 	// Video Refresh Rate
 	new_config.refresh = refresh_slider->value();
@@ -284,13 +273,6 @@ ConfigureDialog::applyConfig()
 	default:
 		vram_2->setChecked(true);
 		break;
-	}
-
-	// Sound
-	if(config_copy->soundenabled) {
-		sound_checkbox->setChecked(true);
-	} else {
-		sound_checkbox->setChecked(false);
 	}
 
 	// Video Refresh Rate
