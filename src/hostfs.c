@@ -21,6 +21,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -50,11 +51,6 @@
 
 # define mkdir(name, mode) _mkdir(name)
 #endif
-
-typedef int bool;
-
-#define true  ((bool) 1)
-#define false ((bool) 0)
 
 /** Registration states of HostFS module with backend code */
 typedef enum {
