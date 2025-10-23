@@ -18,6 +18,8 @@ Makefile
 poduleroms
 roms
 rpcemu
+RPCEmu.exe
+RPCEmu-debug.exe
 rpcemu-interpreter
 rpcemu-interpreter-debug
 rpcemu-recompiler
@@ -45,6 +47,16 @@ src/qt5/object_script.RPCEmu-Interpreter-debug.Debug
 src/qt5/object_script.RPCEmu-Interpreter.Release
 src/qt5/object_script.RPCEmu-Recompiler-debug.Debug
 src/qt5/object_script.RPCEmu-Recompiler.Release
+
+# launcher related files
+src/qt5/launcher/.qmake.stash
+src/qt5/launcher/Makefile.Debug
+src/qt5/launcher/Makefile.Release
+src/qt5/launcher/debug
+src/qt5/launcher/release
+src/qt5/launcher/moc_*.cpp
+src/qt5/launcher/qrc_resources.cpp
+src/qt5/launcher/ui_*.h # generated from the .ui files
 
 # Generated when building EtherRPCEm
 riscos-progs/EtherRPCEm/c/AutoSense

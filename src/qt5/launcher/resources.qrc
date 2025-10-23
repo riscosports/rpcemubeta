@@ -1,0 +1,21 @@
+<RCC>
+    <qresource prefix="/">
+        <file>i/ro4.png</file>
+        <file>i/ro37.png</file>
+        <file>i/ro38.png</file>
+        <file>i/vm_new_32px.png</file>
+        <file>i/vm_settings_32px.png</file>
+        <file>i/vm_start_32px.png</file>
+        <file>i/rpcemu_icon.png</file>
+        <file alias="default/rpc.cfg">../../../rpc.cfg</file>
+        <file alias="default/cmos.ram">../../../cmos.ram</file>
+        <file alias="default/hostfs/Network/ReadMe,fff">../../../riscos-progs/EtherRPCEm/ReadMe,fff</file>
+        <file alias="default/poduleroms/hostfs,ffa">../../../riscos-progs/HostFS/hostfs,ffa</file>
+        <file alias="default/poduleroms/hostfsfiler,ffa">../../../riscos-progs/HostFS/hostfsfiler,ffa</file>
+        <file alias="default/netroms/EtherRPCEm,ffa">../../../netroms/EtherRPCEm,ffa</file>
+        <file alias="default/roms/roms.txt">../../../roms/roms.txt</file>
+        <file>i/import_32px.png</file>
+        <file>i/vm_delete_32px.png</file>
+        <file>i/vm_add_32px.png</file>
+    </qresource>
+</RCC>
