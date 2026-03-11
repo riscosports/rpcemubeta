@@ -29,7 +29,7 @@
 #include "network_dialog.h"
 #include "nat_list_dialog.h"
 #include "about_dialog.h"
-#include "rpc-qt5.h"
+#include "rpc-qt6.h"
 
 #include "rpcemu.h"
 
@@ -112,7 +112,8 @@ protected:
 	void keyPressEvent(QKeyEvent *event) Q_DECL_OVERRIDE;
 	void keyReleaseEvent(QKeyEvent *event) Q_DECL_OVERRIDE;
 #if defined(Q_OS_WIN32) || defined(Q_OS_MACOS)
-	bool nativeEvent(const QByteArray &eventType, void *message, long *result) Q_DECL_OVERRIDE;
+//	bool nativeEvent(const QByteArray &eventType, void *message, long *result) Q_DECL_OVERRIDE;
+	bool nativeEvent(const QByteArray &eventType, void *message, long *result);
 #endif /* Q_OS_WIN32 */
 	
 private slots:

@@ -73,7 +73,7 @@ extern "C" {
 /* Note that networking is currently supported on Mac OS X with the Cocoa GUI
    version but not with the Allegro GUI. */
 #if defined __linux || defined __linux__ || defined WIN32 || defined _WIN32 || \
-    defined RPCEMU_COCOA_GUI
+    defined RPCEMU_COCOA_GUI || defined __APPLE__
 #define RPCEMU_NETWORKING
 #endif
 
@@ -165,10 +165,16 @@ extern Machine machine; /**< The details of the current model being emulated */
 
 extern uint32_t inscount;
 
+
 /* These functions can optionally be overridden by a platform. If not
    needed to be overridden, there is a generic version in rpc-machdep.c */
 extern const char *rpcemu_get_datadir(void);
+
+#ifdef __APPLE__
+extern int rpcemu_set_datadir(const char *path);
+#else
 extern void rpcemu_set_datadir(const char *datadir);
+#endif
 extern const char *rpcemu_get_log_path(void);
 
 /* rpc-[linux|win].c */

@@ -26,7 +26,41 @@
    be, but currently this version is used by Linux, all the other autoconf
    based builds and Windows. Only Mac OS X GUI version needs to override */
 
+#ifdef __APPLE__
+#include <dirent.h>
+
+static char datadir[512] = "";
+
+int rpcemu_set_datadir(const char *path)
+{
+  int len = strlen(path);
+  if (len == 0) return 0;
+
+  if (path[len - 1] != '/')
+  {
+    snprintf(datadir, 512, "%s/", path);
+  }
+  else
+  {
+    strncpy(datadir, path, 512);
+  }
+
+  DIR *ptr = opendir(datadir);
+  if (ptr)
+  {
+    closedir(ptr);
+    return 1;
+  }
+
+  return 0;
+}
+
+#else
+
 static char datadir[512] = "./";
+
+#endif
+
 static char logpath[1024] = "";
 
 /**
@@ -41,6 +75,7 @@ rpcemu_get_datadir(void)
 	return datadir;
 }
 
+#ifndef __APPLE__
 /**
  * Set the datadirectory to the specified path
  * used to handle multiple machines in different locations
@@ -54,6 +89,8 @@ rpcemu_set_datadir(const char *newdir)
 		exit(EXIT_FAILURE);
 	}
 }
+
+#endif
 
 /**
  * Return the full path to the RPCEmu log file.
