@@ -1,5 +1,5 @@
 
-Build instrucitons for macOS using MacPorts
+Build instructions for macOS using MacPorts
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Go to https://www.macports.org/install.php and download the version that matches your OS versiom.
