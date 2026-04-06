@@ -1,3 +1,23 @@
+
+Build instrucitons for macOS using MacPorts
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Go to https://www.macports.org/install.php and download the version that matches your OS versiom.
+Run the installer and follow the wizard to install.
+Once installed open a terminal and type,
+
+export PATH=/opt/local/bin:$PATH
+
+type gcc -v. If the xcode command line tools aren’t installed you should get prompted to install them.
+
+sudo port selfupdate
+
+sudo port install qt5
+
+git clone https://github.com/riscosports/rpcemubeta.git
+
+Then build rpcemu as normal. (the qmake command is at /opt/local/libexec/qt5/bin/qmake)
+
 RPCEmu
 ~~~~~~
 
