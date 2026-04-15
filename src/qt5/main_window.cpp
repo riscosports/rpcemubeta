@@ -71,7 +71,11 @@ MainDisplay::MainDisplay(Emulator &emulator, QWidget *parent)
 void
 MainDisplay::mouseMoveEvent(QMouseEvent *event)
 {
+#if defined(Q_OS_MACOS)
+	if (!pconfig_copy->mousehackon && mouse_captured) {
+#else
 	if((!pconfig_copy->mousehackon && mouse_captured) || full_screen) {
+#endif
 		QPoint middle;
 
 		// In mouse capture mode move the mouse back to the middle of the window */ 
@@ -959,7 +963,11 @@ MainWindow::menu_fullscreen()
 			QMessageBox msg_box(QMessageBox::Information,
 			    "RPCEmu - Full-screen mode",
 			    "<p>This window will now be switched to <b>full-screen</b> mode.</p>"
+#if defined(Q_OS_MACOS)
+			    "<p>To leave full-screen mode press <b>Command-End</b>.</p>",
+#else
 			    "<p>To leave full-screen mode press <b>Ctrl-End</b>.</p>",
+#endif
 			    QMessageBox::Ok | QMessageBox::Cancel,
 			    this);
 			msg_box.setDefaultButton(QMessageBox::Ok);
@@ -992,10 +1000,12 @@ MainWindow::menu_fullscreen()
 		
 		// If in mousehack mode, change to a temporary mouse capture style
 		// during full screen
+#if !defined(Q_OS_MACOS)
 		if(config_copy.mousehackon) {
 			emit this->emulator.mouse_hack_signal();
 			reenable_mousehack = true; 
 		}
+#endif
 		
 		// If in mouse capture mode and not captured, the cursor will be visible, hide it
 		this->display->setCursor(Qt::BlankCursor);
