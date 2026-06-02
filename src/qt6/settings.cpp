@@ -170,6 +170,7 @@ config_load(Config *config, Model *model)
 	}
 
 	config->soundenabled = settings.value("sound_enabled", "1").toInt();
+	config->xattrsenabled = settings.value("xattrs_enabled", "0").toInt();
 	config->refresh      = settings.value("refresh_rate", "60").toInt();
 	config->cdromenabled = settings.value("cdrom_enabled", "0").toInt();
 	config->cdromtype    = settings.value("cdrom_type", "0").toInt();
@@ -286,6 +287,7 @@ config_save(const Config *config, Model model)
 	}
 
 	settings.setValue("sound_enabled",   config->soundenabled);
+	settings.setValue("xattrs_enabled",   config->xattrsenabled);
 	settings.setValue("refresh_rate",    config->refresh);
 	settings.setValue("cdrom_enabled",   config->cdromenabled);
 	settings.setValue("cdrom_type",      config->cdromtype);

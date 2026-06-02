@@ -381,10 +381,6 @@ path_construct(const char *old_path, const char *ro_path,
     riscos_path_to_host(ro_leaf, new_leaf);
   }
 
-  /* If host uses extended attrs, don't append any suffix. */
-  if (hostfs_supports_xattr_platform())
-    return;
-
   /* Calculate where to place new comma suffix */
   /* New suffix appended onto existing path */
   new_suffix = new_path + strlen(new_path);
@@ -434,16 +430,6 @@ hostfs_read_object_info(const char *host_pathname,
 
   /* Find where the leafname starts */
   slash = strrchr(host_pathname, '/');
-
-  /* If xattr metadata exists, use the full leafname as the RISC OS name. */
-  if ((hostfs_read_object_xattr_platform(host_pathname, object_info) != 0)  && (hostfs_supports_xattr_platform() != 0)) {
-    if (ro_leaf) {
-      name_host_to_riscos(slash ? slash + 1 : host_pathname,
-                          strlen(slash ? slash + 1 : host_pathname),
-                          ro_leaf);
-    }
-    return;
-  }
 
   /* Find whether there is a comma in the leafname */
   if (slash) {
@@ -1105,7 +1091,7 @@ hostfs_write_file(ARMul_State *state, bool with_data)
 
   case OBJECT_TYPE_FILE:
     /* If the hostfs_path_process() reported object found,
-       rename to the new name. This also switches to xattrs. */
+       rename to the new name */
     path_construct(host_pathname, ro_path,
                    new_pathname, sizeof(new_pathname),
                    state->Reg[2], state->Reg[3]);
@@ -1163,11 +1149,6 @@ hostfs_write_file(ARMul_State *state, bool with_data)
   state->Reg[6] = 0; /* TODO */
 
   hostfs_object_set_timestamp(new_pathname, state->Reg[2], state->Reg[3]);
-
-  hostfs_object_set_xattr_platform(new_pathname,
-                                   state->Reg[2],
-                                   state->Reg[3],
-                                   DEFAULT_ATTRIBUTES);
 }
 
 static void
@@ -1224,12 +1205,6 @@ hostfs_file_1_write_cat_info(ARMul_State *state)
 
       /* Update timestamp if necessary */
       hostfs_object_set_timestamp(new_pathname, state->Reg[2], state->Reg[3]);
-
-      /* And filetype if necessary */
-      hostfs_object_set_xattr_platform(new_pathname,
-                                       state->Reg[2],
-                                       state->Reg[3],
-                                       state->Reg[5]);
     }
 
     /* TODO handle new attribs */

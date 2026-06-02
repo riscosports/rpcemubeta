@@ -5,8 +5,11 @@
 
 #include <utime.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/xattr.h>
 
 #include "hostfs_internal.h"
+#include "rpcemu.h"
 
 /**
  * Convert ADFS time-stamped Load-Exec addresses to the equivalent time_t.
@@ -38,6 +41,17 @@ hostfs_adfs2host_time(uint32_t load, uint32_t exec)
 	high -= 0x336e996a;
 	return (((high % 100) << 8) + low) / 100 + (high / 100 << 8);
 }
+
+/* Extended attributes store RISC OS filetype, or load/exec.
+ * Uses RISC OS on Linux's format: three 32‑bit words (load, exec, attributes).
+ * NOTE: Not portable as in host endian, but matches ROonL. */
+#define XATTR_NAME "user.RISC_OS.LoadExec"
+
+typedef struct {
+	uint32_t load;
+	uint32_t exec;
+	uint32_t attribs;
+} XattrInfo;
 
 /**
  * Read information about an object.
@@ -103,6 +117,49 @@ hostfs_read_object_info_platform(const char *host_pathname,
 	object_info->length = info.st_size;
 }
 
+int
+hostfs_supports_xattr_platform()
+{
+	return config.xattrsenabled;
+}
+
+int
+hostfs_read_object_xattr_platform(const char *host_pathname, risc_os_object_info *object_info)
+{
+	struct stat info;
+	XattrInfo attrInfo;
+	ssize_t len;
+
+	assert(host_pathname != NULL);
+	assert(object_info != NULL);
+
+	if (stat(host_pathname, &info) || !S_ISREG(info.st_mode)) {
+		return 0;
+	}
+
+	/* Read the RISC OS load/exec/attributes from the extended attribute. */
+	len = getxattr(host_pathname, XATTR_NAME, &attrInfo, sizeof(attrInfo), 0,
+				   XATTR_NOFOLLOW);
+	if (len < 8)
+		return 0; /* need at least load & exec */
+
+	if (len < 12)
+		attrInfo.attribs = DEFAULT_ATTRIBUTES; /* pretend it got this. */
+
+	/* hostfs_read_object_info_platform(), above, always sets the time in
+	 * object_info's load&exec. If xattrs are for a filetype/time, combine
+	 * them, otherwise overwrite with fill load/exec. */
+	if ((attrInfo.load & 0xfff00000u) == 0xfff00000u) {
+		object_info->load |= attrInfo.load & 0xffffff00u;
+	} else {
+		object_info->load = attrInfo.load;
+		object_info->exec = attrInfo.exec;
+	}
+
+	object_info->attribs = attrInfo.attribs;
+	return 1;
+}
+
 /**
  * Apply the timestamp to the supplied host object
  *
@@ -118,4 +175,34 @@ hostfs_object_set_timestamp_platform(const char *host_path, uint32_t load, uint3
 	t.actime = t.modtime = hostfs_adfs2host_time(load, exec);
 	utime(host_path, &t);
 	/* TODO handle error in utime() */
+}
+
+void
+hostfs_object_set_xattr_platform(const char *host_path,
+                                 uint32_t load,
+                                 uint32_t exec,
+                                 uint32_t attribs)
+{
+	XattrInfo attrInfo;
+	attrInfo.load = load;
+	attrInfo.exec = exec;
+	attrInfo.attribs = attribs;
+
+	/* For filetype/timestamp RISC OS files, strip out the time. */
+	if ((load & 0xfff00000u) == 0xfff00000u) {
+		attrInfo.load = load & 0xffffff00u;
+		attrInfo.exec = 0;
+	}
+
+	if (setxattr(host_path,
+				 XATTR_NAME,
+				 &attrInfo,
+				 sizeof(attrInfo),
+				 0,
+				 XATTR_NOFOLLOW) != 0)
+	{
+		fprintf(stderr,
+				"hostfs_object_set_loadexec_platform() could not set xattr on '%s': %s %d\n",
+				host_path, strerror(errno), errno);
+	}
 }

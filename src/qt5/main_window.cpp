@@ -366,6 +366,9 @@ MainWindow::MainWindow(Emulator &emulator, bool launcher_mode)
 	if (config_copy.soundenabled) {
 		sound_action->setChecked(true);
 	}
+	if (config_copy.xattrsenabled) {
+		xattrs_action->setChecked(true);
+	}
 	if(config_copy.cpu_idle) {
 		cpu_idle_action->setChecked(true);
 	}
@@ -1226,6 +1229,13 @@ MainWindow::menu_sound()
 }
 
 void
+MainWindow::menu_xattrs()
+{
+	emit this->emulator.xattrs_enabled_signal();
+	config_copy.xattrsenabled ^= 1;
+}
+
+void
 MainWindow::menu_online_manual()
 {
 	QDesktopServices::openUrl(QUrl(URL_MANUAL));
@@ -1334,6 +1344,9 @@ MainWindow::create_actions()
 	sound_action = new QAction(tr("Sound Enabled"), this);
 	sound_action->setCheckable(true);
 	connect(sound_action, &QAction::triggered, this, &MainWindow::menu_sound);
+	xattrs_action = new QAction(tr("Extended Attributes Enabled"), this);
+	xattrs_action->setCheckable(true);
+	connect(xattrs_action, &QAction::triggered, this, &MainWindow::menu_xattrs);
 	fullscreen_action = new QAction(tr("Full-screen Mode"), this);
 	fullscreen_action->setCheckable(true);
 	connect(fullscreen_action, &QAction::triggered, this, &MainWindow::menu_fullscreen);
@@ -1422,6 +1435,8 @@ MainWindow::create_menus()
 	}
 
 	settings_menu->addAction(sound_action);
+	settings_menu->addSeparator();
+	settings_menu->addAction(xattrs_action);
 	settings_menu->addSeparator();
 	settings_menu->addAction(fullscreen_action);
 	settings_menu->addSeparator();

@@ -134,6 +134,7 @@ private slots:
 	void menu_nat_list();
 #endif /* RPCEMU_NETWORKING */
 	void menu_sound();
+	void menu_xattrs();
 	void menu_fullscreen();
 	void menu_cpu_idle();
 	void menu_mouse_hack();
@@ -234,6 +235,7 @@ private:
 	QAction *nat_list_action;
 #endif /* RPCEMU_NETWORKING */
 	QAction *sound_action;
+	QAction *xattrs_action;
 	QAction *fullscreen_action;
 	QAction *cpu_idle_action;
 	QAction *mouse_hack_action;

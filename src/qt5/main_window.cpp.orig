@@ -41,7 +41,7 @@
 #include "rpcemu.h"
 #include "keyboard.h"
 #include "main_window.h"
-#include "rpc-qt6.h"
+#include "rpc-qt5.h"
 #include "vidc20.h"
 
 #define URL_MANUAL	"http://www.marutan.net/rpcemu/manual/"
@@ -71,7 +71,11 @@ MainDisplay::MainDisplay(Emulator &emulator, QWidget *parent)
 void
 MainDisplay::mouseMoveEvent(QMouseEvent *event)
 {
+#if defined(Q_OS_MACOS)
+	if (!pconfig_copy->mousehackon && mouse_captured) {
+#else
 	if((!pconfig_copy->mousehackon && mouse_captured) || full_screen) {
+#endif
 		QPoint middle;
 
 		// In mouse capture mode move the mouse back to the middle of the window */ 
@@ -362,9 +366,6 @@ MainWindow::MainWindow(Emulator &emulator, bool launcher_mode)
 	if (config_copy.soundenabled) {
 		sound_action->setChecked(true);
 	}
-	if (config_copy.xattrsenabled) {
-		xattrs_action->setChecked(true);
-	}
 	if(config_copy.cpu_idle) {
 		cpu_idle_action->setChecked(true);
 	}
@@ -526,7 +527,7 @@ MainWindow::keyPressEvent(QKeyEvent *event)
 
 	// Special case, handle windows menu key as being menu mouse button
 	if(Qt::Key_Menu == event->key()) {
-		emit this->emulator.mouse_press_signal(Qt::MiddleButton);
+		emit this->emulator.mouse_press_signal(Qt::MidButton);
 		return;
 	}
 
@@ -595,7 +596,7 @@ MainWindow::keyReleaseEvent(QKeyEvent *event)
 
 	// Special case, handle windows menu key as being menu mouse button
 	if(Qt::Key_Menu == event->key()) {
-		emit this->emulator.mouse_release_signal(Qt::MiddleButton);
+		emit this->emulator.mouse_release_signal(Qt::MidButton);
 		return;
 	}
 
@@ -702,7 +703,7 @@ MainWindow::menu_screenshot()
 	                                                tr("PNG (*.png)"));
 
 	// fileName is NULL if user hit cancel
-	if (!fileName.isNull()) {
+	if (fileName != NULL) {
 		bool result = this->display->save_screenshot(fileName);
 
 		if (result == false) {
@@ -962,7 +963,11 @@ MainWindow::menu_fullscreen()
 			QMessageBox msg_box(QMessageBox::Information,
 			    "RPCEmu - Full-screen mode",
 			    "<p>This window will now be switched to <b>full-screen</b> mode.</p>"
+#if defined(Q_OS_MACOS)
+			    "<p>To leave full-screen mode press <b>Command-End</b>.</p>",
+#else
 			    "<p>To leave full-screen mode press <b>Ctrl-End</b>.</p>",
+#endif
 			    QMessageBox::Ok | QMessageBox::Cancel,
 			    this);
 			msg_box.setDefaultButton(QMessageBox::Ok);
@@ -995,10 +1000,12 @@ MainWindow::menu_fullscreen()
 		
 		// If in mousehack mode, change to a temporary mouse capture style
 		// during full screen
+#if !defined(Q_OS_MACOS)
 		if(config_copy.mousehackon) {
 			emit this->emulator.mouse_hack_signal();
 			reenable_mousehack = true; 
 		}
+#endif
 		
 		// If in mouse capture mode and not captured, the cursor will be visible, hide it
 		this->display->setCursor(Qt::BlankCursor);
@@ -1093,7 +1100,7 @@ MainWindow::menu_cdrom_iso()
 	                                                tr("ISO CD-ROM Image (*.iso);;All Files (*.*)"));
 
 	/* fileName is NULL if user hit cancel */
-	if(!fileName.isNull()) {
+	if(fileName != NULL) {
 		if (!config_copy.cdromenabled) {
 			int ret = MainWindow::reset_question(this);
 
@@ -1219,13 +1226,6 @@ MainWindow::menu_sound()
 }
 
 void
-MainWindow::menu_xattrs()
-{
-	emit this->emulator.xattrs_enabled_signal();
-	config_copy.xattrsenabled ^= 1;
-}
-
-void
 MainWindow::menu_online_manual()
 {
 	QDesktopServices::openUrl(QUrl(URL_MANUAL));
@@ -1334,9 +1334,6 @@ MainWindow::create_actions()
 	sound_action = new QAction(tr("Sound Enabled"), this);
 	sound_action->setCheckable(true);
 	connect(sound_action, &QAction::triggered, this, &MainWindow::menu_sound);
-	xattrs_action = new QAction(tr("Extended Attributes Enabled"), this);
-	xattrs_action->setCheckable(true);
-	connect(xattrs_action, &QAction::triggered, this, &MainWindow::menu_xattrs);
 	fullscreen_action = new QAction(tr("Full-screen Mode"), this);
 	fullscreen_action->setCheckable(true);
 	connect(fullscreen_action, &QAction::triggered, this, &MainWindow::menu_fullscreen);
@@ -1425,8 +1422,6 @@ MainWindow::create_menus()
 	}
 
 	settings_menu->addAction(sound_action);
-	settings_menu->addSeparator();
-	settings_menu->addAction(xattrs_action);
 	settings_menu->addSeparator();
 	settings_menu->addAction(fullscreen_action);
 	settings_menu->addSeparator();

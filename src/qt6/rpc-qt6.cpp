@@ -606,6 +606,7 @@ Emulator::Emulator()
 	connect(this, &Emulator::cdrom_win_ioctl_signal, this, &Emulator::cdrom_win_ioctl);
 #endif // win32
 	connect(this, &Emulator::sound_enabled_signal, this, &Emulator::sound_enabled);
+	connect(this, &Emulator::xattrs_enabled_signal, this, &Emulator::xattrs_enabled);
 	connect(this, &Emulator::mouse_hack_signal, this, &Emulator::mouse_hack);
 	connect(this, &Emulator::mouse_twobutton_signal, this, &Emulator::mouse_twobutton);
 	connect(this, &Emulator::config_updated_signal, this, &Emulator::config_updated);
@@ -1056,6 +1057,18 @@ void
 Emulator::sound_enabled()
 {
 	config.soundenabled ^= 1;
+
+	// Save the settings to the rpc.cfg file
+	config_save(&config, machine.model);
+}
+
+/**
+ * GUI is toggling xattrs on/off
+ */
+void
+Emulator::xattrs_enabled()
+{
+	config.xattrsenabled ^= 1;
 
 	// Save the settings to the rpc.cfg file
 	config_save(&config, machine.model);

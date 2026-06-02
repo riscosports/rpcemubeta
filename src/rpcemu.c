@@ -74,6 +74,7 @@ Config config = {
 	NULL,			/* bridgename */
 	0,			/* refresh */
 	1,			/* soundenabled */
+	0,			/* xattrsenabled */
 	1,			/* cdromenabled */
 	0,			/* cdromtype  -- Only used on Windows build */
 	"",			/* isoname */
@@ -598,12 +599,20 @@ rpcemu_config_apply_new_settings(Config *new_config, Model new_model)
 {
 	int needs_reset = 0;
 	int sound_changed = 0;
+	int xattrs_changed = 0;
 
 	/* Sound state changed? */
 	if((config.soundenabled && !new_config->soundenabled)
 	   || (new_config->soundenabled && !config.soundenabled))
 	{
 		sound_changed = 1;
+	}
+
+	/* xattrs state changed? */
+	if((config.xattrsenabled && !new_config->xattrsenabled)
+	   || (new_config->xattrsenabled && !config.xattrsenabled))
+	{
+		xattrs_changed = 1;
 	}
 
 	/* Changed machine we're emulating? */
